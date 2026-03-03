@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
 
 // ─── API Configuration ────────────────────────────────────────────────────────
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1";
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1/api/v1";
 
 // Helper: API fetch with auth token
 const apiFetch = async (path, options = {}) => {
