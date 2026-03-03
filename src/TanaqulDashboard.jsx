@@ -452,7 +452,7 @@ const MOCK = {
     activeOrders:14, pendingAppointments:7, totalInvestors:312,
     goldGrams:"4,820", silverGrams:"18,400", platinumGrams:"960",
     tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
-    lastBlock:"0x3f9a...c821", blockNumber:1847,
+    lastBlock:"—", blockNumber:0,
   },
   investors: [
     { id:"INV-001", nameEn:"Mohammed Al-Otaibi", nameAr:"محمد العتيبي", wallet:"0x1234...abcd", holdingsValue:"1,248,000", gold:820, silver:0,    platinum:0,  status:"ACTIVE",    joined:"2025-11-01", vaultKey:"VK-AX9F2", nationalId:"1012345678", kycExpiry:"2027-11-01", noShowCount:0 },
@@ -536,9 +536,9 @@ const MOCK = {
     { number:1845, hash:"0x1d7c...e009", txCount:18, commission:"5,120", tanaqulShare:"3,072", creatorShare:"1,024", validatorsShare:"1,024", validator:"Tanaqul Node 1", timestamp:"2026-02-26 23:59", size:"0.94 MB" },
   ],
   validators: [
-    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:1847, lastBlock:0, commissionEarned:"84,200", weight:"60%", joined:"2025-09-01" },
-    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:1203, lastBlock:0, commissionEarned:"52,600", weight:"40%", joined:"2025-11-15" },
-    { id:"VAL-003", name:"Partner Node — Elm", address:"0xCCC3...0003", status:"STANDBY", blocksValidated:380, lastBlock:1800, commissionEarned:"12,400", weight:"0%", joined:"2026-01-10" },
+    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"60%", joined:"2025-09-01" },
+    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"40%", joined:"2025-11-15" },
+    { id:"VAL-003", name:"Partner Node — Elm", address:"0xCCC3...0003", status:"STANDBY", blocksValidated:0, lastBlock:1800, commissionEarned:"0", weight:"0%", joined:"2026-01-10" },
   ],
 };
 
