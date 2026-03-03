@@ -43,6 +43,9 @@ const apiLogin = async (email, password, totp_code) => {
   });
   const data = await resp.json();
   if (resp.ok) {
+    if (data.requires_2fa_setup) {
+      return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
+    }
     localStorage.setItem("tanaqul_token", data.access_token);
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
