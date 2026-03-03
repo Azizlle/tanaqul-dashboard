@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
 
 // ─── API Configuration ────────────────────────────────────────────────────────
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1/api/v1";
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1";
 
 // Helper: API fetch with auth token
 const apiFetch = async (path, options = {}) => {
@@ -9411,7 +9411,7 @@ export default function App() {
             depositor: b.depositor_id || "", depositedAt: b.deposited_at || "",
           }));
         }},
-        { path: "/vault/appointments", setter: setAppAppointments, transform: (data) => {
+        { path: "/appointments", setter: setAppAppointments, transform: (data) => {
           const items = data.items || data.appointments || data;
           if (!Array.isArray(items)) return null;
           return items.map(a => ({
@@ -9437,7 +9437,7 @@ export default function App() {
             processedAt: w.processed_at || "", rejectReason: w.reject_reason || "",
           }));
         }},
-        { path: "/wallet/movements", setter: setAppWalletMoves, transform: (data) => {
+        { path: "/wallet", setter: setAppWalletMoves, transform: (data) => {
           const items = data.items || data.movements || data;
           if (!Array.isArray(items)) return null;
           return items.map(m => ({
@@ -9447,7 +9447,7 @@ export default function App() {
             date: m.created_at || "",
           }));
         }},
-        { path: "/blockchain/validators", setter: setAppValidators, transform: (data) => {
+        { path: "/validators", setter: setAppValidators, transform: (data) => {
           const items = data.items || data.validators || data;
           if (!Array.isArray(items)) return null;
           return items.map(v => ({
