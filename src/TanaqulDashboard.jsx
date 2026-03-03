@@ -5406,7 +5406,7 @@ const UserManagement = () => {
   const [newRole, setNewRole] = useState({label:"",labelAr:"",color:C.blueSolid,perms:[]});
   const [editPerms, setEditPerms] = useState([]);
   const [editRole, setEditRole] = useState("VIEWER");
-  const [newUser, setNewUser] = useState({name:"",nameAr:"",email:"",password:"",role:"VIEWER"});
+  const [newUser, setNewUser] = useState({name:"",nameAr:"",email:"",phone:"",password:"",role:"VIEWER"});
   const [logFilter, setLogFilter] = useState("ALL");
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
@@ -5416,7 +5416,7 @@ const UserManagement = () => {
   return (
     <div>
       <SectionHeader title={isAr?"إدارة المستخدمين":"User Management"} sub={isAr?"إدارة مستخدمي الإدارة والصلاحيات والجلسات":"Manage admin users, roles, permissions & sessions"}
-        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",password:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
+        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",phone:"",password:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
 
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:C.cardShadow}}>{toast}</div>}
 
@@ -5474,6 +5474,7 @@ const UserManagement = () => {
             <div style={{flex:1}}><Inp label="الاسم الكامل (عربي)" value={newUser.nameAr} onChange={v=>setNewUser(p=>({...p,nameAr:v}))} placeholder="مثال: نورة الشمسي" /></div>
           </div>
           <Inp label={isAr?"البريد الإلكتروني":"Email"} value={newUser.email} onChange={v=>setNewUser(p=>({...p,email:v}))} placeholder="user@tanaqul.sa" />
+          <Inp label={isAr?"رقم الجوال":"Phone Number"} value={newUser.phone} onChange={v=>setNewUser(p=>({...p,phone:v.replace(/[^0-9+]/g,"")}))} placeholder="+966 5XXXXXXXX" />
           <Inp label={isAr?"كلمة المرور":"Password"} value={newUser.password} onChange={v=>setNewUser(p=>({...p,password:v}))} placeholder="Min 8 characters" type="password" />
           <Sel label={isAr?"الدور":"Role"} value={newUser.role} onChange={v=>setNewUser(p=>({...p,role:v}))} options={allRoles.map(r=>({value:r.id,label:isAr?r.labelAr:r.label}))} />
           <div style={{background:C.bg,borderRadius:10,padding:"12px 14px"}}>
@@ -5486,15 +5487,32 @@ const UserManagement = () => {
             </div>
           </div>
           <Btn variant="gold" onClick={async()=>{
-            if(!newUser.name||!newUser.nameAr||!newUser.email||!newUser.password){showToast(isAr?"⚠️ أكمل جميع الحقول":"⚠️ Fill all fields");return;}
+            if(!newUser.name||!newUser.nameAr||!newUser.email||!newUser.phone||!newUser.password){showToast(isAr?"⚠️ أكمل جميع الحقول":"⚠️ Fill all fields");return;}
             if(newUser.password.length<8){showToast(isAr?"⚠️ كلمة المرور 8 أحرف على الأقل":"⚠️ Password must be at least 8 characters");return;}
+            const phoneNum = newUser.phone.replace(/\s/g,"").replace(/^0/,"966").replace(/^\+/,"");
+            if(!/^966\d{9}$/.test(phoneNum)){showToast(isAr?"⚠️ رقم الجوال غير صحيح":"⚠️ Invalid phone number");return;}
             try {
-              const resp = await apiFetch("/admin/users", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name_en:newUser.name, name_ar:newUser.nameAr, email:newUser.email, password:newUser.password, role:newUser.role})});
+              const resp = await apiFetch("/admin/users", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name_en:newUser.name, name_ar:newUser.nameAr, email:newUser.email, phone:phoneNum, password:newUser.password, role:newUser.role})});
               if(resp.ok){
                 const data = await resp.json();
                 const id = data.display_id || data.id || "USR-"+String(Date.now()).slice(-3);
-                setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
-                setModal(null);showToast(isAr?"✅ تم إضافة المستخدم":"✅ User created successfully");
+                setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,phone:phoneNum,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
+                // ── Send SMS via Msegat ──
+                const mUser = localStorage.getItem("tanaqul_msegat_user")||"";
+                const mKey = localStorage.getItem("tanaqul_msegat_key")||"";
+                const mSender = localStorage.getItem("tanaqul_msegat_sender")||"Tanaqul";
+                if(mUser && mKey){
+                  const roleName = allRoles.find(r=>r.id===newUser.role);
+                  const roleLabel = roleName?(isAr?roleName.labelAr:roleName.label):newUser.role;
+                  const smsMsg = isAr
+                    ? `تم إنشاء حسابك في تناقل\nالمستخدم: ${newUser.email}\nكلمة المرور: ${newUser.password}\nالدور: ${roleLabel}\nالرابط: tanaqul-dashboard.vercel.app\nغيّر كلمة المرور بعد أول تسجيل دخول`
+                    : `Your Tanaqul account has been created\nUser: ${newUser.email}\nPassword: ${newUser.password}\nRole: ${roleLabel}\nURL: tanaqul-dashboard.vercel.app\nChange your password after first login`;
+                  try {
+                    const smsBody = "userName="+encodeURIComponent(mUser)+"&apiKey="+encodeURIComponent(mKey)+"&numbers="+phoneNum+"&userSender="+encodeURIComponent(mSender)+"&msg="+encodeURIComponent(smsMsg)+"&By=API&msgEncoding=UTF8";
+                    await fetch("https://www.msegat.com/gw/sendsms.php", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:smsBody});
+                  } catch(_){}
+                }
+                setModal(null);showToast(isAr?"✅ تم إضافة المستخدم وإرسال رسالة SMS":"✅ User created & SMS sent");
               } else {
                 const err = await resp.json().catch(()=>({}));
                 showToast("❌ "+(err.detail||"Failed to create user"));
@@ -7634,10 +7652,10 @@ const NotificationSettings = () => {
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
 
-  // API config state
-  const [smsKey, setSmsKey] = useState("sk_sms_•••••••••••••");
-  const [smsEndpoint, setSmsEndpoint] = useState("https://api.unifonic.com/v2/messages");
-  const [smsSenderId, setSmsSenderId] = useState("Tanaqul");
+  // API config state — Msegat SMS
+  const [smsUser, setSmsUser] = useState(localStorage.getItem("tanaqul_msegat_user")||"");
+  const [smsKey, setSmsKey] = useState(localStorage.getItem("tanaqul_msegat_key")||"");
+  const [smsSenderId, setSmsSenderId] = useState(localStorage.getItem("tanaqul_msegat_sender")||"Tanaqul");
   const [fcmKey, setFcmKey] = useState("AAAA•••••••••••:APA91•••••••••");
   const [emailProvider, setEmailProvider] = useState("ses");
   const [emailFrom, setEmailFrom] = useState("noreply@tanaqul.sa");
@@ -7704,10 +7722,10 @@ const NotificationSettings = () => {
       <G title={isAr?"قنوات الإرسال":"Delivery Channels"}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>SMS — Unifonic</span></div>
-            <Inp label={isAr?"مفتاح API":"API Key"} value={smsKey} onChange={setSmsKey} type="password" />
-            <Inp label={isAr?"نقطة الاتصال":"Endpoint"} value={smsEndpoint} onChange={setSmsEndpoint} />
-            <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={setSmsSenderId} />
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>SMS — Msegat</span></div>
+            <Inp label={isAr?"اسم المستخدم":"Username"} value={smsUser} onChange={v=>{setSmsUser(v);localStorage.setItem("tanaqul_msegat_user",v);}} placeholder="Msegat username" />
+            <Inp label={isAr?"مفتاح API":"API Key"} value={smsKey} onChange={v=>{setSmsKey(v);localStorage.setItem("tanaqul_msegat_key",v);}} type="password" placeholder="Your Msegat API key" />
+            <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={v=>{setSmsSenderId(v);localStorage.setItem("tanaqul_msegat_sender",v);}} placeholder="e.g. Tanaqul" />
           </div>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>🔔</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"إشعارات فورية — FCM":"Push — Firebase FCM"}</span></div>
