@@ -2299,75 +2299,21 @@ const MiniBar = ({ data, color="#C4956A" }) => {
 };
 
 // Donut chart (CSS-based)
-const MiniDonut = ({ pct, color="#C4956A", size=56 }) => {
-  const p = Math.max(0.5, Math.min(100, pct));
-  const ang = (p / 100) * 360;
+const MiniDonut = ({ pct, color="#3B82F6", size=56 }) => {
+  const p = Math.max(0, Math.min(100, pct));
+  const r = 40, cx = 50, cy = 50;
   const toRad = (a) => (a - 90) * Math.PI / 180;
-  // Donut geometry — outer ellipse, inner ellipse, depth
-  const cx = 50, cy = 40, orx = 40, ory = 26, irx = 18, iry = 12, d = 10;
-  const uid = `d3_${Math.random().toString(36).slice(2,7)}`;
-  // Points on outer/inner ellipses
-  const ox = (a) => cx + orx * Math.cos(toRad(a));
-  const oy = (a) => cy + ory * Math.sin(toRad(a));
-  const ix = (a) => cx + irx * Math.cos(toRad(a));
-  const iy = (a) => cy + iry * Math.sin(toRad(a));
+  const ang = (p / 100) * 360;
+  const ex = cx + r * Math.cos(toRad(ang));
+  const ey = cy + r * Math.sin(toRad(ang));
   const lg = ang > 180 ? 1 : 0;
-  // Darken helper
-  const dk = (hex, amt=45) => {
-    const n = parseInt(hex.replace("#",""),16);
-    return `rgb(${Math.max(0,(n>>16)-amt)},${Math.max(0,((n>>8)&0xff)-amt)},${Math.max(0,(n&0xff)-amt)})`;
-  };
-  // Top face donut arc path (outer arc CW, then inner arc CCW)
-  const donutArc = (startA, endA, fill) => {
-    if(Math.abs(endA - startA) < 0.5) return null;
-    const la = (endA - startA) > 180 ? 1 : 0;
-    return <path d={`M${ox(startA)},${oy(startA)} A${orx},${ory} 0 ${la},1 ${ox(endA)},${oy(endA)} L${ix(endA)},${iy(endA)} A${irx},${iry} 0 ${la},0 ${ix(startA)},${iy(startA)} Z`} fill={fill}/>;
-  };
-  // 3D side wall (only visible on bottom half where oy > cy)
-  const sideWall = (startA, endA, fill) => {
-    // Draw side strips at small angle increments
-    const steps = Math.max(2, Math.ceil(Math.abs(endA-startA)/6));
-    const paths = [];
-    for(let i=0;i<steps;i++){
-      const a1 = startA + (endA-startA)*i/steps;
-      const a2 = startA + (endA-startA)*(i+1)/steps;
-      const y1 = oy(a1), y2 = oy(a2);
-      // Only show side if below center (visible in 3D perspective)
-      if(y1 >= cy-2 || y2 >= cy-2){
-        paths.push(<path key={i} d={`M${ox(a1)},${oy(a1)} A${orx},${ory} 0 0,1 ${ox(a2)},${oy(a2)} L${ox(a2)},${oy(a2)+d} A${orx},${ory} 0 0,0 ${ox(a1)},${oy(a1)+d} Z`} fill={fill}/>);
-      }
-    }
-    return paths;
-  };
   return (
-    <svg width={size} height={size} viewBox="0 0 100 90" style={{display:"block"}}>
-      <defs>
-        <linearGradient id={`${uid}_c`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color}/><stop offset="100%" stopColor={dk(color,35)}/>
-        </linearGradient>
-        <linearGradient id={`${uid}_bg`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#E8E0D4"/><stop offset="100%" stopColor="#D8D0C4"/>
-        </linearGradient>
-        <radialGradient id={`${uid}_hole`} cx="50%" cy="40%" r="50%">
-          <stop offset="0%" stopColor="#FDFBF7"/><stop offset="100%" stopColor="#EDE6DA"/>
-        </radialGradient>
-      </defs>
-      {/* 3D side walls — background (remaining %) */}
-      {p < 100 && sideWall(ang, 360, dk("#D5CCBF",15))}
-      {/* 3D side walls — colored slice */}
-      {sideWall(0, ang, dk(color,55))}
-      {/* Top face — background ring (remaining %) */}
-      {p < 100 && donutArc(ang, 360, `url(#${uid}_bg)`)}
-      {/* Top face — colored ring slice */}
-      {donutArc(0, ang, `url(#${uid}_c)`)}
-      {/* Inner hole — 3D depth */}
-      <ellipse cx={cx} cy={cy+d} rx={irx} ry={iry} fill="#D5CCBF" opacity="0.4"/>
-      {/* Inner hole — top face */}
-      <ellipse cx={cx} cy={cy} rx={irx} ry={iry} fill={`url(#${uid}_hole)`}/>
-      {/* Gloss highlight */}
-      <ellipse cx={cx-6} cy={cy-8} rx={12} ry={5} fill="#FFF" opacity="0.15"/>
-      {/* Percentage text centered in hole */}
-      <text x={cx} y={cy+5} textAnchor="middle" fontSize="13" fontWeight="800" fill={color}>{pct}%</text>
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{display:"block"}}>
+      <circle cx={cx} cy={cy} r={r} fill="#E5E7EB" />
+      {p > 0 && p < 100 && <path d={`M${cx},${cy-r} A${r},${r} 0 ${lg},1 ${ex},${ey} L${cx},${cy} Z`} fill={color} />}
+      {p >= 100 && <circle cx={cx} cy={cy} r={r} fill={color} />}
+      <circle cx={cx} cy={cy} r={22} fill="#FFF" />
+      <text x={cx} y={cy+5} textAnchor="middle" fontSize="14" fontWeight="800" fill={color}>{pct}%</text>
     </svg>
   );
 };
@@ -2432,17 +2378,10 @@ const Reports = () => {
   };
 
   // Combined multi-segment 3D donut for all breakdowns in one chart
-  const SEGMENT_COLORS = ["#C4956A",C.greenSolid,C.blueSolid,"#8B5CF6","#C85C3E","#D4943A","#6B9080",C.purpleSolid];
-  const MultiDonut = ({ segments, size=100 }) => {
-    const cx=50,cy=40,orx=40,ory=26,irx=18,iry=12,d=10;
-    const uid=`md_${Math.random().toString(36).slice(2,7)}`;
-    const toRad=(a)=>(a-90)*Math.PI/180;
-    const ox=(a)=>cx+orx*Math.cos(toRad(a));
-    const oy=(a)=>cy+ory*Math.sin(toRad(a));
-    const ix=(a)=>cx+irx*Math.cos(toRad(a));
-    const iy=(a)=>cy+iry*Math.sin(toRad(a));
-    const dk=(hex,amt=45)=>{const n=parseInt(hex.replace("#",""),16);return `rgb(${Math.max(0,(n>>16)-amt)},${Math.max(0,((n>>8)&0xff)-amt)},${Math.max(0,(n&0xff)-amt)})`;};
-    // Build angle ranges
+  const SEGMENT_COLORS = ["#EF4444","#3B82F6","#22C55E","#EAB308","#8B5CF6","#F97316","#06B6D4","#EC4899"];
+  const MultiDonut = ({ segments, size=90 }) => {
+    const cx=50, cy=50, r=40;
+    const toRad = (a) => (a-90)*Math.PI/180;
     const total = segments.reduce((a,s)=>a+s.pct,0)||1;
     let cumAngle = 0;
     const arcs = segments.filter(s=>s.pct>0).map((s,i)=>{
@@ -2451,36 +2390,17 @@ const Reports = () => {
       cumAngle += sweep;
       return { ...s, startA, endA: cumAngle, color: s.color||SEGMENT_COLORS[i%SEGMENT_COLORS.length] };
     });
-    const donutArc=(sa,ea,fill)=>{
-      if(Math.abs(ea-sa)<0.5) return null;
-      const la=(ea-sa)>180?1:0;
-      return <path d={`M${ox(sa)},${oy(sa)} A${orx},${ory} 0 ${la},1 ${ox(ea)},${oy(ea)} L${ix(ea)},${iy(ea)} A${irx},${iry} 0 ${la},0 ${ix(sa)},${iy(sa)} Z`} fill={fill}/>;
-    };
-    const sideWall=(sa,ea,fill)=>{
-      const steps=Math.max(2,Math.ceil(Math.abs(ea-sa)/6));
-      const paths=[];
-      for(let i=0;i<steps;i++){
-        const a1=sa+(ea-sa)*i/steps;
-        const a2=sa+(ea-sa)*(i+1)/steps;
-        if(oy(a1)>=cy-2||oy(a2)>=cy-2)
-          paths.push(<path key={`${sa}_${i}`} d={`M${ox(a1)},${oy(a1)} A${orx},${ory} 0 0,1 ${ox(a2)},${oy(a2)} L${ox(a2)},${oy(a2)+d} A${orx},${ory} 0 0,0 ${ox(a1)},${oy(a1)+d} Z`} fill={fill}/>);
-      }
-      return paths;
-    };
     return (
-      <svg width={size} height={size*0.9} viewBox="0 0 100 90" style={{display:"block"}}>
-        <defs>
-          {arcs.map((a,i)=><linearGradient key={`g${i}`} id={`${uid}_${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={a.color}/><stop offset="100%" stopColor={dk(a.color,30)}/></linearGradient>)}
-          <radialGradient id={`${uid}_hole`} cx="50%" cy="40%" r="50%"><stop offset="0%" stopColor="#FDFBF7"/><stop offset="100%" stopColor="#EDE6DA"/></radialGradient>
-        </defs>
-        {/* 3D side walls */}
-        {arcs.map((a,i)=>sideWall(a.startA,a.endA,dk(a.color,55)))}
-        {/* Top face arcs */}
-        {arcs.map((a,i)=>donutArc(a.startA,a.endA,`url(#${uid}_${i})`))}
-        {/* Inner hole depth + top */}
-        <ellipse cx={cx} cy={cy+d} rx={irx} ry={iry} fill="#D5CCBF" opacity="0.4"/>
-        <ellipse cx={cx} cy={cy} rx={irx} ry={iry} fill={`url(#${uid}_hole)`}/>
-        <ellipse cx={cx-6} cy={cy-8} rx={12} ry={5} fill="#FFF" opacity="0.13"/>
+      <svg width={size} height={size} viewBox="0 0 100 100" style={{display:"block"}}>
+        <circle cx={cx} cy={cy} r={r} fill="#E5E7EB" />
+        {arcs.map((a,i)=>{
+          if(Math.abs(a.endA-a.startA)<0.5) return null;
+          const sx=cx+r*Math.cos(toRad(a.startA)), sy=cy+r*Math.sin(toRad(a.startA));
+          const ex=cx+r*Math.cos(toRad(a.endA)), ey=cy+r*Math.sin(toRad(a.endA));
+          const lg=(a.endA-a.startA)>180?1:0;
+          return <path key={i} d={`M${cx},${cy} L${sx},${sy} A${r},${r} 0 ${lg},1 ${ex},${ey} Z`} fill={a.color} />;
+        })}
+        <circle cx={cx} cy={cy} r={20} fill="#FFF" />
       </svg>
     );
   };
