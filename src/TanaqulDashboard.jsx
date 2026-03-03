@@ -1,4 +1,50 @@
-import React, { useState, useEffect, useRef, createContext, useContext } from "react";
+import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
+
+// ─── API Configuration ────────────────────────────────────────────────────────
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1";
+
+// Helper: API fetch with auth token
+const apiFetch = async (path, options = {}) => {
+  const token = localStorage.getItem("tanaqul_token");
+  const headers = { "Content-Type": "application/json", ...options.headers };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  if (resp.status === 401) {
+    // Try refresh
+    const refresh = localStorage.getItem("tanaqul_refresh");
+    if (refresh) {
+      const rr = await fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      if (rr.ok) {
+        const rd = await rr.json();
+        localStorage.setItem("tanaqul_token", rd.access_token);
+        localStorage.setItem("tanaqul_refresh", rd.refresh_token);
+        headers["Authorization"] = `Bearer ${rd.access_token}`;
+        return fetch(`${API_BASE}${path}`, { ...options, headers });
+      }
+    }
+    localStorage.removeItem("tanaqul_token");
+    localStorage.removeItem("tanaqul_refresh");
+    window.dispatchEvent(new Event("tanaqul_logout"));
+  }
+  return resp;
+};
+
+// Helper: API login
+const apiLogin = async (email, password) => {
+  const resp = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  localStorage.setItem("tanaqul_token", data.access_token);
+  localStorage.setItem("tanaqul_refresh", data.refresh_token);
+  return data;
+};
 
 // ─── Language Context ─────────────────────────────────────────────────────────
 
@@ -8464,13 +8510,29 @@ function LoginPage({ onLogin }) {
     }
   }, [step]);
 
-  const handleCredentials = (e) => {
+  const handleCredentials = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
+
+    // Try API login first
+    try {
+      const apiResult = await apiLogin(email.trim(), pass.trim());
+      if (apiResult) {
+        // API login succeeded — skip 2FA for now, go straight in
+        setLoading(false);
+        onLogin();
+        return;
+      }
+    } catch (_) { /* API unavailable, fall through to local auth */ }
+
+    // Fallback: local credential check
     if (email.trim() !== ADMIN_EMAIL.trim() || pass.trim() !== ADMIN_PASS.trim()) {
       setError(isAr ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password.");
+      setLoading(false);
       return;
     }
+    setLoading(false);
     setStep(localStorage.getItem("tanaqul_2fa_setup") ? 2 : 3);
   };
 
@@ -9312,6 +9374,136 @@ export default function App() {
   const [appWalletMoves,  setAppWalletMoves]  = useState(MOCK.walletMovements);
   const [appValidators,   setAppValidators]   = useState(MOCK.validators);
   const [appBlacklist,    setAppBlacklist]    = useState(MOCK.blacklist);
+
+  // ═══ LIVE API DATA FETCH — replaces MOCK data when backend is available ═══
+  const [apiConnected, setApiConnected] = useState(false);
+  const fetchApiData = useCallback(async () => {
+    const token = localStorage.getItem("tanaqul_token");
+    if (!token) return;
+    try {
+      const endpoints = [
+        { path: "/investors", setter: setAppInvestors, transform: (data) => {
+          const items = data.items || data.investors || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(inv => ({
+            id: inv.display_id || inv.id, _uuid: String(inv.id),
+            nameEn: inv.name_en || "", nameAr: inv.name_ar || "",
+            wallet: inv.wallet_address || "pending",
+            holdingsValue: String(inv.holdings_value || 0),
+            gold: Number(inv.gold_grams || 0), silver: Number(inv.silver_grams || 0),
+            platinum: Number(inv.platinum_grams || 0),
+            status: inv.status || "ACTIVE", joined: (inv.joined_at || "").slice(0,10),
+            vaultKey: inv.vault_key || "", nationalId: inv.national_id || "",
+            kycExpiry: inv.kyc_expiry ? inv.kyc_expiry.slice(0,10) : "",
+            noShowCount: inv.no_show_count || 0,
+            email: inv.email || "", phone: inv.phone || "",
+          }));
+        }},
+        { path: "/vault/bars", setter: setAppBars, transform: (data) => {
+          const items = data.items || data.bars || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(b => ({
+            id: b.display_id || b.id, _uuid: String(b.id),
+            metal: b.metal || "Gold", weight: b.weight || "",
+            purity: b.purity || "999.9", barcode: b.barcode || "",
+            serial: b.serial || "", manufacturer: b.manufacturer || "",
+            vault: b.vault_location || "Riyadh", status: b.status || "FREE",
+            depositor: b.depositor_id || "", depositedAt: b.deposited_at || "",
+          }));
+        }},
+        { path: "/vault/appointments", setter: setAppAppointments, transform: (data) => {
+          const items = data.items || data.appointments || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(a => ({
+            id: a.display_id || a.id, _uuid: String(a.id),
+            investorId: a.investor_id || "", nationalId: a.national_id || "",
+            type: a.type || "DEPOSIT", metal: a.metal || "Gold",
+            quantity: a.quantity || "", vault: a.vault_location || "Riyadh",
+            date: (a.scheduled_at || "").slice(0,10),
+            time: (a.scheduled_at || "").slice(11,16),
+            status: a.status || "BOOKED", fee: String(a.fee || 0),
+            paymentMethod: a.payment_method || "",
+            otp: a.otp_code || "", notes: a.notes || "",
+          }));
+        }},
+        { path: "/withdrawals", setter: setAppWithdrawals, transform: (data) => {
+          const items = data.items || data.withdrawals || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(w => ({
+            id: w.display_id || w.id, _uuid: String(w.id),
+            nationalId: w.national_id || "", amount: String(w.amount || 0),
+            bank: w.bank_info || "", iban: w.iban || "",
+            status: w.status || "PENDING", requestedAt: w.requested_at || "",
+            processedAt: w.processed_at || "", rejectReason: w.reject_reason || "",
+          }));
+        }},
+        { path: "/wallet/movements", setter: setAppWalletMoves, transform: (data) => {
+          const items = data.items || data.movements || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(m => ({
+            id: m.display_id || m.id, nationalId: m.national_id || "",
+            vaultKey: m.vault_key || "", type: m.type || "CREDIT",
+            amount: String(m.amount || 0), reason: m.reason || "",
+            date: m.created_at || "",
+          }));
+        }},
+        { path: "/blockchain/validators", setter: setAppValidators, transform: (data) => {
+          const items = data.items || data.validators || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(v => ({
+            id: v.display_id || v.id, name: v.name || "",
+            address: v.address || "", status: v.status || "STANDBY",
+            blocks: v.blocks_validated || 0, lastBlock: v.last_block || 0,
+            commission: String(v.commission_earned || 0),
+            weight: v.weight_percent || 0,
+          }));
+        }},
+        { path: "/blacklist", setter: setAppBlacklist, transform: (data) => {
+          const items = data.items || data.blacklist || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(b => ({
+            id: b.display_id || b.id, name: b.name || "",
+            nationalId: b.national_id || "", vaultKey: b.vault_key || "",
+            reason: b.reason || "", bannedBy: b.banned_by || "",
+            date: b.created_at || "", active: b.is_active !== false,
+          }));
+        }},
+      ];
+
+      let anySuccess = false;
+      for (const ep of endpoints) {
+        try {
+          const resp = await apiFetch(ep.path);
+          if (resp.ok) {
+            const raw = await resp.json();
+            const transformed = ep.transform(raw);
+            if (transformed && transformed.length > 0) {
+              ep.setter(transformed);
+              anySuccess = true;
+            }
+          }
+        } catch (_) { /* endpoint not available, keep mock data */ }
+      }
+      if (anySuccess) setApiConnected(true);
+    } catch (_) { /* API unavailable, keep mock data */ }
+  }, []);
+
+  // Fetch on login
+  useEffect(() => {
+    if (loggedIn) {
+      fetchApiData();
+      // Refresh every 60 seconds
+      const iv = setInterval(fetchApiData, 60000);
+      return () => clearInterval(iv);
+    }
+  }, [loggedIn, fetchApiData]);
+
+  // Listen for logout events
+  useEffect(() => {
+    const handleLogout = () => setLoggedIn(false);
+    window.addEventListener("tanaqul_logout", handleLogout);
+    return () => window.removeEventListener("tanaqul_logout", handleLogout);
+  }, []);
   const [appOrders,       setAppOrders]       = useState([
     ...INITIAL_OB_ORDERS,
     {id:"ORD-005",investor:"Fahad Al-Dosari",investorAr:"فهد الدوسري",nationalId:"1045678901",side:"BUY",metal:"Silver",qty:300,filled:300,price:10.42,payment:"Wallet",expiry:"GTC",expiryDate:"",status:"FILLED",placed:"2026-03-01 07:30"},
