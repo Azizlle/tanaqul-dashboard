@@ -377,31 +377,19 @@ const Icons = {
 
 function SAR({ size = "1em", color = "currentColor", style = {} }) {
   return (
-    <>
-      <style>{`
-        @font-face {
-          font-family: 'SaudiRiyalSymbol';
-          src: url('/sar.ttf') format('truetype');
-        }
-        .sar-symbol {
-          font-family: 'SaudiRiyalSymbol', sans-serif !important;
-          font-weight: bold;
-          font-style: normal;
-        }
-      `}</style>
-      <span
-        className="sar-symbol"
-        style={{
-          fontSize: size,
-          color: color,
-          lineHeight: 1,
-          verticalAlign: "middle",
-          flexShrink: 0,
-          display: "inline-block",
-          ...style
-        }}
-      >{"ê"}</span>
-    </>
+    <span
+      style={{
+        fontSize: size,
+        color: color,
+        lineHeight: 1,
+        verticalAlign: "middle",
+        flexShrink: 0,
+        display: "inline-block",
+        fontWeight: "bold",
+        fontFamily: "Arial, sans-serif",
+        ...style
+      }}
+    >SAR</span>
   );
 }
 function SARAmount({ amount, size="1em", color="currentColor" }) {
@@ -9477,7 +9465,7 @@ export default function App() {
           if (resp.ok) {
             const raw = await resp.json();
             const transformed = ep.transform(raw);
-            if (transformed && transformed.length > 0) {
+            if (transformed !== null) {
               ep.setter(transformed);
               anySuccess = true;
             }
