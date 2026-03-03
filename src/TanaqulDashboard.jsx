@@ -9325,7 +9325,7 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
 };
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("tanaqul_token"));
   const [page,     setPage]     = useState("dashboard");
   const [pageHint, setPageHint] = useState(null); // {tab:"WITHDRAWAL REQUESTS"} etc.
   const [open,     setOpen]     = useState(true);
@@ -9500,7 +9500,7 @@ export default function App() {
 
   // Listen for logout events
   useEffect(() => {
-    const handleLogout = () => setLoggedIn(false);
+    const handleLogout = () => {localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");setLoggedIn(false)};
     window.addEventListener("tanaqul_logout", handleLogout);
     return () => window.removeEventListener("tanaqul_logout", handleLogout);
   }, []);
@@ -9753,7 +9753,7 @@ export default function App() {
             </div>
 
             {/* ── Logout — subtle, at the very bottom ── */}
-            <button onClick={()=>setLoggedIn(false)}
+            <button onClick={()=>{localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");setLoggedIn(false)}}
               style={{width:"100%",height:open?34:42,display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                 borderRadius:9,border:"none",cursor:"pointer",
                 background:"rgba(200,92,62,0.08)",color:"#E8826A",fontSize:12,fontWeight:600,transition:"all 0.15s",
