@@ -27,6 +27,7 @@ const apiFetch = async (path, options = {}) => {
     }
     localStorage.removeItem("tanaqul_token");
     localStorage.removeItem("tanaqul_refresh");
+    localStorage.removeItem("tanaqul_admin");
     window.dispatchEvent(new Event("tanaqul_logout"));
   }
   return resp;
@@ -48,6 +49,12 @@ const apiLogin = async (email, password, totp_code) => {
     }
     localStorage.setItem("tanaqul_token", data.access_token);
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
+    // Store admin profile for sidebar/profile display
+    try { localStorage.setItem("tanaqul_admin", JSON.stringify({
+      email: email, name_en: data.name_en || data.name || email.split("@")[0],
+      name_ar: data.name_ar || "", role: data.role || "admin",
+      two_fa_enabled: data.two_fa_enabled || !!totp_code,
+    })); } catch(_){}
     return { ok: true, data };
   }
   return { ok: false, status: resp.status, detail: data.detail, qr_code: data.qr_code, secret: data.secret };
@@ -1198,9 +1205,9 @@ const Dashboard = () => {
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
   const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
-  const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
-  const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
-  const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
+  const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight||0),0);
+  const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight||0),0);
+  const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight||0),0);
   const liveAUM = (goldGrams*(gp?.priceSAR||839) + silverGrams*(sp?.priceSAR||10.42) + platGrams*(pp?.priceSAR||138.5));
   const liveAUMStr = fmtK(liveAUM);
 
@@ -2370,9 +2377,9 @@ const Reports = () => {
   const { matches, investors, walletMovements, bars, withdrawals, appointments, orders } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
   const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
-  const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
-  const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
-  const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
+  const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
+  const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
+  const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
   const liveAUM     = liveGoldG*(gp?.priceSAR||839)+liveSilverG*(sp?.priceSAR||10.42)+livePlatG*(pp?.priceSAR||138.5);
   const volAll      = matches.reduce((a,m)=>a+m.totalSAR,0);
   const commAll     = matches.reduce((a,m)=>a+m.commission,0);
@@ -4974,7 +4981,7 @@ const OrderBook = () => {
     if(mmSide==="SELL"){
       const freeGrams = bars
         .filter(b=>b.metal===mmMetal&&b.status==="FREE")
-        .reduce((sum,b)=>sum+parseFloat(b.weight),0);
+        .reduce((sum,b)=>sum+parseFloat(b.weight||0),0);
       if(mmQtyNum > freeGrams){
         showMatchToast(isAr?`⚠️ مخزون غير كافٍ — متاح ${freeGrams}غ فقط`:`⚠️ Insufficient inventory — only ${freeGrams}g FREE bars available for ${mmMetal}`);
         return;
@@ -5786,14 +5793,9 @@ const AccountProfile = () => {
     showToast(isAr?"📱 تم إرسال رمز التحقق":"📱 OTP sent to phone");
   };
   const verifyOtp = () => {
-    if(phoneOtp.code==="847291"){
-      if(phoneOtp.field==="phone") setProfile(p=>({...p,phoneVerified:true}));
-      else setProfile(p=>({...p,recoveryPhoneVerified:true}));
-      setPhoneOtp(p=>({...p,show:false,verified:true}));
-      showToast(isAr?"✅ تم التحقق من الرقم":"✅ Phone verified");
-    } else {
-      showToast(isAr?"❌ رمز خاطئ":"❌ Incorrect code");
-    }
+    // Live mode — phone OTP verification via API (not yet implemented)
+    showToast(isAr?"⚠️ التحقق من الهاتف غير متاح حالياً":"⚠️ Phone verification not yet available");
+    setPhoneOtp(p=>({...p,show:false}));
   };
 
   return (
@@ -5884,7 +5886,7 @@ const AccountProfile = () => {
               :<button onClick={()=>{setPhoneOtp(p=>({...p,timer:60}));showToast(isAr?"📱 تم إعادة الإرسال":"📱 OTP resent");}} style={{color:C.gold,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال الرمز":"Resend Code"}</button>
             }
           </p>
-          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
+          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"📱 أدخل رمز التحقق المرسل":"📱 Enter the verification code sent"}</p>
           <Btn variant="gold" onClick={verifyOtp} style={{width:"100%"}}>{isAr?"تحقق":"Verify"}</Btn>
         </div>
       </Modal>}
@@ -8583,11 +8585,11 @@ function LoginPage({ onLogin }) {
                     {recoveryTimer>0?<>{isAr?"إعادة الإرسال بعد":"Resend in"} <b>{recoveryTimer}s</b></>:
                     <button onClick={()=>setRecoveryTimer(60)} style={{color:"#C4956A",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال":"Resend"}</button>}
                   </p>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"📱 أدخل رمز التحقق المرسل":"📱 Enter the verification code sent"}</p>
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginBottom:8,textAlign:"center"}}>{error}</p>}
                   <button onClick={()=>{
-                    if(recoveryOtp==="847291"){onLogin();}
-                    else{setError(isAr?"رمز خاطئ":"Invalid code");setRecoveryOtp("");}
+                    // Recovery OTP — not implemented in live mode
+                    setError(isAr?"التحقق من الاسترداد غير متاح حالياً":"Recovery verification not yet available");setRecoveryOtp("");
                   }} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg, #C4956A, #2D2418)",color:"#fff",border:"none",fontSize:17,fontWeight:700,cursor:"pointer"}}>
                     {isAr?"تحقق وادخل":"Verify & Login"}
                   </button>
@@ -9369,7 +9371,7 @@ export default function App() {
 
   // Listen for logout events
   useEffect(() => {
-    const handleLogout = () => {localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");setLoggedIn(false)};
+    const handleLogout = () => {localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");localStorage.removeItem("tanaqul_admin");setLoggedIn(false)};
     window.addEventListener("tanaqul_logout", handleLogout);
     return () => window.removeEventListener("tanaqul_logout", handleLogout);
   }, []);
@@ -9611,7 +9613,7 @@ export default function App() {
             </div>
 
             {/* ── Logout — subtle, at the very bottom ── */}
-            <button onClick={()=>{localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");setLoggedIn(false)}}
+            <button onClick={()=>{localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");localStorage.removeItem("tanaqul_admin");setLoggedIn(false)}}
               style={{width:"100%",height:open?34:42,display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                 borderRadius:9,border:"none",cursor:"pointer",
                 background:"rgba(200,92,62,0.08)",color:"#E8826A",fontSize:12,fontWeight:600,transition:"all 0.15s",
