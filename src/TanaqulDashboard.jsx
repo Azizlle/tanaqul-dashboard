@@ -47,7 +47,7 @@ const apiLogin = async (email, password, totp_code) => {
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
   }
-  return { ok: false, status: resp.status, detail: data.detail };
+  return { ok: false, status: resp.status, detail: data.detail, qr_code: data.qr_code, secret: data.secret };
 };
 
 // ─── Language Context ─────────────────────────────────────────────────────────
@@ -8531,6 +8531,12 @@ function LoginPage({ onLogin }) {
       if (result.status === 400 && result.detail === "2FA code required") {
         setLoading(false);
         setStep(2);
+        return;
+      }
+      if (result.status === 206 && result.detail === "2FA_SETUP_REQUIRED") {
+        setQrUrl(result.qr_code || "");
+        setLoading(false);
+        setStep(3);
         return;
       }
       setError(result.detail || (isAr ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password."));
