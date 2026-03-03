@@ -9128,7 +9128,8 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("tanaqul_token"));
-  const [page,     setPage]     = useState("dashboard");
+  const [page,     setPage_]     = useState(() => localStorage.getItem("tanaqul_page") || "dashboard");
+  const setPage = (p) => { localStorage.setItem("tanaqul_page", p); setPage_(p); };
   const [pageHint, setPageHint] = useState(null); // {tab:"WITHDRAWAL REQUESTS"} etc.
   const [open,     setOpen]     = useState(true);
   const [lang,     setLang]     = useState(() => localStorage.getItem("tanaqul_lang") || "en");
