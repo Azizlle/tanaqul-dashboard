@@ -27,7 +27,6 @@ const apiFetch = async (path, options = {}) => {
     }
     localStorage.removeItem("tanaqul_token");
     localStorage.removeItem("tanaqul_refresh");
-    localStorage.removeItem("tanaqul_admin");
     window.dispatchEvent(new Event("tanaqul_logout"));
   }
   return resp;
@@ -48,13 +47,8 @@ const apiLogin = async (email, password, totp_code) => {
       return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
     }
     localStorage.setItem("tanaqul_token", data.access_token);
+      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "super_admin"}));
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
-    // Store admin profile for sidebar/profile display
-    try { localStorage.setItem("tanaqul_admin", JSON.stringify({
-      email: email, name_en: data.name_en || data.name || email.split("@")[0],
-      name_ar: data.name_ar || "", role: data.role || "admin",
-      two_fa_enabled: data.two_fa_enabled || !!totp_code,
-    })); } catch(_){}
     return { ok: true, data };
   }
   return { ok: false, status: resp.status, detail: data.detail, qr_code: data.qr_code, secret: data.secret };
@@ -453,26 +447,107 @@ const TanaqulLogo = ({ size=36 }) => (
 );
 
 const MOCK = {
-  prices: [],
+  prices: [
+    { symbol:"XAU", name:"Gold",     priceSAR:839.00,  change:+0.60 },
+    { symbol:"XAG", name:"Silver",   priceSAR:10.42,   change:-0.22 },
+    { symbol:"XPT", name:"Platinum", priceSAR:138.50,  change:+1.10 },
+  ],
   stats: {
-    aum:"0", volumeToday:"0", volumeMonth:"0",
-    commissionToday:"0", commissionMonth:"0",
-    adminFeesToday:"0", adminFeesMonth:"0",
-    pendingWithdrawals:"0", totalWalletBalance:"0",
-    activeOrders:0, pendingAppointments:0, totalInvestors:0,
-    goldGrams:"0", silverGrams:"0", platinumGrams:"0",
+    aum:"4,821,600", volumeToday:"182,400", volumeMonth:"3,240,000",
+    commissionToday:"3,648", commissionMonth:"64,800",
+    adminFeesToday:"912", adminFeesMonth:"16,200",
+    pendingWithdrawals:"124,500", totalWalletBalance:"890,200",
+    activeOrders:14, pendingAppointments:7, totalInvestors:312,
+    goldGrams:"4,820", silverGrams:"18,400", platinumGrams:"960",
     tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
     lastBlock:"—", blockNumber:0,
   },
-  investors: [],
-  bars: [],
-  appointments: [],
-  transactions: [],
-  walletMovements: [],
-  withdrawalRequests: [],
-  blacklist: [],
-  blocks: [],
-  validators: [],
+  investors: [
+    { id:"INV-001", nameEn:"Mohammed Al-Otaibi", nameAr:"محمد العتيبي", wallet:"0x1234...abcd", holdingsValue:"1,248,000", gold:820, silver:0,    platinum:0,  status:"ACTIVE",    joined:"2025-11-01", vaultKey:"VK-AX9F2", nationalId:"1012345678", kycExpiry:"2027-11-01", noShowCount:0 },
+    { id:"INV-002", nameEn:"Sara Al-Qahtani",    nameAr:"سارة القحطاني", wallet:"0x5678...efgh", holdingsValue:"245,200",   gold:180, silver:2400, platinum:50, status:"ACTIVE",    joined:"2025-12-15", vaultKey:"VK-BQ7T4", nationalId:"1098765432", kycExpiry:"2027-12-15", noShowCount:0 },
+    { id:"INV-003", nameEn:"Ahmed Saad",          nameAr:"أحمد سعد",      wallet:"0x9abc...ijkl", holdingsValue:"98,750",    gold:60,  silver:800,  platinum:20, status:"ACTIVE",    joined:"2026-01-03", vaultKey:"VK-CR1M8", nationalId:"1078901234", kycExpiry:"2026-04-01", noShowCount:1 },
+    { id:"INV-004", nameEn:"Fatima Hassan",       nameAr:"فاطمة حسن",     wallet:"pending",        holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"SUSPENDED", joined:"2026-01-20", vaultKey:"VK-DS5K3", nationalId:"1090123456" },
+    { id:"INV-007", nameEn:"Tariq Al-Mansour",    nameAr:"طارق المنصور",  wallet:"banned",         holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"BANNED",    joined:"2025-09-10", vaultKey:"VK-GZ9V7", nationalId:"1077654321" },
+    { id:"INV-005", nameEn:"Khalid Al-Ghamdi",   nameAr:"خالد الغامدي",  wallet:"0x2345...mnop", holdingsValue:"560,000",   gold:400, silver:1200, platinum:80, status:"ACTIVE",    joined:"2025-10-08", vaultKey:"VK-ET2P6", nationalId:"1023456789", kycExpiry:"2027-10-08", noShowCount:0 },
+    { id:"INV-006", nameEn:"Nora Al-Shehri",     nameAr:"نورة الشهري",   wallet:"0x3456...qrst", holdingsValue:"76,400",    gold:50,  silver:1000, platinum:0,  status:"ACTIVE",    joined:"2026-02-01", vaultKey:"VK-FU8N1", nationalId:"1056789012", kycExpiry:"2027-02-01", noShowCount:2 },
+    // ═══ NEW MOCK INVESTORS — expanded scenarios ═══
+    { id:"INV-008", nameEn:"Omar Al-Zahrani",    nameAr:"عمر الزهراني",  wallet:"0x4567...uvwx", holdingsValue:"312,800",   gold:200, silver:3200, platinum:40, status:"ACTIVE",    joined:"2025-08-15", vaultKey:"VK-HX3R9", nationalId:"1089012345", kycExpiry:"2026-03-10", noShowCount:0 },
+    { id:"INV-009", nameEn:"Layla Al-Dossari",   nameAr:"ليلى الدوسري",  wallet:"0x5678...yzab", holdingsValue:"890,000",   gold:600, silver:4800, platinum:100, status:"ACTIVE",   joined:"2025-07-01", vaultKey:"VK-JY4S1", nationalId:"1067890123", kycExpiry:"2027-07-01", noShowCount:0 },
+    { id:"INV-010", nameEn:"Fahad Al-Dosari",    nameAr:"فهد الدوسري",   wallet:"0x6789...cdef", holdingsValue:"45,600",    gold:30,  silver:600,  platinum:10, status:"ACTIVE",    joined:"2026-02-20", vaultKey:"VK-KZ5T2", nationalId:"1045678901", kycExpiry:"2028-02-20", noShowCount:1 },
+    { id:"INV-011", nameEn:"Reem Al-Mutairi",    nameAr:"ريم المطيري",   wallet:"0x7890...ghij", holdingsValue:"128,500",   gold:90,  silver:1800, platinum:25, status:"ACTIVE",    joined:"2025-12-01", vaultKey:"VK-LA6U3", nationalId:"1034567890", kycExpiry:"2027-12-01", noShowCount:0 },
+    { id:"INV-012", nameEn:"Bader Al-Shimmari",  nameAr:"بدر الشمري",    wallet:"0x8901...klmn", holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"ACTIVE",    joined:"2026-03-01", vaultKey:"VK-MB7V4", nationalId:"1023450987", kycExpiry:"2028-03-01", noShowCount:0 },
+  ],
+  bars: [
+    { id:"BAR-001", metal:"Gold",     weight:"100g", barcode:"PAMP-G100-001",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-001", deposited:"2025-11-01" },
+    { id:"BAR-002", metal:"Gold",     weight:"50g",  barcode:"PAMP-G050-002",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"FREE",   depositor:"INV-002", deposited:"2025-12-15" },
+    { id:"BAR-003", metal:"Silver",   weight:"100g", barcode:"VALC-S100-003",  manufacturer:"Valcambi SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-002", deposited:"2025-12-16" },
+    { id:"BAR-004", metal:"Gold",     weight:"25g",  barcode:"ARGOR-G025-004", manufacturer:"Argor-Heraeus", vault:"Jeddah", status:"FREE",   depositor:"INV-003", deposited:"2026-01-05" },
+    { id:"BAR-005", metal:"Platinum", weight:"10g",  barcode:"PAMP-P010-005",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-005", deposited:"2025-10-10" },
+    { id:"BAR-006", metal:"Gold",     weight:"1g",   barcode:"PAMP-G001-006",  manufacturer:"MKS PAMP SA",   vault:"Jeddah", status:"FREE",    depositor:"INV-006", deposited:"2026-02-02" },
+    { id:"BAR-007", metal:"Silver",   weight:"50g",  barcode:"VALC-S050-007",  manufacturer:"Valcambi SA",   vault:"Riyadh", status:"DAMAGED", depositor:"INV-001", deposited:"2025-11-15" },
+    { id:"BAR-008", metal:"Gold",     weight:"100g", barcode:"PAMP-G100-008",  manufacturer:"MKS PAMP SA",   vault:"—",      status:"LEFT",    depositor:"INV-003", deposited:"2025-08-10", leftOn:"2026-01-20" },
+  ],
+  appointments: [
+    { id:"APT-001", investor:"Mohammed Al-Otaibi", investorPhone:"0501234567", nationalId:"1012345678", type:"DEPOSIT",    metal:"Gold",     qty:"100g", vault:"Riyadh Vault 1", date:"2026-03-01 10:00", status:"BOOKED",      fee:150, paymentMethod:"Wallet" },
+    { id:"APT-002", investor:"Sara Al-Qahtani",    investorPhone:"0507654321", nationalId:"1098765432", type:"WITHDRAWAL", metal:"Gold",     qty:"50g",  vault:"Riyadh Vault 1", date:"2026-02-28 11:00", status:"EXPIRED",     fee:100, paymentMethod:"MADA" },
+    { id:"APT-003", investor:"Ahmed Saad",         investorPhone:"0509876543", nationalId:"1078901234", type:"DEPOSIT",    metal:"Silver",   qty:"500g", vault:"Jeddah Vault 1", date:"2026-03-03 14:00", status:"BOOKED",      fee:150, paymentMethod:"Wallet" },
+    { id:"APT-004", investor:"Khalid Al-Ghamdi",   investorPhone:"0501112233", nationalId:"1023456789", type:"WITHDRAWAL", metal:"Platinum", qty:"25g",  vault:"Riyadh Vault 1", date:"2026-02-27 15:00", status:"COMPLETED",   fee:100, paymentMethod:"Visa" },
+    { id:"APT-005", investor:"Nora Al-Shehri",     investorPhone:"0503334455", nationalId:"1056789012", type:"DEPOSIT",    metal:"Gold",     qty:"200g", vault:"Jeddah Vault 1", date:"2026-03-04 09:00", status:"RESCHEDULED", fee:150, paymentMethod:"Wallet" },
+    { id:"APT-006", investor:"Fahad Al-Dosari",    investorPhone:"0506667788", nationalId:"1045678901", type:"DEPOSIT",    metal:"Gold",     qty:"50g",  vault:"Riyadh Vault 1", date:"2026-02-26 10:00", status:"NO_SHOW",     fee:150, paymentMethod:"MADA" },
+    { id:"APT-007", investor:"Lina Al-Harbi",      investorPhone:"0508889900", nationalId:"1034567890", type:"WITHDRAWAL", metal:"Silver",   qty:"250g", vault:"Jeddah Vault 1", date:"2026-02-25 14:00", status:"CANCELED",    fee:100, paymentMethod:"Wallet" },
+  ],
+  transactions: [
+    { id:"TXN-001", investor:"Mohammed Al-Otaibi", investorAr:"محمد العتيبي",   vaultKey:"VK-AX9F2", type:"BUY",  metal:"Gold",     metalAmt:"83,900",  commission:"1,678", adminFee:"420", method:"MADA",    total:"85,998",  status:"COMPLETED",  date:"2026-02-28 09:15", buyerName:"Mohammed Al-Otaibi",  buyerNationalId:"1012345678", sellerName:"Sara Al-Qahtani",    sellerNationalId:"1098765432" },
+    { id:"TXN-002", investor:"Sara Al-Qahtani",    investorAr:"سارة القحطاني", vaultKey:"VK-BQ7T4", type:"SELL", metal:"Silver",   metalAmt:"5,200",   commission:"104",   adminFee:"0",   method:"—",       total:"5,096",   status:"COMPLETED",  date:"2026-02-28 09:10", buyerName:"Khalid Al-Ghamdi",    buyerNationalId:"1023456789", sellerName:"Sara Al-Qahtani",    sellerNationalId:"1098765432" },
+    { id:"TXN-003", investor:"Khalid Al-Ghamdi",   investorAr:"خالد الغامدي",  vaultKey:"VK-ET2P6", type:"BUY",  metal:"Gold",     metalAmt:"419,455", commission:"8,389", adminFee:"0",   method:"SADAD",   total:"427,844", status:"CANCELLED",  date:"2026-02-27 14:20", buyerName:"Khalid Al-Ghamdi", buyerNationalId:"1023456789", sellerName:"Nora Al-Shehri", sellerNationalId:"1056789012" },
+    { id:"TXN-004", investor:"Ahmed Saad",          investorAr:"أحمد سعد",      vaultKey:"VK-CR1M8", type:"BUY",  metal:"Platinum", metalAmt:"6,925",   commission:"139",   adminFee:"75",  method:"Visa",    total:"7,139",   status:"COMPLETED",  date:"2026-02-27 10:00", buyerName:"Ahmed Saad", buyerNationalId:"1078901234", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
+    { id:"TXN-005", investor:"Nora Al-Shehri",     investorAr:"نورة الشهري",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Silver",   metalAmt:"10,420",  commission:"208",   adminFee:"420", method:"MADA",    total:"11,048",  status:"COMPLETED",  date:"2026-02-26 11:05", buyerName:"Nora Al-Shehri",      buyerNationalId:"1056789012", sellerName:"Fahad Al-Dosari",    sellerNationalId:"1034567890" },
+    { id:"TXN-006", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-AX9F2", type:"SELL", metal:"Gold",     metalAmt:"42,000",  commission:"840",   adminFee:"0",   method:"—",       total:"41,160",  status:"COMPLETED",  date:"2026-02-25 14:30", buyerName:"Mohammed Al-Otaibi", buyerNationalId:"1012345678", sellerName:"Fahad Al-Dosari", sellerNationalId:"1045678901" },
+    { id:"TXN-007", investor:"Mohammed Al-Otaibi", investorAr:"محمد العتيبي",   vaultKey:"VK-AX9F2", type:"BUY",  metal:"Silver",   metalAmt:"12,800",  commission:"256",   adminFee:"420", method:"Visa/MC", total:"13,476",  status:"COMPLETED",  date:"2026-02-24 10:05", buyerName:"Mohammed Al-Otaibi", buyerNationalId:"1012345678", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
+    { id:"TXN-008", investor:"Lina Al-Harbi",      investorAr:"لينا الحربي",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Gold",     metalAmt:"95,200",  commission:"1,904", adminFee:"420", method:"MADA",    total:"97,524",  status:"CANCELLED",  date:"2026-02-23 16:45", buyerName:"Lina Al-Harbi",       buyerNationalId:"1067890123", sellerName:"Omar Al-Zahrani",    sellerNationalId:"1045678901" },
+    { id:"TXN-009", investor:"Sara Al-Qahtani",    investorAr:"سارة القحطاني", vaultKey:"VK-BQ7T4", type:"SELL", metal:"Platinum", metalAmt:"8,100",   commission:"162",   adminFee:"0",   method:"—",       total:"7,938",   status:"COMPLETED",  date:"2026-02-22 09:00", buyerName:"Ahmed Saad", buyerNationalId:"1078901234", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
+    { id:"TXN-010", investor:"Ahmed Saad",          investorAr:"أحمد سعد",      vaultKey:"VK-CR1M8", type:"BUY",  metal:"Gold",     metalAmt:"210,000", commission:"4,200", adminFee:"420", method:"SADAD",   total:"214,620", status:"COMPLETED",  date:"2026-02-21 11:20", buyerName:"Ahmed Saad",          buyerNationalId:"1078901234", sellerName:"Bader Al-Shimmari",  sellerNationalId:"1089012345" },
+    { id:"TXN-011", investor:"Khalid Al-Ghamdi",   investorAr:"خالد الغامدي",  vaultKey:"VK-ET2P6", type:"SELL", metal:"Silver",   metalAmt:"3,600",   commission:"72",    adminFee:"0",   method:"—",       total:"3,528",   status:"COMPLETED",  date:"2026-02-20 13:15", buyerName:"Nora Al-Shehri", buyerNationalId:"1056789012", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
+    { id:"TXN-012", investor:"Nora Al-Shehri",     investorAr:"نورة الشهري",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Platinum", metalAmt:"15,500",  commission:"310",   adminFee:"420", method:"Visa/MC", total:"16,230",  status:"COMPLETED",  date:"2026-02-19 08:50", buyerName:"Nora Al-Shehri", buyerNationalId:"1056789012", sellerName:"Fahad Al-Dosari", sellerNationalId:"1045678901" },
+    // ═══ NEW TRANSACTIONS — trigger more AML/CMA scenarios ═══
+    { id:"TXN-013", investor:"Omar Al-Zahrani",    investorAr:"عمر الزهراني",  vaultKey:"VK-HX3R9", type:"BUY",  metal:"Gold",     metalAmt:"75,000",  commission:"1,500", adminFee:"420", method:"MADA",    total:"76,920",  status:"COMPLETED",  date:"2026-03-01 09:00", buyerName:"Omar Al-Zahrani", buyerNationalId:"1089012345", sellerName:"Layla Al-Dossari", sellerNationalId:"1067890123" },
+    { id:"TXN-014", investor:"Omar Al-Zahrani",    investorAr:"عمر الزهراني",  vaultKey:"VK-HX3R9", type:"SELL", metal:"Gold",     metalAmt:"70,000",  commission:"1,400", adminFee:"0",   method:"—",       total:"68,600",  status:"COMPLETED",  date:"2026-03-01 14:30", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Omar Al-Zahrani", sellerNationalId:"1089012345" },
+    { id:"TXN-015", investor:"Bader Al-Shimmari",  investorAr:"بدر الشمري",    vaultKey:"VK-MB7V4", type:"BUY",  metal:"Gold",     metalAmt:"50,000",  commission:"1,000", adminFee:"420", method:"SADAD",   total:"51,420",  status:"COMPLETED",  date:"2026-03-01 15:00", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Reem Al-Mutairi", sellerNationalId:"1034567890" },
+    { id:"TXN-016", investor:"Bader Al-Shimmari",  investorAr:"بدر الشمري",    vaultKey:"VK-MB7V4", type:"BUY",  metal:"Silver",   metalAmt:"10,000",  commission:"200",   adminFee:"420", method:"MADA",    total:"10,620",  status:"COMPLETED",  date:"2026-03-01 15:30", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Ahmed Saad", sellerNationalId:"1078901234" },
+    { id:"TXN-017", investor:"Layla Al-Dossari",   investorAr:"ليلى الدوسري",  vaultKey:"VK-JY4S1", type:"BUY",  metal:"Gold",     metalAmt:"250,000", commission:"5,000", adminFee:"420", method:"MADA",    total:"255,420", status:"COMPLETED",  date:"2026-02-28 10:00", buyerName:"Layla Al-Dossari", buyerNationalId:"1067890123", sellerName:"Mohammed Al-Otaibi", sellerNationalId:"1012345678" },
+    { id:"TXN-018", investor:"Reem Al-Mutairi",    investorAr:"ريم المطيري",   vaultKey:"VK-LA6U3", type:"BUY",  metal:"Platinum", metalAmt:"20,000",  commission:"400",   adminFee:"420", method:"Visa/MC", total:"20,820",  status:"COMPLETED",  date:"2026-03-02 08:00", buyerName:"Reem Al-Mutairi", buyerNationalId:"1034567890", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
+    // Round-amount structuring pattern (R10 trigger)
+    { id:"TXN-019", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-KZ5T2", type:"BUY",  metal:"Gold",     metalAmt:"10,000",  commission:"200",   adminFee:"420", method:"MADA",    total:"10,620",  status:"COMPLETED",  date:"2026-03-01 11:00", buyerName:"Fahad Al-Dosari", buyerNationalId:"1045678901", sellerName:"Nora Al-Shehri", sellerNationalId:"1056789012" },
+    { id:"TXN-020", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-KZ5T2", type:"BUY",  metal:"Gold",     metalAmt:"20,000",  commission:"400",   adminFee:"420", method:"SADAD",   total:"20,820",  status:"COMPLETED",  date:"2026-03-02 09:00", buyerName:"Fahad Al-Dosari", buyerNationalId:"1045678901", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
+  ],
+  walletMovements: [
+    { id:"WM-001", investor:"Sara Al-Qahtani",  nationalId:"1098765432", vaultKey:"VK-BQ7T4", type:"CREDIT", amount:"5,096",   reason:"Sell Proceeds",     date:"2026-02-28 09:10" },
+    { id:"WM-002", investor:"Khalid Al-Ghamdi", nationalId:"1023456789", vaultKey:"VK-ET2P6", type:"CREDIT", amount:"427,844", reason:"Order Cancellation", date:"2026-02-27 14:25" },
+    { id:"WM-003", investor:"Ahmed Saad",        nationalId:"1078901234", vaultKey:"VK-CR1M8", type:"DEBIT",  amount:"7,139",   reason:"Buy Order",          date:"2026-02-27 10:00" },
+    { id:"WM-004", investor:"Nora Al-Shehri",   nationalId:"1056789012", vaultKey:"VK-FU8N1", type:"DEBIT",  amount:"11,048",  reason:"Buy Order",          date:"2026-02-26 11:05" },
+  ],
+  withdrawalRequests: [
+    { id:"WR-001", investor:"Mohammed Al-Otaibi", nationalId:"1012345678", amount:"50,000",  bank:"SNB — ****4521",   status:"PENDING",   requested:"2026-02-27", processed:"—" },
+    { id:"WR-002", investor:"Khalid Al-Ghamdi",   nationalId:"1023456789", amount:"120,000", bank:"Riyad — ****8832", status:"APPROVED",  requested:"2026-02-25", processed:"2026-02-26" },
+    { id:"WR-003", investor:"Sara Al-Qahtani",    nationalId:"1098765432", amount:"5,096",   bank:"ANB — ****3310",   status:"PROCESSED", requested:"2026-02-24", processed:"2026-02-25" },
+    { id:"WR-004", investor:"Nora Al-Shehri",     nationalId:"1056789012", amount:"25,000",  bank:"AlRajhi — ****7712", status:"REJECTED", requested:"2026-02-23", processed:"2026-02-24", rejectReason:"Insufficient balance" },
+    { id:"WR-005", investor:"Ahmed Saad",          nationalId:"1078901234", amount:"8,400",   bank:"SNB — ****9901",   status:"PENDING",   requested:"2026-03-01", processed:"—" },
+    { id:"WR-006", investor:"Fahad Al-Dosari",    nationalId:"1034567890", amount:"200,000", bank:"Riyad — ****8832", status:"PROCESSED", requested:"2026-02-20", processed:"2026-02-22" },
+  ],
+  blacklist: [
+    { id:"BL-001", name:"Unknown",       nationalId:"1090123456", vaultKey:"—",        reason:"Pre-registration ban — fraud suspicion", bannedBy:"admin@tanaqul.sa", date:"2026-02-10" },
+    { id:"BL-002", name:"Fatima Hassan", nationalId:"1023456789", vaultKey:"VK-DS5K3", reason:"Suspicious trading activity",            bannedBy:"admin@tanaqul.sa", date:"2026-02-20" },
+  ],
+  blocks: [
+    { number:1847, hash:"0x3f9a...c821", txCount:12, commission:"3,648", tanaqulShare:"2,189", creatorShare:"730",   validatorsShare:"729",   validator:"Tanaqul Node 1", timestamp:"2026-02-28 23:59", size:"0.82 MB" },
+    { number:1846, hash:"0x2e8b...d910", txCount:8,  commission:"2,240", tanaqulShare:"1,344", creatorShare:"448",   validatorsShare:"448",   validator:"Tanaqul Node 1", timestamp:"2026-02-27 23:59", size:"0.61 MB" },
+    { number:1845, hash:"0x1d7c...e009", txCount:18, commission:"5,120", tanaqulShare:"3,072", creatorShare:"1,024", validatorsShare:"1,024", validator:"Tanaqul Node 1", timestamp:"2026-02-26 23:59", size:"0.94 MB" },
+  ],
+  validators: [
+    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"60%", joined:"2025-09-01" },
+    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"40%", joined:"2025-11-15" },
+    { id:"VAL-003", name:"Partner Node — Elm", address:"0xCCC3...0003", status:"STANDBY", blocksValidated:0, lastBlock:1800, commissionEarned:"0", weight:"0%", joined:"2026-01-10" },
+  ],
 };
 
 // ─── Theme System — Light & Dark modes ──────────────────────────────────────
@@ -1081,7 +1156,15 @@ const PriceTicker = () => {
 
 
 // ─── Shared initial order book data (used by Dashboard widget + OrderBook) ───
-const INITIAL_OB_ORDERS = [];
+const INITIAL_OB_ORDERS = [
+  {id:"ORD-001",investor:"Mohammed Al-Otaibi",investorAr:"محمد العتيبي",  nationalId:"1012345678", side:"BUY", metal:"Gold",    qty:50, filled:0,  price:842.00,payment:"MADA",    expiry:"GTC",expiryDate:"",          status:"OPEN",    placed:"2026-03-01 08:10"},
+  {id:"ORD-002",investor:"Sara Al-Qahtani",   investorAr:"سارة القحطاني", nationalId:"1098765432", side:"SELL",metal:"Gold",    qty:30, filled:20, price:840.50,payment:"SADAD",   expiry:"GTC",expiryDate:"",          status:"PARTIAL", placed:"2026-03-01 08:05"},
+  {id:"ORD-003",investor:"Khalid Al-Ghamdi",  investorAr:"خالد الغامدي",  nationalId:"1023456789", side:"BUY", metal:"Gold",    qty:20, filled:20, price:841.00,payment:"Visa",    expiry:"GTD",expiryDate:"2026-03-05",status:"FILLED",  placed:"2026-03-01 07:55"},
+  {id:"ORD-004",investor:"Nora Al-Shehri",    investorAr:"نورة الشهري",   nationalId:"1056789012", side:"SELL",metal:"Silver",  qty:500,filled:300,price:10.45, payment:"Apple Pay",expiry:"GTC",expiryDate:"",          status:"PARTIAL", placed:"2026-03-01 07:50"},
+  {id:"ORD-008",investor:"Omar Al-Zahrani",   investorAr:"عمر الزهراني",  nationalId:"1067890123", side:"BUY", metal:"Platinum",qty:40, filled:0,  price:139.00,payment:"STC Pay", expiry:"GTC",expiryDate:"",          status:"OPEN",    placed:"2026-03-01 06:30"},
+  {id:"ORD-009",investor:"Reem Al-Mutairi",   investorAr:"ريم المطيري",   nationalId:"1089012345", side:"SELL",metal:"Platinum",qty:25, filled:0,  price:138.50,payment:"SADAD",   expiry:"GTD",expiryDate:"2026-04-10",status:"OPEN",    placed:"2026-03-01 06:00"},
+  {id:"SYN-001",investor:"[Stabilizer]",      investorAr:"[موازن]",        nationalId:"SYSTEM",     side:"BUY", metal:"Gold",    qty:15, filled:0,  price:840.00,payment:"Wallet",  expiry:"GTC",expiryDate:"",          status:"OPEN",synthetic:true,placed:"2026-03-01 08:00"},
+];
 
 // ─── Mini Order Book Widget (Dashboard) ──────────────────────────────────────
 const MiniOrderBook = ({ orders, isAr }) => {
@@ -1168,46 +1251,13 @@ const MiniOrderBook = ({ orders, isAr }) => {
 const Dashboard = () => {
   const { t, isAr } = useLang();
   const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts, cmaAlerts, amlDismissed } = useAppData();
-  // ═══ LIVE COMPUTED STATS — no mock data ═══
-  const s = (() => {
-    const inv = investors || [];
-    const ord = orders || [];
-    const mtch = matches || [];
-    const ap = appointments || [];
-    const wdr = withdrawals || [];
-    const br = bars || [];
-    const wm = walletMovements || [];
-    const volToday = mtch.filter(m => m.date && m.date.startsWith(new Date().toISOString().slice(0,10))).reduce((a,m) => a+m.totalSAR, 0);
-    const volMonth = mtch.reduce((a,m) => a+m.totalSAR, 0);
-    const commToday = mtch.filter(m => m.date && m.date.startsWith(new Date().toISOString().slice(0,10))).reduce((a,m) => a+m.commission, 0);
-    const commMonth = mtch.reduce((a,m) => a+m.commission, 0);
-    const adminToday = mtch.filter(m => m.date && m.date.startsWith(new Date().toISOString().slice(0,10))).reduce((a,m) => a+(m.adminFee||0), 0);
-    const adminMonth = mtch.reduce((a,m) => a+(m.adminFee||0), 0);
-    const pendW = wdr.filter(w => w.status==="PENDING").reduce((a,w) => a+parseFloat(String(w.amount).replace(/,/g,"")||0), 0);
-    const totalWallet = wm.reduce((a,m) => { const v=parseFloat(String(m.amount).replace(/,/g,"")||0); return m.type==="CREDIT"?a+v:a-v; }, 0);
-    const goldG = br.filter(b=>b.metal==="Gold"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
-    const silverG = br.filter(b=>b.metal==="Silver"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
-    const platG = br.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
-    const aum = goldG*839 + silverG*10.42 + platG*138.5;
-    return {
-      aum: aum.toLocaleString(), volumeToday: volToday.toLocaleString(), volumeMonth: volMonth.toLocaleString(),
-      commissionToday: commToday.toLocaleString(), commissionMonth: commMonth.toLocaleString(),
-      adminFeesToday: adminToday.toLocaleString(), adminFeesMonth: adminMonth.toLocaleString(),
-      pendingWithdrawals: Math.round(pendW).toLocaleString(), totalWalletBalance: Math.round(Math.max(0,totalWallet)).toLocaleString(),
-      activeOrders: ord.filter(o=>o.status==="OPEN"||o.status==="PARTIAL").length,
-      pendingAppointments: ap.filter(a=>a.status==="BOOKED").length,
-      totalInvestors: inv.length,
-      goldGrams: goldG.toLocaleString(), silverGrams: silverG.toLocaleString(), platinumGrams: platG.toLocaleString(),
-      tokensMinted: 0, tokensCirculating: 0, tokensPendingBurn: 0,
-      lastBlock: "—", blockNumber: 0,
-    };
-  })();
+  const s = appDashStats ? {...MOCK.stats, ...appDashStats} : MOCK.stats;
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
   const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
-  const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight||0),0);
-  const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight||0),0);
-  const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight||0),0);
+  const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
+  const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
+  const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
   const liveAUM = (goldGrams*(gp?.priceSAR||839) + silverGrams*(sp?.priceSAR||10.42) + platGrams*(pp?.priceSAR||138.5));
   const liveAUMStr = fmtK(liveAUM);
 
@@ -1252,7 +1302,7 @@ const Dashboard = () => {
         <div style={{position:"absolute",top:-30,right:isAr?undefined:-30,left:isAr?-30:undefined,width:140,height:140,borderRadius:"50%",background:`${C.gold}15`}}/>
         <div style={{position:"absolute",bottom:-20,right:isAr?undefined:60,left:isAr?60:undefined,width:80,height:80,borderRadius:"50%",background:`${C.gold}10`}}/>
         <div style={{position:"relative",zIndex:1}}>
-          <h2 style={{fontSize:22,fontWeight:800,color:"#FFF",margin:0}}>{isAr?"مرحباً بعودتك 👋":"Welcome back 👋"}</h2>
+          <h2 style={{fontSize:22,fontWeight:800,color:"#FFF",margin:0}}>{isAr?"مرحباً بعودتك، عبدالعزيز 👋":"Welcome back, Abdulaziz 👋"}</h2>
           <p style={{fontSize:14,color:"#A89880",marginTop:4}}>{new Date().toLocaleDateString(isAr?"ar-SA":"en-SA",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
           <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
             {pendingW>0&&<span style={{background:"#D4943A22",color:"#D4943A",padding:"3px 10px",borderRadius:6,fontSize:12,fontWeight:700}}>{pendingW} {isAr?"سحب معلق":"pending withdrawals"}</span>}
@@ -1814,7 +1864,7 @@ const Appointments = () => {
   const showApptToast=(msg)=>{setApptToast(msg);setTimeout(()=>setApptToast(""),4000);};
   // ⚠️ SECURITY: In production, OTP must be generated server-side and delivered via SMS/push.
   // This mock value exists only for prototype demonstration. Remove before deployment.
-  const MOCK_OTP = null; // Live mode — OTP via API only
+  const MOCK_OTP = "847291";
 
   const closeAll = (interrupted=false) => { if(interrupted&&sel&&startStep>1){setInProgress(p=>new Set([...p,sel.id]));} setSel(null); setModal(null); setStartStep(1); setOtpVal(""); setOtpError(""); setOtpSecs(300); setOtpExpired(false); setReschedDate(""); setReschedTime(""); };
 
@@ -2087,7 +2137,7 @@ const Appointments = () => {
           <div style={{display:"flex",gap:8,justifyContent:"center"}}>
             <Btn variant="gold" onClick={()=>{
               if(otpExpired){setOtpError("OTP has expired. Click Resend OTP.");return;}
-              if(false){ // Mock OTP disabled — use API verification
+              if(otpVal===MOCK_OTP){
                 // Mark IN_PROGRESS then COMPLETED
                 setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"IN_PROGRESS"}:a));
                 setTimeout(()=>setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"COMPLETED"}:a)),500);
@@ -2153,7 +2203,7 @@ const Financials = () => {
   useEffect(()=>{
     if(pageHint?.tab){setTab(pageHint.tab);setPageHint(null);}
   },[pageHint]);
-  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
+  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(appMatches.length > 0 ? [] : MOCK.transactions);
   const [wModal,setWModal]=useState(null);
   const [wReason,setWReason]=useState("");
   const [finToast,setFinToast]=useState("");
@@ -2299,89 +2349,150 @@ const MiniBar = ({ data, color="#C4956A" }) => {
 };
 
 // Donut chart (CSS-based)
-const MiniDonut = ({ pct, color="#3B82F6", size=56 }) => {
-  const p = Math.max(0, Math.min(100, pct));
-  const r = 40, cx = 50, cy = 50;
-  const toRad = (a) => (a - 90) * Math.PI / 180;
+const MiniDonut = ({ pct, color="#C4956A", size=56 }) => {
+  const p = Math.max(0.5, Math.min(100, pct));
   const ang = (p / 100) * 360;
-  const ex = cx + r * Math.cos(toRad(ang));
-  const ey = cy + r * Math.sin(toRad(ang));
+  const toRad = (a) => (a - 90) * Math.PI / 180;
+  // Donut geometry — outer ellipse, inner ellipse, depth
+  const cx = 50, cy = 40, orx = 40, ory = 26, irx = 18, iry = 12, d = 10;
+  const uid = `d3_${Math.random().toString(36).slice(2,7)}`;
+  // Points on outer/inner ellipses
+  const ox = (a) => cx + orx * Math.cos(toRad(a));
+  const oy = (a) => cy + ory * Math.sin(toRad(a));
+  const ix = (a) => cx + irx * Math.cos(toRad(a));
+  const iy = (a) => cy + iry * Math.sin(toRad(a));
   const lg = ang > 180 ? 1 : 0;
+  // Darken helper
+  const dk = (hex, amt=45) => {
+    const n = parseInt(hex.replace("#",""),16);
+    return `rgb(${Math.max(0,(n>>16)-amt)},${Math.max(0,((n>>8)&0xff)-amt)},${Math.max(0,(n&0xff)-amt)})`;
+  };
+  // Top face donut arc path (outer arc CW, then inner arc CCW)
+  const donutArc = (startA, endA, fill) => {
+    if(Math.abs(endA - startA) < 0.5) return null;
+    const la = (endA - startA) > 180 ? 1 : 0;
+    return <path d={`M${ox(startA)},${oy(startA)} A${orx},${ory} 0 ${la},1 ${ox(endA)},${oy(endA)} L${ix(endA)},${iy(endA)} A${irx},${iry} 0 ${la},0 ${ix(startA)},${iy(startA)} Z`} fill={fill}/>;
+  };
+  // 3D side wall (only visible on bottom half where oy > cy)
+  const sideWall = (startA, endA, fill) => {
+    // Draw side strips at small angle increments
+    const steps = Math.max(2, Math.ceil(Math.abs(endA-startA)/6));
+    const paths = [];
+    for(let i=0;i<steps;i++){
+      const a1 = startA + (endA-startA)*i/steps;
+      const a2 = startA + (endA-startA)*(i+1)/steps;
+      const y1 = oy(a1), y2 = oy(a2);
+      // Only show side if below center (visible in 3D perspective)
+      if(y1 >= cy-2 || y2 >= cy-2){
+        paths.push(<path key={i} d={`M${ox(a1)},${oy(a1)} A${orx},${ory} 0 0,1 ${ox(a2)},${oy(a2)} L${ox(a2)},${oy(a2)+d} A${orx},${ory} 0 0,0 ${ox(a1)},${oy(a1)+d} Z`} fill={fill}/>);
+      }
+    }
+    return paths;
+  };
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={{display:"block"}}>
-      <circle cx={cx} cy={cy} r={r} fill="#E5E7EB" />
-      {p > 0 && p < 100 && <path d={`M${cx},${cy-r} A${r},${r} 0 ${lg},1 ${ex},${ey} L${cx},${cy} Z`} fill={color} />}
-      {p >= 100 && <circle cx={cx} cy={cy} r={r} fill={color} />}
-      <circle cx={cx} cy={cy} r={22} fill="#FFF" />
-      <text x={cx} y={cy+5} textAnchor="middle" fontSize="14" fontWeight="800" fill={color}>{pct}%</text>
+    <svg width={size} height={size} viewBox="0 0 100 90" style={{display:"block"}}>
+      <defs>
+        <linearGradient id={`${uid}_c`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color}/><stop offset="100%" stopColor={dk(color,35)}/>
+        </linearGradient>
+        <linearGradient id={`${uid}_bg`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E8E0D4"/><stop offset="100%" stopColor="#D8D0C4"/>
+        </linearGradient>
+        <radialGradient id={`${uid}_hole`} cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#FDFBF7"/><stop offset="100%" stopColor="#EDE6DA"/>
+        </radialGradient>
+      </defs>
+      {/* 3D side walls — background (remaining %) */}
+      {p < 100 && sideWall(ang, 360, dk("#D5CCBF",15))}
+      {/* 3D side walls — colored slice */}
+      {sideWall(0, ang, dk(color,55))}
+      {/* Top face — background ring (remaining %) */}
+      {p < 100 && donutArc(ang, 360, `url(#${uid}_bg)`)}
+      {/* Top face — colored ring slice */}
+      {donutArc(0, ang, `url(#${uid}_c)`)}
+      {/* Inner hole — 3D depth */}
+      <ellipse cx={cx} cy={cy+d} rx={irx} ry={iry} fill="#D5CCBF" opacity="0.4"/>
+      {/* Inner hole — top face */}
+      <ellipse cx={cx} cy={cy} rx={irx} ry={iry} fill={`url(#${uid}_hole)`}/>
+      {/* Gloss highlight */}
+      <ellipse cx={cx-6} cy={cy-8} rx={12} ry={5} fill="#FFF" opacity="0.15"/>
+      {/* Percentage text centered in hole */}
+      <text x={cx} y={cy+5} textAnchor="middle" fontSize="13" fontWeight="800" fill={color}>{pct}%</text>
     </svg>
   );
 };
 
 const Reports = () => {
   const { t, isAr } = useLang();
-  const { matches, investors, walletMovements, bars, withdrawals, appointments, orders } = useAppData();
+  const { matches, investors, walletMovements, bars } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
   const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
-  const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
-  const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
-  const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight||0),0);
+  const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
+  const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
+  const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const liveAUM     = liveGoldG*(gp?.priceSAR||839)+liveSilverG*(sp?.priceSAR||10.42)+livePlatG*(pp?.priceSAR||138.5);
   const volAll      = matches.reduce((a,m)=>a+m.totalSAR,0);
   const commAll     = matches.reduce((a,m)=>a+m.commission,0);
   const adminAll    = matches.reduce((a,m)=>a+(m.adminFee||0),0);
   const REPORT_DATA = {
     financial: [
-      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount={String(commAll+adminAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:C.gold,
-        breakdown:[{label:"Commission",val:String(commAll),pct:commAll+adminAll>0?Math.round(commAll/(commAll+adminAll)*100):0},{label:"Admin Fees",val:String(adminAll),pct:commAll+adminAll>0?Math.round(adminAll/(commAll+adminAll)*100):0}] },
-      { title:"Trading Volume by Metal", sub:"From matches", value:<SARAmount amount={String(Math.round(volAll))}/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:C.teal,
-        breakdown:(() => { const byM={}; matches.forEach(m=>{byM[m.metal]=(byM[m.metal]||0)+m.totalSAR}); return Object.entries(byM).map(([k,v])=>({label:k,val:String(Math.round(v)),pct:volAll>0?Math.round(v/volAll*100):0})); })() },
-      { title:"Volume by Period", sub:"Daily average", value:<SARAmount amount={String(Math.round(volAll/Math.max(1,30)))}/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:"#8B5CF6",
-        breakdown:[{label:"Avg/Day",val:String(Math.round(volAll/30)),pct:100}] },
-      { title:"Payment Methods", sub:"Order count", value:String(orders.length)+" orders", prev:"0", change:"—", up:true, chart:[0], color:"#D4943A",
-        breakdown:(() => { const byP={}; orders.forEach(o=>{byP[o.payment]=(byP[o.payment]||0)+1}); return Object.entries(byP).map(([k,v])=>({label:k,val:String(v),pct:orders.length>0?Math.round(v/orders.length*100):0})); })() },
-      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount={String(walletMovements.reduce((a,m)=>a+parseFloat(String(m.amount).replace(/,/g,"")||0),0))}/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:C.teal,
-        breakdown:(() => { let cr=0,dr=0; walletMovements.forEach(m=>{const v=parseFloat(String(m.amount).replace(/,/g,"")||0); if(m.type==="CREDIT")cr+=v; else dr+=v;}); const tot=cr+dr; return [{label:"Credits",val:String(Math.round(cr)),pct:tot>0?Math.round(cr/tot*100):0},{label:"Debits",val:String(Math.round(dr)),pct:tot>0?Math.round(dr/tot*100):0}]; })() },
-      { title:"Withdrawal Requests", sub:"Total pending", value:<SARAmount amount={String(withdrawals.filter(w=>w.status==="PENDING").reduce((a,w)=>a+parseFloat(String(w.amount).replace(/,/g,"")||0),0))}/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:"#C85C3E",
-        breakdown:(() => { const byS={}; withdrawals.forEach(w=>{byS[w.status]=(byS[w.status]||0)+1}); return Object.entries(byS).map(([k,v])=>({label:k,val:String(v),pct:withdrawals.length>0?Math.round(v/withdrawals.length*100):0})); })() },
+      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount="81,000"/>, prev:<SARAmount amount="72,400"/>, change:"+11.9%", up:true, chart:[6200,7100,5800,8200,7600,9100,8400], color:C.gold,
+        breakdown:[{label:"Commission",val:"64,800",pct:80},{label:"Admin Fees",val:"16,200",pct:20}] },
+      { title:"Trading Volume by Metal", sub:"This month", value:<SARAmount amount="3,240,000"/>, prev:<SARAmount amount="2,980,000"/>, change:"+8.7%", up:true, chart:[240,280,220,320,290,350,340], color:C.teal,
+        breakdown:[{label:"Gold",val:"2,820,000",pct:87},{label:"Silver",val:"310,000",pct:10},{label:"Platinum",val:"110,000",pct:3}] },
+      { title:"Volume by Period", sub:"Daily avg this month", value:<SARAmount amount="108,000"/>, prev:<SARAmount amount="99,333"/>, change:"+8.7%", up:true, chart:[95,110,88,125,108,130,115], color:"#8B5CF6",
+        breakdown:[{label:"Avg/Day",val:"108,000",pct:100}] },
+      { title:"Payment Methods", sub:"Orders this month", value:"14 orders", prev:"11 orders", change:"+27%", up:true, chart:[2,5,1,3,1,1,1], color:"#D4943A",
+        breakdown:[{label:"MADA",val:"7",pct:50},{label:"SADAD",val:"4",pct:29},{label:"Visa/MC",val:"3",pct:21}] },
+      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount="890,200"/>, prev:<SARAmount amount="820,000"/>, change:"+8.6%", up:true, chart:[60,80,55,90,75,100,88], color:C.teal,
+        breakdown:[{label:"Credits",val:"950,400",pct:52},{label:"Debits",val:"875,200",pct:48}] },
+      { title:"Withdrawal Requests", sub:"This month", value:<SARAmount amount="124,500"/>, prev:<SARAmount amount="98,000"/>, change:"+27%", up:true, chart:[8,12,7,15,10,18,14], color:"#C85C3E",
+        breakdown:[{label:"Processed",val:"2",pct:67},{label:"Pending",val:"1",pct:33}] },
     ],
     vault: [
-      { title:"Bars by Metal", sub:"Physical inventory", value:String(bars.length)+" bars", prev:"0", change:"—", up:true, chart:[0], color:C.gold,
-        breakdown:(() => { const byM={}; bars.forEach(b=>{byM[b.metal]=(byM[b.metal]||0)+1}); return Object.entries(byM).map(([k,v])=>({label:k,val:String(v),pct:bars.length>0?Math.round(v/bars.length*100):0})); })() },
-      { title:"Linked vs Free", sub:"Bar status", value:String(bars.filter(b=>b.status==="LINKED").length)+" linked", prev:"0", change:"—", up:true, chart:[0], color:C.navy,
-        breakdown:(() => { const linked=bars.filter(b=>b.status==="LINKED").length; const free=bars.filter(b=>b.status==="FREE").length; const t=linked+free||1; return [{label:"Linked",val:String(linked),pct:Math.round(linked/t*100)},{label:"Free",val:String(free),pct:Math.round(free/t*100)}]; })() },
-      { title:"Tokens Minted/Burned", sub:"From stats", value:"0 minted", prev:"0", change:"—", up:true, chart:[0], color:C.greenSolid,
-        breakdown:[{label:"Minted",val:"0",pct:0},{label:"Burned",val:"0",pct:0}] },
-      { title:"Deposit vs Withdrawal", sub:"Appointment types", value:String(appointments.length)+" total", prev:"0", change:"—", up:true, chart:[0], color:"#8B5CF6",
-        breakdown:(() => { const dep=appointments.filter(a=>a.type==="DEPOSIT").length; const wit=appointments.filter(a=>a.type==="WITHDRAWAL").length; const t=dep+wit||1; return [{label:"Deposits",val:String(dep),pct:Math.round(dep/t*100)},{label:"Withdrawals",val:String(wit),pct:Math.round(wit/t*100)}]; })() },
+      { title:"Bars by Metal", sub:"Physical inventory", value:"6 bars", prev:"5 bars", change:"+20%", up:true, chart:[1,2,1,1,1,2,1], color:C.gold,
+        breakdown:[{label:"Gold",val:"3",pct:50},{label:"Silver",val:"2",pct:33},{label:"Platinum",val:"1",pct:17}] },
+      { title:"Linked vs Floating Tokens", sub:"Circulation status", value:"24,180 tokens", prev:"0", change:"+9.9%", up:true, chart:[0], color:C.navy,
+        breakdown:[{label:"Linked",val:"15,840",pct:65},{label:"Floating",val:"8,340",pct:35}] },
+      { title:"Tokens Minted/Burned", sub:"This month", value:"2,180 minted", prev:"1,900", change:"+14.7%", up:true, chart:[150,200,180,220,190,250,220], color:C.greenSolid,
+        breakdown:[{label:"Minted",val:"2,180",pct:86},{label:"Burned",val:"340",pct:14}] },
+      { title:"Deposit vs Withdrawal", sub:"Appointment types", value:"7 this month", prev:"5", change:"+40%", up:true, chart:[1,2,1,2,0,1,2], color:"#8B5CF6",
+        breakdown:[{label:"Deposits",val:"5",pct:71},{label:"Withdrawals",val:"2",pct:29}] },
     ],
     investors: [
-      { title:"Active / Suspended / Banned", sub:"Account status", value:String(investors.length)+" total", prev:"0", change:"—", up:true, chart:[0], color:C.navy,
-        breakdown:(() => { const a=investors.filter(i=>i.status==="ACTIVE").length; const s=investors.filter(i=>i.status==="SUSPENDED").length; const b=investors.filter(i=>i.status==="BANNED").length; const t=a+s+b||1; return [{label:"Active",val:String(a),pct:Math.round(a/t*100)},{label:"Suspended",val:String(s),pct:Math.round(s/t*100)},{label:"Banned",val:String(b),pct:Math.round(b/t*100)}]; })() },
-      { title:"New Investors", sub:"Recently joined", value:String(investors.filter(i=>{const d=new Date(i.joined);const now=new Date();return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).length)+" new", prev:"0", change:"—", up:true, chart:[0], color:C.teal,
-        breakdown:[{label:"This Month",val:String(investors.filter(i=>{const d=new Date(i.joined);const now=new Date();return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).length),pct:100}] },
-      { title:"Top by Holdings Value", sub:"Highest portfolio", value:<SARAmount amount={String(investors.length>0?Math.max(...investors.map(i=>parseFloat(String(i.holdingsValue).replace(/,/g,"")||0))):0)}/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:C.gold,
-        breakdown:(() => { const sorted=[...investors].sort((a,b)=>parseFloat(String(b.holdingsValue).replace(/,/g,"")||0)-parseFloat(String(a.holdingsValue).replace(/,/g,"")||0)).slice(0,3); return sorted.map(i=>({label:i.id,val:String(i.holdingsValue),pct:0})); })() },
-      { title:"Top by Trading Volume", sub:"Most active", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:true, chart:[0], color:"#8B5CF6",
-        breakdown:[] },
+      { title:"Active / Suspended / Banned", sub:"Account status", value:"312 total", prev:"298", change:"+4.7%", up:true, chart:[280,290,295,300,305,308,312], color:C.navy,
+        breakdown:[{label:"Active",val:"305",pct:98},{label:"Suspended",val:"5",pct:2},{label:"Banned",val:"2",pct:1}] },
+      { title:"New Investors by Period", sub:"This month", value:"18 new", prev:"14", change:"+28.6%", up:true, chart:[1,3,2,4,2,3,3], color:C.teal,
+        breakdown:[{label:"This Month",val:"18",pct:100}] },
+      { title:"Top by Holdings Value", sub:"Highest portfolio", value:<SARAmount amount="1,248,000"/>, prev:<SARAmount amount="1,100,000"/>, change:"+13.5%", up:true, chart:[900,950,1000,1050,1100,1180,1248], color:C.gold,
+        breakdown:[{label:"INV-001",val:"1,248,000",pct:56},{label:"INV-005",val:"560,000",pct:25},{label:"Others",val:"420,350",pct:19}] },
+      { title:"Top by Trading Volume", sub:"Most active", value:<SARAmount amount="419,455"/>, prev:<SARAmount amount="380,000"/>, change:"+10.4%", up:true, chart:[300,330,360,380,395,410,419], color:"#8B5CF6",
+        breakdown:[{label:"INV-003",val:"419,455",pct:51},{label:"INV-001",val:"83,900",pct:10},{label:"Others",val:"322,000",pct:39}] },
     ],
     appointments: [
-      { title:"Total by Period", sub:"This month", value:String(appointments.length)+" appointments", prev:"0", change:"—", up:true, chart:[0], color:C.teal,
-        breakdown:(() => { const byS={}; appointments.forEach(a=>{byS[a.status]=(byS[a.status]||0)+1}); return Object.entries(byS).map(([k,v])=>({label:k,val:String(v),pct:appointments.length>0?Math.round(v/appointments.length*100):0})); })() },
-      { title:"Deposit vs Withdrawal Split", sub:"Type breakdown", value:String(appointments.filter(a=>a.type==="DEPOSIT").length)+" deposits", prev:"0", change:"—", up:true, chart:[0], color:C.gold,
-        breakdown:(() => { const dep=appointments.filter(a=>a.type==="DEPOSIT").length; const wit=appointments.filter(a=>a.type==="WITHDRAWAL").length; const t=dep+wit||1; return [{label:"Deposits",val:String(dep),pct:Math.round(dep/t*100)},{label:"Withdrawals",val:String(wit),pct:Math.round(wit/t*100)}]; })() },
-      { title:"No Show Rate", sub:"Missed appointments", value:String(appointments.length>0?Math.round(appointments.filter(a=>a.status==="NO_SHOW").length/appointments.length*100):0)+"%", prev:"0%", change:"—", up:true, chart:[0], color:"#C85C3E",
-        breakdown:(() => { const att=appointments.filter(a=>a.status!=="NO_SHOW").length; const ns=appointments.filter(a=>a.status==="NO_SHOW").length; return [{label:"Attended",val:String(att),pct:appointments.length>0?Math.round(att/appointments.length*100):0},{label:"No Show",val:String(ns),pct:appointments.length>0?Math.round(ns/appointments.length*100):0}]; })() },
-      { title:"Completion Rate", sub:"Successfully done", value:String(appointments.length>0?Math.round(appointments.filter(a=>a.status==="COMPLETED").length/appointments.length*100):0)+"%", prev:"0%", change:"—", up:true, chart:[0], color:C.greenSolid,
-        breakdown:[{label:"Completed",val:String(appointments.filter(a=>a.status==="COMPLETED").length),pct:appointments.length>0?Math.round(appointments.filter(a=>a.status==="COMPLETED").length/appointments.length*100):0}] },
+      { title:"Total by Period", sub:"This month", value:"7 appointments", prev:"5", change:"+40%", up:true, chart:[0,1,1,2,1,1,1], color:C.teal,
+        breakdown:[{label:"Booked",val:"3",pct:43},{label:"Completed",val:"1",pct:14},{label:"Other",val:"3",pct:43}] },
+      { title:"Deposit vs Withdrawal Split", sub:"Type breakdown", value:"5 deposits", prev:"4", change:"+25%", up:true, chart:[1,1,2,1,1,2,1], color:C.gold,
+        breakdown:[{label:"Deposits",val:"5",pct:71},{label:"Withdrawals",val:"2",pct:29}] },
+      { title:"No Show Rate", sub:"Missed appointments", value:"0%", prev:"10%", change:"-100%", up:true, chart:[1,0,1,0,0,0,0], color:"#C85C3E",
+        breakdown:[{label:"Attended",val:"6",pct:100},{label:"No Show",val:"0",pct:0}] },
+      { title:"Completion Rate", sub:"Successfully done", value:"100%", prev:"80%", change:"+25%", up:true, chart:[70,80,80,90,90,100,100], color:C.greenSolid,
+        breakdown:[{label:"Completed",val:"1",pct:100}] },
     ],
   };
 
   // Combined multi-segment 3D donut for all breakdowns in one chart
-  const SEGMENT_COLORS = ["#EF4444","#3B82F6","#22C55E","#EAB308","#8B5CF6","#F97316","#06B6D4","#EC4899"];
-  const MultiDonut = ({ segments, size=90 }) => {
-    const cx=50, cy=50, r=40;
-    const toRad = (a) => (a-90)*Math.PI/180;
+  const SEGMENT_COLORS = ["#C4956A",C.greenSolid,C.blueSolid,"#8B5CF6","#C85C3E","#D4943A","#6B9080",C.purpleSolid];
+  const MultiDonut = ({ segments, size=100 }) => {
+    const cx=50,cy=40,orx=40,ory=26,irx=18,iry=12,d=10;
+    const uid=`md_${Math.random().toString(36).slice(2,7)}`;
+    const toRad=(a)=>(a-90)*Math.PI/180;
+    const ox=(a)=>cx+orx*Math.cos(toRad(a));
+    const oy=(a)=>cy+ory*Math.sin(toRad(a));
+    const ix=(a)=>cx+irx*Math.cos(toRad(a));
+    const iy=(a)=>cy+iry*Math.sin(toRad(a));
+    const dk=(hex,amt=45)=>{const n=parseInt(hex.replace("#",""),16);return `rgb(${Math.max(0,(n>>16)-amt)},${Math.max(0,((n>>8)&0xff)-amt)},${Math.max(0,(n&0xff)-amt)})`;};
+    // Build angle ranges
     const total = segments.reduce((a,s)=>a+s.pct,0)||1;
     let cumAngle = 0;
     const arcs = segments.filter(s=>s.pct>0).map((s,i)=>{
@@ -2390,17 +2501,36 @@ const Reports = () => {
       cumAngle += sweep;
       return { ...s, startA, endA: cumAngle, color: s.color||SEGMENT_COLORS[i%SEGMENT_COLORS.length] };
     });
+    const donutArc=(sa,ea,fill)=>{
+      if(Math.abs(ea-sa)<0.5) return null;
+      const la=(ea-sa)>180?1:0;
+      return <path d={`M${ox(sa)},${oy(sa)} A${orx},${ory} 0 ${la},1 ${ox(ea)},${oy(ea)} L${ix(ea)},${iy(ea)} A${irx},${iry} 0 ${la},0 ${ix(sa)},${iy(sa)} Z`} fill={fill}/>;
+    };
+    const sideWall=(sa,ea,fill)=>{
+      const steps=Math.max(2,Math.ceil(Math.abs(ea-sa)/6));
+      const paths=[];
+      for(let i=0;i<steps;i++){
+        const a1=sa+(ea-sa)*i/steps;
+        const a2=sa+(ea-sa)*(i+1)/steps;
+        if(oy(a1)>=cy-2||oy(a2)>=cy-2)
+          paths.push(<path key={`${sa}_${i}`} d={`M${ox(a1)},${oy(a1)} A${orx},${ory} 0 0,1 ${ox(a2)},${oy(a2)} L${ox(a2)},${oy(a2)+d} A${orx},${ory} 0 0,0 ${ox(a1)},${oy(a1)+d} Z`} fill={fill}/>);
+      }
+      return paths;
+    };
     return (
-      <svg width={size} height={size} viewBox="0 0 100 100" style={{display:"block"}}>
-        <circle cx={cx} cy={cy} r={r} fill="#E5E7EB" />
-        {arcs.map((a,i)=>{
-          if(Math.abs(a.endA-a.startA)<0.5) return null;
-          const sx=cx+r*Math.cos(toRad(a.startA)), sy=cy+r*Math.sin(toRad(a.startA));
-          const ex=cx+r*Math.cos(toRad(a.endA)), ey=cy+r*Math.sin(toRad(a.endA));
-          const lg=(a.endA-a.startA)>180?1:0;
-          return <path key={i} d={`M${cx},${cy} L${sx},${sy} A${r},${r} 0 ${lg},1 ${ex},${ey} Z`} fill={a.color} />;
-        })}
-        <circle cx={cx} cy={cy} r={20} fill="#FFF" />
+      <svg width={size} height={size*0.9} viewBox="0 0 100 90" style={{display:"block"}}>
+        <defs>
+          {arcs.map((a,i)=><linearGradient key={`g${i}`} id={`${uid}_${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={a.color}/><stop offset="100%" stopColor={dk(a.color,30)}/></linearGradient>)}
+          <radialGradient id={`${uid}_hole`} cx="50%" cy="40%" r="50%"><stop offset="0%" stopColor="#FDFBF7"/><stop offset="100%" stopColor="#EDE6DA"/></radialGradient>
+        </defs>
+        {/* 3D side walls */}
+        {arcs.map((a,i)=>sideWall(a.startA,a.endA,dk(a.color,55)))}
+        {/* Top face arcs */}
+        {arcs.map((a,i)=>donutArc(a.startA,a.endA,`url(#${uid}_${i})`))}
+        {/* Inner hole depth + top */}
+        <ellipse cx={cx} cy={cy+d} rx={irx} ry={iry} fill="#D5CCBF" opacity="0.4"/>
+        <ellipse cx={cx} cy={cy} rx={irx} ry={iry} fill={`url(#${uid}_hole)`}/>
+        <ellipse cx={cx-6} cy={cy-8} rx={12} ry={5} fill="#FFF" opacity="0.13"/>
       </svg>
     );
   };
@@ -2659,12 +2789,12 @@ const Blocks = () => {
   const tanaqulPct = (commSplit.buying||30)+(commSplit.selling||30);
   const creatorPct = commSplit.creator||20;
   const validatorsPct = commSplit.validators||20;
-  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
+  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(appMatches.length > 0 ? [] : MOCK.transactions);
   return (
     <div>
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:18}}>
-        <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Latest Block"} value={"#"+0} gold />
+        <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Latest Block"} value={"#"+(appBlockStats?.latest_block_number || MOCK.stats.blockNumber)} gold />
         <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value="0" />
         <StatCard icon={Icons.fire(22,"#C85C3E")} title={isAr?"الرموز المحروقة":"Tokens Burned"} value="340" />
         <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"العمولات الموزعة":"Commission Distributed"} value={<SARAmount amount={matches.reduce((a,m)=>a+m.commission,0).toLocaleString("en-SA",{maximumFractionDigits:0})}/>} gold />
@@ -2678,7 +2808,7 @@ const Blocks = () => {
         <span style={{color:C.silverText}}>|</span>
         <span style={{fontSize:13,color:"#A89880"}}>Split: <span style={{color:C.teal}}>{tanaqulPct}% Tanaqul / {creatorPct}% Creator / {validatorsPct}% Validators</span></span>
         <span style={{color:C.silverText}}>|</span>
-        <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>Last: {"—"}</span>
+        <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>Last: {(appBlockStats?.latest_block_hash || MOCK.stats.lastBlock)}</span>
       </div>
       <TabBar tabs={[{id:"BLOCKS",label:isAr?"البلوكات":"BLOCKS"},{id:"TRANSACTIONS",label:isAr?"المعاملات":"TRANSACTIONS"},{id:"VALIDATORS",label:isAr?"المدققون":"VALIDATORS"}]} active={tab} onChange={setTab} />
       {tab==="BLOCKS"&&<TTable cols={[
@@ -2690,7 +2820,7 @@ const Blocks = () => {
         {key:"creatorShare",label:`Creator ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validatorsShare",label:`Validators ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validator",label:"Creator"},{key:"size",label:"Size"},{key:"timestamp",label:"Time"},
-      ]} rows={[]} />}
+      ]} rows={appBlocks.length > 0 ? appBlocks : MOCK.blocks} />}
       {tab==="TRANSACTIONS"&&<TTable cols={[
         {key:"id",label:"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
         {key:"investor",label:"Investor"},{key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
@@ -2904,13 +3034,14 @@ const AuditLog = () => {
 
   const buildInvestorProfiles = () => {
     const allTxns = [
-            ...matches.map(m=>({
+      ...(MOCK.transactions||[]),
+      ...matches.map(m=>({
         id:m.id, buyerNationalId:m.buyerNid||"", sellerNationalId:m.sellerNid||"",
         total:String(m.totalSAR), metal:m.metal, status:"COMPLETED", date:m.date,
       })),
     ];
     const allWM = [...walletMovements];
-    const allAppts = [...appointments];
+    const allAppts = [...(MOCK.appointments||[]), ...appointments];
     const profiles = {};
 
     investors.forEach(inv => {
@@ -4901,7 +5032,7 @@ const OrderBook = () => {
     if(mmSide==="SELL"){
       const freeGrams = bars
         .filter(b=>b.metal===mmMetal&&b.status==="FREE")
-        .reduce((sum,b)=>sum+parseFloat(b.weight||0),0);
+        .reduce((sum,b)=>sum+parseFloat(b.weight),0);
       if(mmQtyNum > freeGrams){
         showMatchToast(isAr?`⚠️ مخزون غير كافٍ — متاح ${freeGrams}غ فقط`:`⚠️ Insufficient inventory — only ${freeGrams}g FREE bars available for ${mmMetal}`);
         return;
@@ -5399,14 +5530,58 @@ const UserManagement = () => {
   const allRoles = [...ROLES.filter(r=>r.id!=="CUSTOM"), ...customRoles, ROLES.find(r=>r.id==="CUSTOM")];
   const allRolePerms = {...ROLE_PERMS};
   customRoles.forEach(r=>{ allRolePerms[r.id]=r.perms; });
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([
+    {id:"USR-001",name:"Abdulaziz Al-Rashid",nameAr:"عبدالعزيز الراشد",email:"admin@tanaqul.sa",role:"SUPER_ADMIN",perms:ROLE_PERMS.SUPER_ADMIN,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-02 09:14",sessions:2,created:"2025-09-01",
+      log:[
+        {date:"2026-03-02 09:14",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (196.203.x.x)",ip:"196.203.x.x"},
+        {date:"2026-03-02 09:20",action:"Changed commission rates",actionAr:"تغيير أسعار العمولة",detail:"Buyer: 1.0% → 1.2%, Seller: 1.0% → 1.1%",ip:"196.203.x.x"},
+        {date:"2026-03-01 16:45",action:"Approved withdrawal",actionAr:"الموافقة على سحب",detail:"WR-003 — SAR 25,000 — Mohammed Al-Otaibi",ip:"196.203.x.x"},
+        {date:"2026-03-01 14:10",action:"Filed SAR report",actionAr:"تقديم بلاغ SAR",detail:"SAR-24819374 — Suspicious volume pattern",ip:"196.203.x.x"},
+        {date:"2026-03-01 10:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (196.203.x.x)",ip:"196.203.x.x"},
+        {date:"2026-02-28 15:30",action:"Suspended user USR-005",actionAr:"إيقاف المستخدم USR-005",detail:"Khalid Al-Mutairi — policy violation",ip:"196.203.x.x"},
+        {date:"2026-02-28 09:00",action:"Login",actionAr:"تسجيل دخول",detail:"Safari — iPhone (196.203.x.x)",ip:"196.203.x.x"},
+        {date:"2026-02-27 11:30",action:"Updated vault settings",actionAr:"تحديث إعدادات الخزينة",detail:"Added Jeddah Vault 2",ip:"196.203.x.x"},
+      ]},
+    {id:"USR-002",name:"Noura Al-Shamsi",nameAr:"نورة الشمسي",email:"compliance@tanaqul.sa",role:"COMPLIANCE",perms:ROLE_PERMS.COMPLIANCE,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-01 16:22",sessions:1,created:"2025-10-15",
+      log:[
+        {date:"2026-03-01 16:22",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (10.0.x.x)",ip:"10.0.x.x"},
+        {date:"2026-03-01 16:35",action:"Reviewed AML alerts",actionAr:"مراجعة تنبيهات غسل الأموال",detail:"Dismissed 3 LOW alerts, escalated 1 HIGH",ip:"10.0.x.x"},
+        {date:"2026-03-01 17:00",action:"Filed SAR report",actionAr:"تقديم بلاغ SAR",detail:"SAR-24819401 — Velocity-based detection",ip:"10.0.x.x"},
+        {date:"2026-02-28 09:15",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
+        {date:"2026-02-28 10:00",action:"PEP screening completed",actionAr:"اكتمال فحص الشخصيات المعرضة سياسياً",detail:"12 investors screened — 0 PEP matches",ip:"10.0.x.x"},
+        {date:"2026-02-27 14:20",action:"Sent CMA notification",actionAr:"إرسال إخطار الهيئة",detail:"CMA-NOTIF-38291 — Self-trade detected",ip:"10.0.x.x"},
+      ]},
+    {id:"USR-003",name:"Mohammed Al-Harbi",nameAr:"محمد الحربي",email:"vault@tanaqul.sa",role:"VAULT_MGR",perms:ROLE_PERMS.VAULT_MGR,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-02 08:05",sessions:1,created:"2025-11-01",
+      log:[
+        {date:"2026-03-02 08:05",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"192.168.x.x"},
+        {date:"2026-03-02 08:30",action:"Processed appointment",actionAr:"معالجة موعد",detail:"APT-012 — Gold deposit 500g — Fahad Al-Dosari",ip:"192.168.x.x"},
+        {date:"2026-03-02 09:15",action:"Verified bar authenticity",actionAr:"التحقق من أصالة السبيكة",detail:"BAR-AU-047 — LBMA certified — 1000g",ip:"192.168.x.x"},
+        {date:"2026-03-01 08:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"192.168.x.x"},
+        {date:"2026-03-01 10:45",action:"Processed withdrawal",actionAr:"معالجة سحب",detail:"APT-009 — Silver 200g — Sara Al-Qahtani",ip:"192.168.x.x"},
+      ]},
+    {id:"USR-004",name:"Sara Al-Qahtani",nameAr:"سارة القحطاني",email:"finance@tanaqul.sa",role:"FINANCIAL",perms:ROLE_PERMS.FINANCIAL,twoFA:false,status:"ACTIVE",lastLogin:"2026-02-28 14:30",sessions:0,created:"2026-01-10",
+      log:[
+        {date:"2026-02-28 14:30",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
+        {date:"2026-02-28 15:00",action:"Approved withdrawal",actionAr:"الموافقة على سحب",detail:"WR-005 — SAR 15,000 — Noura Al-Dossari",ip:"10.0.x.x"},
+        {date:"2026-02-28 15:20",action:"Generated financial report",actionAr:"إنشاء تقرير مالي",detail:"Monthly P&L — February 2026",ip:"10.0.x.x"},
+        {date:"2026-02-27 09:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
+      ]},
+    {id:"USR-005",name:"Khalid Al-Mutairi",nameAr:"خالد المطيري",email:"viewer@tanaqul.sa",role:"VIEWER",perms:ROLE_PERMS.VIEWER,twoFA:false,status:"SUSPENDED",lastLogin:"2026-02-15 10:00",sessions:0,created:"2026-02-01",
+      log:[
+        {date:"2026-02-15 10:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Jeddah",ip:"85.100.x.x"},
+        {date:"2026-02-15 10:30",action:"Viewed dashboard",actionAr:"عرض لوحة التحكم",detail:"Read-only access",ip:"85.100.x.x"},
+        {date:"2026-02-14 11:00",action:"Login",actionAr:"تسجيل دخول",detail:"Firefox — Jeddah",ip:"85.100.x.x"},
+        {date:"2026-02-14 11:20",action:"Exported report",actionAr:"تصدير تقرير",detail:"Downloaded monthly overview PDF",ip:"85.100.x.x"},
+        {date:"2026-02-28 00:00",action:"Account suspended",actionAr:"إيقاف الحساب",detail:"Suspended by Super Admin (USR-001)",ip:"—"},
+      ]},
+  ]);
   const [modal, setModal] = useState(null); // null | "add" | user object
   const [activityModal, setActivityModal] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
   const [newRole, setNewRole] = useState({label:"",labelAr:"",color:C.blueSolid,perms:[]});
   const [editPerms, setEditPerms] = useState([]);
   const [editRole, setEditRole] = useState("VIEWER");
-  const [newUser, setNewUser] = useState({name:"",nameAr:"",email:"",phone:"",password:"",role:"VIEWER"});
+  const [newUser, setNewUser] = useState({name:"",email:"",role:"VIEWER"});
   const [logFilter, setLogFilter] = useState("ALL");
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
@@ -5416,7 +5591,7 @@ const UserManagement = () => {
   return (
     <div>
       <SectionHeader title={isAr?"إدارة المستخدمين":"User Management"} sub={isAr?"إدارة مستخدمي الإدارة والصلاحيات والجلسات":"Manage admin users, roles, permissions & sessions"}
-        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",phone:"",password:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
+        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
 
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:C.cardShadow}}>{toast}</div>}
 
@@ -5474,8 +5649,6 @@ const UserManagement = () => {
             <div style={{flex:1}}><Inp label="الاسم الكامل (عربي)" value={newUser.nameAr} onChange={v=>setNewUser(p=>({...p,nameAr:v}))} placeholder="مثال: نورة الشمسي" /></div>
           </div>
           <Inp label={isAr?"البريد الإلكتروني":"Email"} value={newUser.email} onChange={v=>setNewUser(p=>({...p,email:v}))} placeholder="user@tanaqul.sa" />
-          <Inp label={isAr?"رقم الجوال":"Phone Number"} value={newUser.phone} onChange={v=>setNewUser(p=>({...p,phone:v.replace(/[^0-9+]/g,"")}))} placeholder="+966 5XXXXXXXX" />
-          <Inp label={isAr?"كلمة المرور":"Password"} value={newUser.password} onChange={v=>setNewUser(p=>({...p,password:v}))} placeholder="Min 8 characters" type="password" />
           <Sel label={isAr?"الدور":"Role"} value={newUser.role} onChange={v=>setNewUser(p=>({...p,role:v}))} options={allRoles.map(r=>({value:r.id,label:isAr?r.labelAr:r.label}))} />
           <div style={{background:C.bg,borderRadius:10,padding:"12px 14px"}}>
             <p style={{fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:6}}>{isAr?"الصلاحيات":"Permissions"}</p>
@@ -5486,38 +5659,11 @@ const UserManagement = () => {
               {(allRolePerms[newUser.role]||[]).length===0&&<span style={{fontSize:13,color:C.textMuted,fontStyle:"italic"}}>{isAr?"اختر الدور أولاً":"Select role first"}</span>}
             </div>
           </div>
-          <Btn variant="gold" onClick={async()=>{
-            if(!newUser.name||!newUser.nameAr||!newUser.email||!newUser.phone||!newUser.password){showToast(isAr?"⚠️ أكمل جميع الحقول":"⚠️ Fill all fields");return;}
-            if(newUser.password.length<8){showToast(isAr?"⚠️ كلمة المرور 8 أحرف على الأقل":"⚠️ Password must be at least 8 characters");return;}
-            const phoneNum = newUser.phone.replace(/\s/g,"").replace(/^0/,"966").replace(/^\+/,"");
-            if(!/^966\d{9}$/.test(phoneNum)){showToast(isAr?"⚠️ رقم الجوال غير صحيح":"⚠️ Invalid phone number");return;}
-            try {
-              const resp = await apiFetch("/admin/users", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name_en:newUser.name, name_ar:newUser.nameAr, email:newUser.email, phone:phoneNum, password:newUser.password, role:newUser.role})});
-              if(resp.ok){
-                const data = await resp.json();
-                const id = data.display_id || data.id || "USR-"+String(Date.now()).slice(-3);
-                setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,phone:phoneNum,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
-                // ── Send SMS via Msegat ──
-                const mUser = localStorage.getItem("tanaqul_msegat_user")||"";
-                const mKey = localStorage.getItem("tanaqul_msegat_key")||"";
-                const mSender = localStorage.getItem("tanaqul_msegat_sender")||"Tanaqul";
-                if(mUser && mKey){
-                  const roleName = allRoles.find(r=>r.id===newUser.role);
-                  const roleLabel = roleName?(isAr?roleName.labelAr:roleName.label):newUser.role;
-                  const smsMsg = isAr
-                    ? `تم إنشاء حسابك في تناقل\nالمستخدم: ${newUser.email}\nكلمة المرور: ${newUser.password}\nالدور: ${roleLabel}\nالرابط: tanaqul-dashboard.vercel.app\nغيّر كلمة المرور بعد أول تسجيل دخول`
-                    : `Your Tanaqul account has been created\nUser: ${newUser.email}\nPassword: ${newUser.password}\nRole: ${roleLabel}\nURL: tanaqul-dashboard.vercel.app\nChange your password after first login`;
-                  try {
-                    const smsBody = "userName="+encodeURIComponent(mUser)+"&apiKey="+encodeURIComponent(mKey)+"&numbers="+phoneNum+"&userSender="+encodeURIComponent(mSender)+"&msg="+encodeURIComponent(smsMsg)+"&By=API&msgEncoding=UTF8";
-                    await fetch("https://www.msegat.com/gw/sendsms.php", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:smsBody});
-                  } catch(_){}
-                }
-                setModal(null);showToast(isAr?"✅ تم إضافة المستخدم وإرسال رسالة SMS":"✅ User created & SMS sent");
-              } else {
-                const err = await resp.json().catch(()=>({}));
-                showToast("❌ "+(err.detail||"Failed to create user"));
-              }
-            } catch(e){ showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error"); }
+          <Btn variant="gold" onClick={()=>{
+            if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
+            const id="USR-"+String(Date.now()).slice(-3);
+            setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
+            setModal(null);showToast(isAr?"✅ تم إضافة المستخدم — كلمة مرور مؤقتة أُرسلت للبريد":"✅ User added — temporary password sent to email");
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
         </div>
       </Modal>}
@@ -5711,21 +5857,31 @@ const AccountProfile = () => {
   const { isAr, t } = useLang();
   const [tab, setTab] = useState("INFO");
   const [profile, setProfile] = useState({
-    name:"", nameAr:"",
-    email:"", phone:"",
-    phoneVerified:false,
-    recoveryPhone:"", recoveryPhoneVerified:false,
-    recoveryEmail:"",
-    role:"admin", roleAr:"",
-    joined:"", lastLogin:"",
+    name:"Abdulaziz Al-Rashid", nameAr:"عبدالعزيز الراشد",
+    email:"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
+    phoneVerified:true,
+    recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
+    recoveryEmail:"abdulaziz.recovery@gmail.com",
+    role:"Super Admin", roleAr:"مسؤول أعلى",
+    joined:"2025-09-01", lastLogin:"2026-03-02 09:14",
     twoFA:true, lang:"ar",
   });
   const [pwForm, setPwForm] = useState({current:"",newPw:"",confirm:""});
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState({show:false,field:null,code:"",sent:false,verified:false,timer:0});
-  const [sessions] = useState([]);
-  const [activityLog] = useState([]);
+  const [sessions] = useState([
+    {id:"S1",device:"Chrome — Windows 11",ip:"196.203.x.x",location:isAr?"الرياض":"Riyadh",time:"2026-03-02 09:14",current:true},
+    {id:"S2",device:"Safari — iPhone 15",ip:"196.203.x.x",location:isAr?"الرياض":"Riyadh",time:"2026-03-01 22:30",current:false},
+  ]);
+  const [activityLog] = useState([
+    {date:"2026-03-02 09:14",action:isAr?"تسجيل دخول":"Login",detail:"Chrome — Riyadh"},
+    {date:"2026-03-01 16:45",action:isAr?"تغيير الإعدادات":"Settings changed",detail:isAr?"تحديث رسوم العمولة":"Updated commission rates"},
+    {date:"2026-03-01 14:20",action:isAr?"موافقة على سحب":"Withdrawal approved",detail:"WR-003 — SAR 25,000"},
+    {date:"2026-03-01 10:00",action:isAr?"تسجيل دخول":"Login",detail:"Chrome — Riyadh"},
+    {date:"2026-02-28 15:30",action:isAr?"تقديم بلاغ SAR":"SAR filed",detail:"SAR-24819374 — Mohammed Al-Otaibi"},
+    {date:"2026-02-28 09:00",action:isAr?"تسجيل دخول":"Login",detail:"Safari — iPhone"},
+  ]);
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
   const showSaved = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
 
@@ -5742,9 +5898,14 @@ const AccountProfile = () => {
     showToast(isAr?"📱 تم إرسال رمز التحقق":"📱 OTP sent to phone");
   };
   const verifyOtp = () => {
-    // Live mode — phone OTP verification via API (not yet implemented)
-    showToast(isAr?"⚠️ التحقق من الهاتف غير متاح حالياً":"⚠️ Phone verification not yet available");
-    setPhoneOtp(p=>({...p,show:false}));
+    if(phoneOtp.code==="847291"){
+      if(phoneOtp.field==="phone") setProfile(p=>({...p,phoneVerified:true}));
+      else setProfile(p=>({...p,recoveryPhoneVerified:true}));
+      setPhoneOtp(p=>({...p,show:false,verified:true}));
+      showToast(isAr?"✅ تم التحقق من الرقم":"✅ Phone verified");
+    } else {
+      showToast(isAr?"❌ رمز خاطئ":"❌ Incorrect code");
+    }
   };
 
   return (
@@ -5835,7 +5996,7 @@ const AccountProfile = () => {
               :<button onClick={()=>{setPhoneOtp(p=>({...p,timer:60}));showToast(isAr?"📱 تم إعادة الإرسال":"📱 OTP resent");}} style={{color:C.gold,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال الرمز":"Resend Code"}</button>
             }
           </p>
-          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"📱 أدخل رمز التحقق المرسل":"📱 Enter the verification code sent"}</p>
+          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
           <Btn variant="gold" onClick={verifyOtp} style={{width:"100%"}}>{isAr?"تحقق":"Verify"}</Btn>
         </div>
       </Modal>}
@@ -5942,7 +6103,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       });
     });
     // Search transactions
-    ([]).forEach(tx => { // Mock removed
+    (MOCK.transactions||[]).forEach(tx => {
       if(results.length >= MAX) return;
       const haystack = `${tx.id} ${tx.buyerNationalId} ${tx.sellerNationalId} ${tx.metal} ${tx.type} ${tx.method||""} ${tx.total}`.toLowerCase();
       if(haystack.includes(q)) results.push({
@@ -6100,7 +6261,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
     color:"#6B9080"});
 
   // Transactions
-  ([]).forEach(tx => { // Mock removed
+  (MOCK.transactions||[]).forEach(tx => {
     if(tx.buyerNationalId===nid) events.push({date:tx.date, type:"transaction", icon:tx.type==="BUY"?"🟢":"💰",
       title:`${isAr?"شراء":"Buy"} ${tx.metal} — ${tx.amount}`,
       detail:`SAR ${tx.total} · ${tx.method||"—"} · ${tx.status}`,
@@ -6275,7 +6436,44 @@ const COMM_TEMPLATES = [
     vars:["investor"], priority:"normal"},
 ];
 
-const MOCK_MESSAGES = [];
+const MOCK_MESSAGES = [
+  {id:"MSG-001",to:"Mohammed Al-Otaibi",toAr:"محمد العتيبي",toNid:"1012345678",channel:"sms",subject:"KYC Reminder",subjectAr:"تذكير بالهوية",
+    body:"Dear Mohammed, your KYC verification expires on 2027-11-01. Please renew your identity documents.",
+    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-02 09:30",deliveredAt:"2026-03-02 09:31",readAt:"2026-03-02 10:15",template:"TPL-001"},
+  {id:"MSG-002",to:"Sara Al-Qahtani",toAr:"سارة القحطاني",toNid:"1098765432",channel:"email",subject:"Withdrawal Processed",subjectAr:"تم معالجة السحب",
+    body:"Dear Sara, your withdrawal request of SAR 5,096 has been processed to ANB — ****3310.",
+    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-01 16:00",deliveredAt:"2026-03-01 16:02",readAt:null,template:"TPL-003"},
+  {id:"MSG-003",to:"Ahmed Saad",toAr:"أحمد سعد",toNid:"1078901234",channel:"sms",subject:"Appointment Confirmation",subjectAr:"تأكيد الموعد",
+    body:"Your DEPOSIT appointment for Silver (500g) at Jeddah Vault 1 is confirmed for 2026-03-03 14:00.",
+    status:"sent",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-01 14:00",deliveredAt:null,readAt:null,template:"TPL-002"},
+  {id:"MSG-004",to:"Nora Al-Shehri",toAr:"نورة الشهري",toNid:"1056789012",channel:"sms",subject:"No-Show Warning",subjectAr:"تحذير عدم الحضور",
+    body:"Nora, you have 2 no-shows. 3+ no-shows may result in appointment restrictions.",
+    status:"delivered",priority:"urgent",sentBy:"compliance@tanaqul.sa",sentAt:"2026-02-28 11:00",deliveredAt:"2026-02-28 11:01",readAt:"2026-02-28 12:30",template:"TPL-007"},
+  {id:"MSG-005",to:"Khalid Al-Ghamdi",toAr:"خالد الغامدي",toNid:"1023456789",channel:"push",subject:"Price Alert — Gold",subjectAr:"تنبيه سعر — ذهب",
+    body:"Gold price is now SAR 839/g — up 0.6% from yesterday. Trade now on Tanaqul.",
+    status:"read",priority:"normal",sentBy:"system",sentAt:"2026-03-02 07:00",deliveredAt:"2026-03-02 07:00",readAt:"2026-03-02 07:15",template:"TPL-005"},
+  {id:"MSG-006",to:"Bader Al-Shimmari",toAr:"بدر الشمري",toNid:"1023450987",channel:"email",subject:"Welcome to Tanaqul",subjectAr:"مرحباً بك في تناقل",
+    body:"Welcome to Tanaqul, Bader! Your account is active. Vault key: VK-MB7V4.",
+    status:"delivered",priority:"normal",sentBy:"system",sentAt:"2026-03-01 10:00",deliveredAt:"2026-03-01 10:02",readAt:"2026-03-01 10:30",template:"TPL-006"},
+  {id:"MSG-007",to:"Omar Al-Zahrani",toAr:"عمر الزهراني",toNid:"1089012345",channel:"email",subject:"AML Review Notice",subjectAr:"إشعار مراجعة AML",
+    body:"Dear Omar, your account is under routine AML review as required by SAMA regulations.",
+    status:"sent",priority:"normal",sentBy:"compliance@tanaqul.sa",sentAt:"2026-03-02 08:00",deliveredAt:null,readAt:null,template:"TPL-008"},
+  {id:"MSG-008",to:"Fatima Hassan",toAr:"فاطمة حسن",toNid:"1090123456",channel:"sms",subject:"Account Suspended",subjectAr:"تعليق الحساب",
+    body:"Dear Fatima, your Tanaqul account has been temporarily suspended pending review.",
+    status:"failed",priority:"urgent",sentBy:"admin@tanaqul.sa",sentAt:"2026-02-27 09:00",deliveredAt:null,readAt:null,template:"TPL-004",failReason:"Invalid phone number"},
+  // Broadcasts
+  {id:"MSG-B01",to:"All Active Investors (8)",toAr:"جميع المستثمرين النشطين (8)",toNid:"BROADCAST",channel:"push",subject:"Market Hours Update",subjectAr:"تحديث ساعات السوق",
+    body:"Trading hours extended to 4 PM starting March 5. More time to trade gold, silver & platinum on Tanaqul.",
+    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-02-26 12:00",deliveredAt:"2026-02-26 12:05",readAt:null,template:null,isBroadcast:true,recipientCount:8},
+  // Scheduled
+  {id:"MSG-S01",to:"Layla Al-Dossari",toAr:"ليلى الدوسري",toNid:"1067890123",channel:"email",subject:"Portfolio Review",subjectAr:"مراجعة المحفظة",
+    body:"Dear Layla, your quarterly portfolio review is available. Log in to view your holdings summary.",
+    status:"scheduled",priority:"normal",sentBy:"admin@tanaqul.sa",scheduledFor:"2026-03-05 09:00",template:null},
+  // Draft
+  {id:"MSG-D01",to:"Reem Al-Mutairi",toAr:"ريم المطيري",toNid:"1034567890",channel:"sms",subject:"Promotion",subjectAr:"عرض ترويجي",
+    body:"Dear Reem, enjoy 0% commission on your next 3 trades...",
+    status:"draft",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:null,template:null},
+];
 
 const CommCenter = () => {
   const { t, isAr } = useLang();
@@ -7652,10 +7850,10 @@ const NotificationSettings = () => {
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
 
-  // API config state — Msegat SMS
-  const [smsUser, setSmsUser] = useState(localStorage.getItem("tanaqul_msegat_user")||"");
-  const [smsKey, setSmsKey] = useState(localStorage.getItem("tanaqul_msegat_key")||"");
-  const [smsSenderId, setSmsSenderId] = useState(localStorage.getItem("tanaqul_msegat_sender")||"Tanaqul");
+  // API config state
+  const [smsKey, setSmsKey] = useState("sk_sms_•••••••••••••");
+  const [smsEndpoint, setSmsEndpoint] = useState("https://api.unifonic.com/v2/messages");
+  const [smsSenderId, setSmsSenderId] = useState("Tanaqul");
   const [fcmKey, setFcmKey] = useState("AAAA•••••••••••:APA91•••••••••");
   const [emailProvider, setEmailProvider] = useState("ses");
   const [emailFrom, setEmailFrom] = useState("noreply@tanaqul.sa");
@@ -7722,10 +7920,10 @@ const NotificationSettings = () => {
       <G title={isAr?"قنوات الإرسال":"Delivery Channels"}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>SMS — Msegat</span></div>
-            <Inp label={isAr?"اسم المستخدم":"Username"} value={smsUser} onChange={v=>{setSmsUser(v);localStorage.setItem("tanaqul_msegat_user",v);}} placeholder="Msegat username" />
-            <Inp label={isAr?"مفتاح API":"API Key"} value={smsKey} onChange={v=>{setSmsKey(v);localStorage.setItem("tanaqul_msegat_key",v);}} type="password" placeholder="Your Msegat API key" />
-            <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={v=>{setSmsSenderId(v);localStorage.setItem("tanaqul_msegat_sender",v);}} placeholder="e.g. Tanaqul" />
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>SMS — Unifonic</span></div>
+            <Inp label={isAr?"مفتاح API":"API Key"} value={smsKey} onChange={setSmsKey} type="password" />
+            <Inp label={isAr?"نقطة الاتصال":"Endpoint"} value={smsEndpoint} onChange={setSmsEndpoint} />
+            <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={setSmsSenderId} />
           </div>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>🔔</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"إشعارات فورية — FCM":"Push — Firebase FCM"}</span></div>
@@ -8534,11 +8732,11 @@ function LoginPage({ onLogin }) {
                     {recoveryTimer>0?<>{isAr?"إعادة الإرسال بعد":"Resend in"} <b>{recoveryTimer}s</b></>:
                     <button onClick={()=>setRecoveryTimer(60)} style={{color:"#C4956A",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال":"Resend"}</button>}
                   </p>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"📱 أدخل رمز التحقق المرسل":"📱 Enter the verification code sent"}</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginBottom:8,textAlign:"center"}}>{error}</p>}
                   <button onClick={()=>{
-                    // Recovery OTP — not implemented in live mode
-                    setError(isAr?"التحقق من الاسترداد غير متاح حالياً":"Recovery verification not yet available");setRecoveryOtp("");
+                    if(recoveryOtp==="847291"){onLogin();}
+                    else{setError(isAr?"رمز خاطئ":"Invalid code");setRecoveryOtp("");}
                   }} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg, #C4956A, #2D2418)",color:"#fff",border:"none",fontSize:17,fontWeight:700,cursor:"pointer"}}>
                     {isAr?"تحقق وادخل":"Verify & Login"}
                   </button>
@@ -8693,7 +8891,7 @@ const HeaderPills = () => {
       <div style={{display:"flex",alignItems:"center",gap:0,background:C.goldLight,borderRadius:7,border:`1px solid ${C.gold}44`,overflow:"hidden",direction:"ltr"}}>
         <div style={{padding:"4px 9px",display:"flex",alignItems:"center",gap:4}}>
           {Icons.block(11,C.goldDim)}
-          <span style={{fontSize:11,color:C.goldDim,fontWeight:700}}>#{0}</span>
+          <span style={{fontSize:11,color:C.goldDim,fontWeight:700}}>#{(appBlockStats?.latest_block_number || MOCK.stats.blockNumber)}</span>
         </div>
         <div style={{width:1,height:18,background:C.gold+"44"}}/>
         <div style={{padding:"4px 9px",display:"flex",alignItems:"center",gap:3}}>
@@ -8738,7 +8936,7 @@ const parseSARGlobal = v => { if(typeof v === "number") return v; return parseFl
 const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals, bars, blacklist, transactions, appointments}) => {
   const alerts = [];
   const now = new Date();
-  const allTxns = transactions || [];
+  const allTxns = transactions || MOCK.transactions || [];
 
   investors.forEach(inv => {
     const nid = inv.nationalId;
@@ -8759,7 +8957,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     const wdReqs = withdrawals.filter(w=>w.nationalId===nid||w.investor===inv.nameEn);
     const totalWithdrawn = wdReqs.filter(w=>w.status==="PROCESSED"||w.status==="APPROVED").reduce((a,w)=>a+parseSARGlobal(w.amount),0);
     const holdings = parseSARGlobal(inv.holdingsValue);
-    const noShows = (appointments||[]).filter(a=>a.nationalId===nid&&a.status==="NO_SHOW").length;
+    const noShows = (appointments||MOCK.appointments||[]).filter(a=>a.nationalId===nid&&a.status==="NO_SHOW").length;
     const daysSinceJoin = inv.joined ? (now - new Date(inv.joined))/(86400000) : 999;
 
     const push = (rule,level,title,detail,category) => alerts.push({rule,level,nid,name:inv.nameEn,title,detail,category,automatedAt:now.toISOString(),key:rule+":"+nid});
@@ -8825,7 +9023,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
 const runCMAManipulation = ({investors, orders, matches, blacklist, transactions}) => {
   const alerts = [];
   const now = new Date();
-  const allTxns = transactions || [];
+  const allTxns = transactions || MOCK.transactions || [];
   const push = (rule,level,nid,name,title,detail,article,category) =>
     alerts.push({rule,level,nid,name,title,detail,article,category,automatedAt:now.toISOString(),key:rule+":"+nid});
 
@@ -9146,8 +9344,7 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("tanaqul_token"));
-  const [page,     setPage_]     = useState(() => localStorage.getItem("tanaqul_page") || "dashboard");
-  const setPage = (p) => { localStorage.setItem("tanaqul_page", p); setPage_(p); };
+  const [page,     setPage]     = useState("dashboard");
   const [pageHint, setPageHint] = useState(null); // {tab:"WITHDRAWAL REQUESTS"} etc.
   const [open,     setOpen]     = useState(true);
   const [lang,     setLang]     = useState(() => localStorage.getItem("tanaqul_lang") || "en");
@@ -9276,7 +9473,9 @@ export default function App() {
             address: v.address || "", status: v.status || "STANDBY",
             blocks: v.blocks_validated || 0, lastBlock: v.last_block || 0,
             commission: String(v.commission_earned || 0),
-            weight: v.weight_percent || 0,
+            weight: v.weight_percent || v.weight || 0,
+            canCreate: v.can_create || false,
+            walletAddress: v.wallet_address || "",
           }));
         }},
         { path: "/blacklist", setter: setAppBlacklist, transform: (data) => {
@@ -9287,6 +9486,47 @@ export default function App() {
             nationalId: b.national_id || "", vaultKey: b.vault_key || "",
             reason: b.reason || "", bannedBy: b.banned_by || "",
             date: b.created_at || "", active: b.is_active !== false,
+          }));
+        }},
+        { path: "/orders", setter: setAppOrders, transform: (data) => {
+          const items = data.items || data.orders || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(o => ({
+            id: o.display_id || o.id, _uuid: String(o.id),
+            investorId: o.investor_display || o.investor_id || "",
+            metal: o.metal || "Gold", side: o.side || "BUY",
+            qty: String(o.quantity_grams || 0), remaining: String(o.remaining_grams || 0),
+            price: String(o.price_per_gram || 0), total: String(o.total_sar || 0),
+            status: o.status || "OPEN", date: o.created_at || "",
+          }));
+        }},
+        { path: "/matches", setter: setAppMatches, transform: (data) => {
+          const items = data.items || data.matches || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(m => ({
+            id: m.display_id || m.id, _uuid: String(m.id),
+            metal: m.metal || "Gold",
+            qty: String(m.quantity_grams || 0), price: String(m.price_per_gram || 0),
+            totalSAR: String(m.total_sar || 0), commission: String(m.commission || 0),
+            adminFee: String(m.admin_fee || 0),
+            buyerName: m.buyer_name || "", buyerNid: m.buyer_national_id || "",
+            sellerName: m.seller_name || "", sellerNid: m.seller_national_id || "",
+            filledFor: m.buyer_name || "", date: m.matched_at || "",
+            blockNumber: m.block_number || null,
+          }));
+        }},
+        { path: "/blocks", setter: setAppBlocks, transform: (data) => {
+          const items = data.items || data.blocks || data;
+          if (!Array.isArray(items)) return null;
+          return items.map(b => ({
+            number: b.number, hash: b.hash || "",
+            txCount: b.tx_count || 0, commission: String(b.commission_total || 0),
+            tanaqulShare: String(b.tanaqul_share || 0),
+            creatorShare: String(b.creator_share || 0),
+            validatorsShare: String(b.validators_share || 0),
+            validator: b.creator_name || "Tanaqul",
+            timestamp: b.created_at || "", size: b.size_bytes ? (b.size_bytes/1048576).toFixed(2)+" MB" : "0 MB",
+            quorumMet: b.quorum_met || false,
           }));
         }},
       ];
@@ -9306,6 +9546,22 @@ export default function App() {
         } catch (_) { /* endpoint not available, keep mock data */ }
       }
       if (anySuccess) setApiConnected(true);
+      // Fetch block network stats
+      try {
+        const bsResp = await apiFetch("/blocks/stats/network");
+        if (bsResp.ok) {
+          const bs = await bsResp.json();
+          setAppBlockStats(bs);
+        }
+      } catch(_){}
+      // Fetch dashboard stats
+      try {
+        const dsResp = await apiFetch("/dashboard/stats");
+        if (dsResp.ok) {
+          const ds = await dsResp.json();
+          setAppDashStats(ds);
+        }
+      } catch(_){}
     } catch (_) { /* API unavailable, keep mock data */ }
   }, []);
 
@@ -9321,11 +9577,14 @@ export default function App() {
 
   // Listen for logout events
   useEffect(() => {
-    const handleLogout = () => {localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");localStorage.removeItem("tanaqul_admin");setLoggedIn(false)};
+    const handleLogout = () => {localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");setLoggedIn(false)};
     window.addEventListener("tanaqul_logout", handleLogout);
     return () => window.removeEventListener("tanaqul_logout", handleLogout);
   }, []);
   const [appOrders,       setAppOrders]       = useState([]);
+  const [appBlocks,       setAppBlocks]       = useState([]);
+  const [appDashStats,    setAppDashStats]    = useState(null);
+  const [appBlockStats,   setAppBlockStats]   = useState(null);
   const [appMatches, setAppMatches] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [amlAlerts, setAmlAlerts] = useState([]);
@@ -9337,8 +9596,8 @@ export default function App() {
 
   // ═══ MARKET MAKER ACCOUNT STATE ═══
   const [mmAccount, setMMAccount] = useState({
-    cash: 0, gold:{g:0,avg:0}, silver:{g:0,avg:0}, platinum:{g:0,avg:0},
-    trades:[], pnl:{realized:0,unrealized:0,fees:0},
+    cash: 500000, gold:{g:1200,avg:68.5}, silver:{g:25000,avg:0.85}, platinum:{g:400,avg:32.0},
+    trades:[], pnl:{realized:12450,unrealized:3200,fees:890},
   });
   // ═══ TREASURY / RECONCILIATION STATE ═══
   const [reconState, setReconState] = useState({frozen:false,lastRecon:null,dayStatus:"pending"});
@@ -9377,7 +9636,8 @@ export default function App() {
     if(!loggedIn) return;
     // Build combined transactions list: MOCK + match-generated
     const allTransactions = [
-            ...appMatches.map(m=>({
+      ...(MOCK.transactions||[]),
+      ...appMatches.map(m=>({
         id:m.id, buyerNationalId:m.buyerNid||"", sellerNationalId:m.sellerNid||"",
         buyerName:m.filledFor, sellerName:m.filledFor,
         total:String(m.totalSAR), metal:m.metal, status:"COMPLETED", date:m.date,
@@ -9432,6 +9692,7 @@ export default function App() {
     amlAlerts, cmaAlerts, amlDismissed, dismissAmlAlert, amlLastRun,
     pageHint, setPageHint,
     mmAccount, setMMAccount, reconState, setReconState,
+    appBlocks, appBlockStats, appDashStats,
   };
 
   if (!loggedIn) return (
@@ -9520,7 +9781,7 @@ export default function App() {
                 A
               </div>
               <div style={{flex:1,textAlign:"start",overflow:"hidden"}}>
-                <p style={{fontSize:13,fontWeight:700,color:"#F5F0E8",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{(() => { try { const a=JSON.parse(localStorage.getItem("tanaqul_admin")||"{}"); return isAr?(a.name_ar||"مسؤول"):(a.name_en||a.name||"Admin"); } catch(e) { return "Admin"; } })()}</p>
+                <p style={{fontSize:13,fontWeight:700,color:"#F5F0E8",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isAr?"عبدالعزيز":"Abdulaziz"}</p>
                 <p style={{fontSize:11,color:"#A89880",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Super Admin</p>
               </div>
               <span style={{fontSize:11,color:"#A89880",flexShrink:0}}>›</span>
@@ -9563,7 +9824,7 @@ export default function App() {
             </div>
 
             {/* ── Logout — subtle, at the very bottom ── */}
-            <button onClick={()=>{localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");localStorage.removeItem("tanaqul_admin");setLoggedIn(false)}}
+            <button onClick={()=>{localStorage.removeItem("tanaqul_token");localStorage.removeItem("tanaqul_refresh");setLoggedIn(false)}}
               style={{width:"100%",height:open?34:42,display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                 borderRadius:9,border:"none",cursor:"pointer",
                 background:"rgba(200,92,62,0.08)",color:"#E8826A",fontSize:12,fontWeight:600,transition:"all 0.15s",
