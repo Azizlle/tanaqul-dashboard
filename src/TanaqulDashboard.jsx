@@ -8510,13 +8510,11 @@ function LoginPage({ onLogin }) {
     if(recoveryTimer>0){ const iv=setInterval(()=>setRecoveryTimer(t=>t-1),1000); return ()=>clearInterval(iv); }
   },[recoveryTimer]);
 
-  useEffect(() => {
-    if (step === 3) {
-      // ⚠️ SECURITY: This sends the TOTP secret to quickchart.io (third party).
-      // Production: Generate QR code client-side using a library like 'qrcode' npm package.
-      const url = `otpauth://totp/Tanaqul%3AAziz?secret=${TOTP_SECRET}&issuer=Tanaqul&digits=6&period=30`;
-      setQrUrl(`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=200&margin=2`);
-    }
+useEffect(() => {
+      if (step === 3 && !qrUrl) {
+          const url = `otpauth://totp/Tanaqul%3AAziz?secret=${TOTP_SECRET}&issuer=Tanaqul&digits=6&period=30`;
+          setQrUrl(`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=200&margin=2`);
+      }
   }, [step]);
 
   const handleCredentials = async (e) => {
@@ -8536,12 +8534,13 @@ function LoginPage({ onLogin }) {
         setStep(2);
         return;
       }
-      if (result.status === 206 && result.detail === "2FA_SETUP_REQUIRED") {
-        setQrUrl(result.qr_code || "");
-        setLoading(false);
-        setStep(3);
-        return;
-      }
+     if (result.status === 206 && result.detail === "2FA_SETUP_REQUIRED") {
+          setQrUrl(result.qr_code || "");
+          if (result.secret) window._apiSecret = result.secret;
+          setLoading(false);
+          setStep(3);
+          return;
+        }
       setError(result.detail || (isAr ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password."));
     } catch (_) {
       setError(isAr ? "خطأ في الاتصال" : "Connection error");
@@ -8805,7 +8804,7 @@ function LoginPage({ onLogin }) {
               </div>
               <div style={{background:"rgba(255,255,255,0.04)", borderRadius:10, padding:"10px 14px", marginBottom:18, textAlign:"center"}}>
                 <p style={{fontSize:12, color:C.silverText, marginBottom:4}}>{isAr?"أو أدخل المفتاح يدوياً:":"Or enter key manually:"}</p>
-                <p style={{fontFamily:"monospace", fontSize:16, color:C.gold, letterSpacing:"0.1em"}}>{TOTP_SECRET}</p>
+                <p style={{fontFamily:"monospace", fontSize:16, color:C.gold, letterSpacing:"0.1em"}}>{window._apiSecret || TOTP_SECRET}</p>
               </div>
               <div style={{marginBottom:18}}>
                 <input type="text" value={code}
