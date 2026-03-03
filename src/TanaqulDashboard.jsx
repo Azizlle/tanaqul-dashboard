@@ -33,17 +33,21 @@ const apiFetch = async (path, options = {}) => {
 };
 
 // Helper: API login
-const apiLogin = async (email, password) => {
+const apiLogin = async (email, password, totp_code) => {
+  const body = { email, password };
+  if (totp_code) body.totp_code = totp_code;
   const resp = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
-  if (!resp.ok) return null;
   const data = await resp.json();
-  localStorage.setItem("tanaqul_token", data.access_token);
-  localStorage.setItem("tanaqul_refresh", data.refresh_token);
-  return data;
+  if (resp.ok) {
+    localStorage.setItem("tanaqul_token", data.access_token);
+    localStorage.setItem("tanaqul_refresh", data.refresh_token);
+    return { ok: true, data };
+  }
+  return { ok: false, status: resp.status, detail: data.detail };
 };
 
 // ─── Language Context ─────────────────────────────────────────────────────────
@@ -8517,38 +8521,40 @@ function LoginPage({ onLogin }) {
     setError("");
     setLoading(true);
 
-    // Try API login first
     try {
-      const apiResult = await apiLogin(email.trim(), pass.trim());
-      if (apiResult) {
-        // API login succeeded — skip 2FA for now, go straight in
+      const result = await apiLogin(email.trim(), pass.trim());
+      if (result.ok) {
         setLoading(false);
         onLogin();
         return;
       }
-    } catch (_) { /* API unavailable, fall through to local auth */ }
-
-    // Fallback: local credential check
-    if (email.trim() !== ADMIN_EMAIL.trim() || pass.trim() !== ADMIN_PASS.trim()) {
-      setError(isAr ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password.");
-      setLoading(false);
-      return;
+      if (result.status === 400 && result.detail === "2FA code required") {
+        setLoading(false);
+        setStep(2);
+        return;
+      }
+      setError(result.detail || (isAr ? "بريد إلكتروني أو كلمة مرور غير صحيحة" : "Invalid email or password."));
+    } catch (_) {
+      setError(isAr ? "خطأ في الاتصال" : "Connection error");
     }
     setLoading(false);
-    setStep(localStorage.getItem("tanaqul_2fa_setup") ? 2 : 3);
   };
 
   const handleVerify = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const expected = await generateTOTP(TOTP_SECRET);
-    if (code === expected) {
-      if (step === 3) localStorage.setItem("tanaqul_2fa_setup", "true");
-      onLogin();
-    } else {
-      setError(isAr ? "رمز غير صحيح، حاول مجدداً" : "Invalid code. Please try again.");
-      setCode("");
+
+    try {
+      const result = await apiLogin(email.trim(), pass.trim(), code.trim());
+      if (result.ok) {
+        onLogin();
+      } else {
+        setError(result.detail || (isAr ? "رمز غير صحيح" : "Invalid code. Please try again."));
+        setCode("");
+      }
+    } catch (_) {
+      setError(isAr ? "خطأ في الاتصال" : "Connection error");
     }
     setLoading(false);
   };
