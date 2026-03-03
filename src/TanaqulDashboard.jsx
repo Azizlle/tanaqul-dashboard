@@ -380,17 +380,18 @@ function SAR({ size = "1em", color = "currentColor", style = {} }) {
     <>
       <style>{`
         @font-face {
-          font-family: 'SaudiRiyal';
-          src: url('https://cdn.jsdelivr.net/npm/@abdulrysr/saudi-riyal-new-symbol-font/font-files/SaudiRiyal-Regular.woff2') format('woff2'),
-               url('https://cdn.jsdelivr.net/npm/@abdulrysr/saudi-riyal-new-symbol-font/font-files/SaudiRiyal-Regular.woff') format('woff');
-          font-weight: normal;
+          font-family: 'saudi_riyal_bold';
+          src: url('https://cdn.jsdelivr.net/npm/@emran-alhaddad/saudi-riyal-font/fonts/bold/saudi_riyal.woff2') format('woff2'),
+               url('https://cdn.jsdelivr.net/npm/@emran-alhaddad/saudi-riyal-font/fonts/bold/saudi_riyal.woff') format('woff'),
+               url('https://cdn.jsdelivr.net/npm/@emran-alhaddad/saudi-riyal-font/fonts/bold/saudi_riyal.ttf') format('truetype');
+          font-weight: bold;
           font-style: normal;
           font-display: swap;
         }
       `}</style>
       <span
         style={{
-          fontFamily: "'SaudiRiyal', sans-serif",
+          fontFamily: "'saudi_riyal_bold', sans-serif",
           fontSize: size,
           color: color,
           lineHeight: 1,
@@ -400,7 +401,7 @@ function SAR({ size = "1em", color = "currentColor", style = {} }) {
           fontWeight: "bold",
           ...style
         }}
-      >{"\u00ea"}</span>
+      >{String.fromCharCode(0xe900)}</span>
     </>
   );
 }
@@ -450,7 +451,7 @@ const MOCK = {
     pendingWithdrawals:"124,500", totalWalletBalance:"890,200",
     activeOrders:14, pendingAppointments:7, totalInvestors:312,
     goldGrams:"4,820", silverGrams:"18,400", platinumGrams:"960",
-    tokensMinted:24180, tokensCirculating:23840, tokensPendingBurn:340,
+    tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
     lastBlock:"0x3f9a...c821", blockNumber:1847,
   },
   investors: [
@@ -535,8 +536,8 @@ const MOCK = {
     { number:1845, hash:"0x1d7c...e009", txCount:18, commission:"5,120", tanaqulShare:"3,072", creatorShare:"1,024", validatorsShare:"1,024", validator:"Tanaqul Node 1", timestamp:"2026-02-26 23:59", size:"0.94 MB" },
   ],
   validators: [
-    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:1847, lastBlock:1847, commissionEarned:"84,200", weight:"60%", joined:"2025-09-01" },
-    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:1203, lastBlock:1847, commissionEarned:"52,600", weight:"40%", joined:"2025-11-15" },
+    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:1847, lastBlock:0, commissionEarned:"84,200", weight:"60%", joined:"2025-09-01" },
+    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:1203, lastBlock:0, commissionEarned:"52,600", weight:"40%", joined:"2025-11-15" },
     { id:"VAL-003", name:"Partner Node — Elm", address:"0xCCC3...0003", status:"STANDBY", blocksValidated:380, lastBlock:1800, commissionEarned:"12,400", weight:"0%", joined:"2026-01-10" },
   ],
 };
@@ -1573,7 +1574,7 @@ const Investors = () => {
 const TransactionLog = () => {
   const { t, isAr } = useLang();
   const { matches } = useAppData();
-  const [txns, setTxns] = useState(MOCK.transactions);
+  const [txns, setTxns] = useState([]);
   const liveTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,buyerName:m.filledFor,sellerName:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
   const allTxns = [...liveTxRows, ...txns];
   const [typeF, setTypeF]     = useState("ALL");
@@ -1756,7 +1757,7 @@ const Vault = () => {
         <StatCard icon={Icons.vault(22,C.navy)} title={isAr?"إجمالي السبائك":"Total Bars"} value={bars.length} />
         <StatCard icon={Icons.block(22,C.teal)} title={t("Linked")} value={bars.filter(b=>b.status==="LINKED").length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Free")} value={bars.filter(b=>b.status==="FREE").length} />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="24,180" gold />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="0" gold />
         <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value="8,340" />
         <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value="15,840" />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Integrity")} value={bars.filter(b=>b.status==="DAMAGED").length===0&&bars.filter(b=>b.status==="LEFT").length===bars.filter(b=>b.leftOn).length&&bars.filter(b=>b.leftOn&&b.status!=="LEFT").length===0?"1:1 ✓":"⚠ Check"} gold />
@@ -2443,7 +2444,7 @@ const Reports = () => {
     vault: [
       { title:"Bars by Metal", sub:"Physical inventory", value:"6 bars", prev:"5 bars", change:"+20%", up:true, chart:[1,2,1,1,1,2,1], color:C.gold,
         breakdown:[{label:"Gold",val:"3",pct:50},{label:"Silver",val:"2",pct:33},{label:"Platinum",val:"1",pct:17}] },
-      { title:"Linked vs Floating Tokens", sub:"Circulation status", value:"24,180 tokens", prev:"22,000", change:"+9.9%", up:true, chart:[20000,21000,20500,22000,23000,23500,24180], color:C.navy,
+      { title:"Linked vs Floating Tokens", sub:"Circulation status", value:"24,180 tokens", prev:"0", change:"+9.9%", up:true, chart:[0], color:C.navy,
         breakdown:[{label:"Linked",val:"15,840",pct:65},{label:"Floating",val:"8,340",pct:35}] },
       { title:"Tokens Minted/Burned", sub:"This month", value:"2,180 minted", prev:"1,900", change:"+14.7%", up:true, chart:[150,200,180,220,190,250,220], color:C.greenSolid,
         breakdown:[{label:"Minted",val:"2,180",pct:86},{label:"Burned",val:"340",pct:14}] },
@@ -2577,7 +2578,7 @@ const Reports = () => {
         <StatCard icon={Icons.commission(22,C.gold)} title={isAr?"العمولة (الكل)":"Commission (All)"} value={<SARAmount amount={fmtK(commAll)}/>} gold />
         <StatCard icon={Icons.settings(22,C.textMuted)} title={isAr?"رسوم الإدارة (الكل)":"Admin Fees (All)"} value={<SARAmount amount={fmtK(adminAll)}/>} />
         <StatCard icon={Icons.investors(22,C.navy)} title={isAr?"إجمالي المستثمرين":"Total Investors"} value={investors.length} />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="24,180" />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="0" />
       </div>
       {[
         {title:isAr?"التقارير المالية":"Financial Reports", key:"financial"},
@@ -2786,7 +2787,7 @@ const Blocks = () => {
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:18}}>
         <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Latest Block"} value={"#"+MOCK.stats.blockNumber} gold />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value="24,180" />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value="0" />
         <StatCard icon={Icons.fire(22,"#C85C3E")} title={isAr?"الرموز المحروقة":"Tokens Burned"} value="340" />
         <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"العمولات الموزعة":"Commission Distributed"} value={<SARAmount amount={matches.reduce((a,m)=>a+m.commission,0).toLocaleString("en-SA",{maximumFractionDigits:0})}/>} gold />
         <StatCard icon={Icons.investors(22,C.navy)} title={isAr?"المصادقون النشطون":"Active Validators"} value="1" />
@@ -9368,13 +9369,13 @@ export default function App() {
   }, []);
 
   // ── Lifted shared state (persists across navigation) ──────────────────────
-  const [appInvestors,    setAppInvestors]    = useState(MOCK.investors);
-  const [appAppointments, setAppAppointments] = useState(MOCK.appointments);
-  const [appBars,         setAppBars]         = useState(MOCK.bars);
-  const [appWithdrawals,  setAppWithdrawals]  = useState(MOCK.withdrawalRequests);
-  const [appWalletMoves,  setAppWalletMoves]  = useState(MOCK.walletMovements);
-  const [appValidators,   setAppValidators]   = useState(MOCK.validators);
-  const [appBlacklist,    setAppBlacklist]    = useState(MOCK.blacklist);
+  const [appInvestors,    setAppInvestors]    = useState([]);
+  const [appAppointments, setAppAppointments] = useState([]);
+  const [appBars,         setAppBars]         = useState([]);
+  const [appWithdrawals,  setAppWithdrawals]  = useState([]);
+  const [appWalletMoves,  setAppWalletMoves]  = useState([]);
+  const [appValidators,   setAppValidators]   = useState([]);
+  const [appBlacklist,    setAppBlacklist]    = useState([]);
 
   // ═══ LIVE API DATA FETCH — replaces MOCK data when backend is available ═══
   const [apiConnected, setApiConnected] = useState(false);
@@ -9505,18 +9506,8 @@ export default function App() {
     window.addEventListener("tanaqul_logout", handleLogout);
     return () => window.removeEventListener("tanaqul_logout", handleLogout);
   }, []);
-  const [appOrders,       setAppOrders]       = useState([
-    ...INITIAL_OB_ORDERS,
-    {id:"ORD-005",investor:"Fahad Al-Dosari",investorAr:"فهد الدوسري",nationalId:"1045678901",side:"BUY",metal:"Silver",qty:300,filled:300,price:10.42,payment:"Wallet",expiry:"GTC",expiryDate:"",status:"FILLED",placed:"2026-03-01 07:30"},
-    {id:"ORD-006",investor:"Lina Al-Harbi",investorAr:"لينا الحربي",nationalId:"1034567890",side:"BUY",metal:"Gold",qty:100,filled:80,price:839.00,payment:"MADA",expiry:"GTD",expiryDate:"2026-04-03",status:"PARTIAL",placed:"2026-03-01 07:20"},
-    {id:"ORD-007",investor:"Ahmed Saad",investorAr:"أحمد سعد",nationalId:"1078901234",side:"SELL",metal:"Gold",qty:80,filled:80,price:841.50,payment:"SADAD",expiry:"GTC",expiryDate:"",status:"FILLED",placed:"2026-03-01 06:45"},
-    {id:"ORD-010",investor:"Bader Al-Shimmari",investorAr:"بدر الشمري",nationalId:"1011223344",side:"SELL",metal:"Gold",qty:60,filled:0,price:843.00,payment:"Wallet",expiry:"GTC",expiryDate:"",status:"CANCELLED",cancelReason:"Investor requested",placed:"2026-02-28 15:10"},
-  ]);
-  const [appMatches, setAppMatches] = useState([
-    {id:"MTC-001",buyOrder:"ORD-003",sellOrder:"ORD-002",metal:"Gold",   qty:20,price:840.75,totalSAR:16815,commission:336, adminFee:420,filledFor:"Khalid Al-Ghamdi",date:"2026-03-01 08:02",mode:"bid-ask"},
-    {id:"MTC-002",buyOrder:"ORD-005",sellOrder:"ORD-004",metal:"Silver", qty:300,price:10.43,totalSAR:3129, commission:63,  adminFee:0,  filledFor:"Fahad Al-Dosari",  date:"2026-03-01 07:35",mode:"bid-ask"},
-    {id:"MTC-003",buyOrder:"ORD-006",sellOrder:"ORD-007",metal:"Gold",   qty:80,price:841.00,totalSAR:67280,commission:1346,adminFee:420,filledFor:"Lina Al-Harbi",    date:"2026-03-01 06:50",mode:"bid-ask"},
-  ]);
+  const [appOrders,       setAppOrders]       = useState([]);
+  const [appMatches, setAppMatches] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [amlAlerts, setAmlAlerts] = useState([]);
   const [cmaAlerts, setCmaAlerts] = useState([]);
