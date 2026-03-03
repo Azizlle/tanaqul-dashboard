@@ -5406,7 +5406,7 @@ const UserManagement = () => {
   const [newRole, setNewRole] = useState({label:"",labelAr:"",color:C.blueSolid,perms:[]});
   const [editPerms, setEditPerms] = useState([]);
   const [editRole, setEditRole] = useState("VIEWER");
-  const [newUser, setNewUser] = useState({name:"",email:"",role:"VIEWER"});
+  const [newUser, setNewUser] = useState({name:"",nameAr:"",email:"",password:"",role:"VIEWER"});
   const [logFilter, setLogFilter] = useState("ALL");
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
@@ -5416,7 +5416,7 @@ const UserManagement = () => {
   return (
     <div>
       <SectionHeader title={isAr?"إدارة المستخدمين":"User Management"} sub={isAr?"إدارة مستخدمي الإدارة والصلاحيات والجلسات":"Manage admin users, roles, permissions & sessions"}
-        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
+        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",password:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
 
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:C.cardShadow}}>{toast}</div>}
 
@@ -5474,6 +5474,7 @@ const UserManagement = () => {
             <div style={{flex:1}}><Inp label="الاسم الكامل (عربي)" value={newUser.nameAr} onChange={v=>setNewUser(p=>({...p,nameAr:v}))} placeholder="مثال: نورة الشمسي" /></div>
           </div>
           <Inp label={isAr?"البريد الإلكتروني":"Email"} value={newUser.email} onChange={v=>setNewUser(p=>({...p,email:v}))} placeholder="user@tanaqul.sa" />
+          <Inp label={isAr?"كلمة المرور":"Password"} value={newUser.password} onChange={v=>setNewUser(p=>({...p,password:v}))} placeholder="Min 8 characters" type="password" />
           <Sel label={isAr?"الدور":"Role"} value={newUser.role} onChange={v=>setNewUser(p=>({...p,role:v}))} options={allRoles.map(r=>({value:r.id,label:isAr?r.labelAr:r.label}))} />
           <div style={{background:C.bg,borderRadius:10,padding:"12px 14px"}}>
             <p style={{fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:6}}>{isAr?"الصلاحيات":"Permissions"}</p>
@@ -5484,11 +5485,21 @@ const UserManagement = () => {
               {(allRolePerms[newUser.role]||[]).length===0&&<span style={{fontSize:13,color:C.textMuted,fontStyle:"italic"}}>{isAr?"اختر الدور أولاً":"Select role first"}</span>}
             </div>
           </div>
-          <Btn variant="gold" onClick={()=>{
-            if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
-            const id="USR-"+String(Date.now()).slice(-3);
-            setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
-            setModal(null);showToast(isAr?"✅ تم إضافة المستخدم — كلمة مرور مؤقتة أُرسلت للبريد":"✅ User added — temporary password sent to email");
+          <Btn variant="gold" onClick={async()=>{
+            if(!newUser.name||!newUser.nameAr||!newUser.email||!newUser.password){showToast(isAr?"⚠️ أكمل جميع الحقول":"⚠️ Fill all fields");return;}
+            if(newUser.password.length<8){showToast(isAr?"⚠️ كلمة المرور 8 أحرف على الأقل":"⚠️ Password must be at least 8 characters");return;}
+            try {
+              const resp = await apiFetch("/admin/users", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name_en:newUser.name, name_ar:newUser.nameAr, email:newUser.email, password:newUser.password, role:newUser.role})});
+              if(resp.ok){
+                const data = await resp.json();
+                const id = data.display_id || data.id || "USR-"+String(Date.now()).slice(-3);
+                setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
+                setModal(null);showToast(isAr?"✅ تم إضافة المستخدم":"✅ User created successfully");
+              } else {
+                const err = await resp.json().catch(()=>({}));
+                showToast("❌ "+(err.detail||"Failed to create user"));
+              }
+            } catch(e){ showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error"); }
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
         </div>
       </Modal>}
