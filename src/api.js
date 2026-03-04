@@ -232,15 +232,15 @@ const wallet = {
 
 const transactions = {
   async list(params = {}) {
-    return request("/transactions", { params });
+    return request("/public/explorer/transactions/recent", { params });
   },
 
   async get(id) {
-    return request(`/transactions/${id}`);
+    return request(`/public/explorer/tx/${id}`);
   },
 
   async stats() {
-    return request("/transactions/stats/summary");
+    return request("/public/explorer/network");
   },
 };
 
@@ -533,3 +533,4 @@ const api = {
 
 export default api;
 export { API_BASE, getToken, setTokens, clearTokens };
+
