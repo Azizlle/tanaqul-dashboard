@@ -2476,7 +2476,23 @@ const Reports = () => {
     );
   };
 
-  const ReportCard = ({ r }) => (
+  
+// ═══ CSV Export Utilities (moved above ReportCard for scope) ═══
+const generateCSV = (headers, rows) => {
+  const esc = v => `"${String(v||"").replace(/"/g,'""')}"`;
+  const lines = [headers.map(esc).join(",")];
+  rows.forEach(r => lines.push(r.map(esc).join(",")));
+  return lines.join("\n");
+};
+const downloadCSV = (filename, headers, rows) => {
+  const csv = generateCSV(headers, rows);
+  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename+".csv"; a.click();
+  URL.revokeObjectURL(url);
+};
+const ReportCard = ({ r }) => (
     <div style={{background:C.white,borderRadius:18,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.07)"}}>
       <div style={{padding:"22px 24px 14px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -7409,21 +7425,9 @@ const NotificationBell = ({notifications, unread, readSet, markRead, markAllRead
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT ENGINE — Generate CSV/PDF-ready data exports from any page
 // ═══════════════════════════════════════════════════════════════════════════════
-const generateCSV = (headers, rows) => {
-  const esc = v => `"${String(v||"").replace(/"/g,'""')}"`;
-  const lines = [headers.map(esc).join(",")];
-  rows.forEach(r => lines.push(r.map(esc).join(",")));
-  return lines.join("\n");
-};
 
-const downloadCSV = (filename, headers, rows) => {
-  const csv = generateCSV(headers, rows);
-  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename+".csv"; a.click();
-  URL.revokeObjectURL(url);
-};
+
+
 
 const ExportMenu = ({title, onCSV, onPDF, isAr}) => {
   const [open, setOpen] = useState(false);
