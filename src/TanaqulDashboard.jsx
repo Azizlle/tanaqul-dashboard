@@ -1069,7 +1069,8 @@ const PriceTicker = () => {
 
 
 // ─── Shared initial order book data (used by Dashboard widget + OrderBook) ───
-const INITIAL_OB_ORDERS = []; // SECURITY: Hardcoded orders removed
+const INITIAL_OB_ORDERS = [];
+// SECURITY: Hardcoded orders removed
 
 // ─── Mini Order Book Widget (Dashboard) ──────────────────────────────────────
 const MiniOrderBook = ({ orders, isAr }) => {
@@ -1778,7 +1779,7 @@ const Appointments = () => {
   const showApptToast=(msg)=>{setApptToast(msg);setTimeout(()=>setApptToast(""),4000);};
   // ⚠️ SECURITY: In production, OTP must be generated server-side and delivered via SMS/push.
   // This mock value exists only for prototype demonstration. Remove before deployment.
-  const MOCK_OTP = null; // SECURITY: Mock OTP disabled
+  const MOCK_OTP = null;
 
   const closeAll = (interrupted=false) => { if(interrupted&&sel&&startStep>1){setInProgress(p=>new Set([...p,sel.id]));} setSel(null); setModal(null); setStartStep(1); setOtpVal(""); setOtpError(""); setOtpSecs(300); setOtpExpired(false); setReschedDate(""); setReschedTime(""); };
 
@@ -2350,52 +2351,33 @@ const Reports = () => {
   const adminAll    = matches.reduce((a,m)=>a+(m.adminFee||0),0);
   const REPORT_DATA = {
     financial: [
-      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount={fmtK(commAll+adminAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.gold,
-        breakdown:[{label:"Commission",val:fmtK(commAll),pct:commAll+adminAll>0?Math.round(commAll/(commAll+adminAll)*100):0},{label:"Admin Fees",val:fmtK(adminAll),pct:commAll+adminAll>0?Math.round(adminAll/(commAll+adminAll)*100):0}] },
-      { title:"Trading Volume by Metal", sub:"This month", value:<SARAmount amount={fmtK(volAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.teal,
-        breakdown:[] },
-      { title:"Volume by Period", sub:"Daily avg this month", value:<SARAmount amount={fmtK(Math.round(volAll/30))}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#8B5CF6",
-        breakdown:[] },
-      { title:"Payment Methods", sub:"Orders this month", value:"0 orders", prev:"0", change:"—", up:false, chart:[0], color:"#D4943A",
-        breakdown:[] },
-      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.teal,
-        breakdown:[] },
-      { title:"Withdrawal Requests", sub:"This month", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#C85C3E",
-        breakdown:[] },
+      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount={fmtK(commAll+adminAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
+      { title:"Trading Volume by Metal", sub:"This month", value:<SARAmount amount={fmtK(volAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
+      { title:"Volume by Period", sub:"Daily avg", value:<SARAmount amount={fmtK(Math.round(volAll/30))}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#8B5CF6", breakdown:[] },
+      { title:"Payment Methods", sub:"Orders", value:"0 orders", prev:"0", change:"—", up:false, chart:[0], color:"#D4943A", breakdown:[] },
+      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
+      { title:"Withdrawal Requests", sub:"This month", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#C85C3E", breakdown:[] },
     ],
     vault: [
-      { title:"Bars by Metal", sub:"Physical inventory", value:fmtK(bars.length)+" bars", prev:"0", change:"—", up:false, chart:[0], color:C.gold,
-        breakdown:[] },
-      { title:"Linked vs Floating Tokens", sub:"Circulation status", value:"0 tokens", prev:"0", change:"—", up:false, chart:[0], color:C.navy,
-        breakdown:[] },
-      { title:"Tokens Minted/Burned", sub:"This month", value:"0 minted", prev:"0", change:"—", up:false, chart:[0], color:C.greenSolid,
-        breakdown:[] },
-      { title:"Deposit vs Withdrawal", sub:"Appointment types", value:"0 this month", prev:"0", change:"—", up:false, chart:[0], color:"#8B5CF6",
-        breakdown:[] },
+      { title:"Bars by Metal", sub:"Physical inventory", value:fmtK(bars.length)+" bars", prev:"0", change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
+      { title:"Linked vs Floating Tokens", sub:"Circulation", value:"0 tokens", prev:"0", change:"—", up:false, chart:[0], color:C.navy, breakdown:[] },
+      { title:"Tokens Minted/Burned", sub:"This month", value:"0 minted", prev:"0", change:"—", up:false, chart:[0], color:C.greenSolid, breakdown:[] },
+      { title:"Deposit vs Withdrawal", sub:"Appointments", value:"0 this month", prev:"0", change:"—", up:false, chart:[0], color:"#8B5CF6", breakdown:[] },
     ],
     investors: [
-      { title:"Active / Suspended / Banned", sub:"Account status", value:fmtK(investors.length)+" total", prev:"0", change:"—", up:false, chart:[0], color:C.navy,
-        breakdown:[] },
-      { title:"New Investors by Period", sub:"This month", value:"0 new", prev:"0", change:"—", up:false, chart:[0], color:C.teal,
-        breakdown:[] },
-      { title:"Top by Holdings Value", sub:"Highest portfolio", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.gold,
-        breakdown:[] },
-      { title:"Top by Trading Volume", sub:"Most active", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#8B5CF6",
-        breakdown:[] },
+      { title:"Active / Suspended / Banned", sub:"Account status", value:fmtK(investors.length)+" total", prev:"0", change:"—", up:false, chart:[0], color:C.navy, breakdown:[] },
+      { title:"New Investors", sub:"This month", value:"0 new", prev:"0", change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
+      { title:"Top by Holdings", sub:"Highest portfolio", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
+      { title:"Top by Volume", sub:"Most active", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#8B5CF6", breakdown:[] },
     ],
     appointments: [
-      { title:"Total by Period", sub:"This month", value:"0 appointments", prev:"0", change:"—", up:false, chart:[0], color:C.teal,
-        breakdown:[] },
-      { title:"Deposit vs Withdrawal Split", sub:"Type breakdown", value:"0 deposits", prev:"0", change:"—", up:false, chart:[0], color:C.gold,
-        breakdown:[] },
-      { title:"No Show Rate", sub:"Missed appointments", value:"0%", prev:"0%", change:"—", up:false, chart:[0], color:"#C85C3E",
-        breakdown:[] },
-      { title:"Completion Rate", sub:"Successfully done", value:"0%", prev:"0%", change:"—", up:false, chart:[0], color:C.greenSolid,
-        breakdown:[] },
+      { title:"Total by Period", sub:"This month", value:"0 appointments", prev:"0", change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
+      { title:"Deposit vs Withdrawal", sub:"Type breakdown", value:"0 deposits", prev:"0", change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
+      { title:"No Show Rate", sub:"Missed", value:"0%", prev:"0%", change:"—", up:false, chart:[0], color:"#C85C3E", breakdown:[] },
+      { title:"Completion Rate", sub:"Done", value:"0%", prev:"0%", change:"—", up:false, chart:[0], color:C.greenSolid, breakdown:[] },
     ],
   };
-
-  // Combined multi-segment 3D donut for all breakdowns in one chart
+// Combined multi-segment 3D donut for all breakdowns in one chart
   const SEGMENT_COLORS = ["#C4956A",C.greenSolid,C.blueSolid,"#8B5CF6","#C85C3E","#D4943A","#6B9080",C.purpleSolid];
   const MultiDonut = ({ segments, size=100 }) => {
     const cx=50,cy=40,orx=40,ory=26,irx=18,iry=12,d=10;
@@ -5752,8 +5734,8 @@ const AccountProfile = () => {
   const { isAr, t } = useLang();
   const [tab, setTab] = useState("INFO");
   const [profile, setProfile] = useState({
-    name:"Abdulaziz Al-Rashid", nameAr:"عبدالعزيز الراشد",
-    email:"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
+    name:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"Admin", nameAr:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"مسؤول",
+    email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:"+966 50 XXX XXXX",
     phoneVerified:true,
     recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
     recoveryEmail:"abdulaziz.recovery@gmail.com",
@@ -5783,7 +5765,7 @@ const AccountProfile = () => {
     showToast(isAr?"📱 تم إرسال رمز التحقق":"📱 OTP sent to phone");
   };
   const verifyOtp = () => {
-    if(phoneOtp.code==="847291"){
+    if(false){
       if(phoneOtp.field==="phone") setProfile(p=>({...p,phoneVerified:true}));
       else setProfile(p=>({...p,recoveryPhoneVerified:true}));
       setPhoneOtp(p=>({...p,show:false,verified:true}));
@@ -5881,7 +5863,7 @@ const AccountProfile = () => {
               :<button onClick={()=>{setPhoneOtp(p=>({...p,timer:60}));showToast(isAr?"📱 تم إعادة الإرسال":"📱 OTP resent");}} style={{color:C.gold,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال الرمز":"Resend Code"}</button>
             }
           </p>
-          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
+          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"":"" }</p>
           <Btn variant="gold" onClick={verifyOtp} style={{width:"100%"}}>{isAr?"تحقق":"Verify"}</Btn>
         </div>
       </Modal>}
@@ -6321,7 +6303,8 @@ const COMM_TEMPLATES = [
     vars:["investor"], priority:"normal"},
 ];
 
-const MOCK_MESSAGES = []; // Removed — messages loaded from API
+const MOCK_MESSAGES = [];
+// Removed — messages loaded from API
 
 const CommCenter = () => {
   const { t, isAr } = useLang();
@@ -8040,7 +8023,7 @@ const Settings = ({ onLangChange }) => {
   const [nafathKey,setNafathKey]=useState(""); const [nafathWebhook,setNafathWebhook]=useState("https://api.tanaqul.sa/nafath/webhook");
   const [nafathMode,setNafathMode]=useState("production");
   // Security
-  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x");
+  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("");
 
 
   return (
@@ -8580,7 +8563,7 @@ function LoginPage({ onLogin }) {
                     {recoveryTimer>0?<>{isAr?"إعادة الإرسال بعد":"Resend in"} <b>{recoveryTimer}s</b></>:
                     <button onClick={()=>setRecoveryTimer(60)} style={{color:"#C4956A",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال":"Resend"}</button>}
                   </p>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"":"" }</p>
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginBottom:8,textAlign:"center"}}>{error}</p>}
                   <button onClick={()=>{
                     if(recoveryOtp==="847291"){onLogin();}
