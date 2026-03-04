@@ -1484,7 +1484,7 @@ const Investors = () => {
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="teal" onClick={()=>{if(!notifyMsg.trim()){showToast("⚠️ Message is empty");return;}showToast("✅ Notification sent to "+sel.nameEn);setSel(null);setAction(null);}}>{isAr?"إرسال إشعار":"Send Notification"}</Btn>
+          <Btn variant="teal" onClick={async()=>{if(!notifyMsg.trim()){showToast("⚠️ Message is empty");return;}try{await apiFetch("/notifications/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({template:"custom",phone:sel.phone||"",email:sel.email||"",lang:"en",params:{body:notifyMsg}})})}catch(e){}showToast("✅ Notification sent to "+sel.nameEn);setSel(null);setAction(null);}}>{isAr?"إرسال إشعار":"Send Notification"}</Btn>
           <Btn variant="outline" onClick={()=>{setSel(null);setAction(null);}}>{t("Cancel")}</Btn>
         </div>
       </Modal>}
@@ -1883,6 +1883,7 @@ const Appointments = () => {
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
             <Btn variant="danger" onClick={()=>{
+              try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/cancel",{method:"PATCH"})}catch(e){}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Create wallet refund movement (fee minus cancellation charge from Settings)
               const refundAmt = Math.max(0, sel.fee - cfee);
@@ -1920,6 +1921,7 @@ const Appointments = () => {
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
             <Btn variant="danger" onClick={()=>{
+              try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/no-show",{method:"PATCH"})}catch(e){}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
               setInvestors(prev=>prev.map(inv=>{
                 // nationalId is the universal key — name comes from NAFATH
@@ -1953,6 +1955,7 @@ const Appointments = () => {
           <Btn variant="teal" onClick={()=>{
             if(!reschedDate||!reschedTime){showApptToast(isAr?"يرجى اختيار التاريخ والوقت":"Please select a date and time");return;}
             const newDate = reschedDate+" "+reschedTime;
+            try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/reschedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({new_date:newDate})})}catch(e){}
             setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"RESCHEDULED",date:newDate}:a));
             addAudit("RESCHEDULE", sel.id, sel.investor+" → "+newDate);
             closeAll();
@@ -2512,7 +2515,7 @@ const Blacklist = () => {
   const [blToast,setBlToast]=useState("");
   const showBlToast = (m)=>{ setBlToast(m); setTimeout(()=>setBlToast(""),3000); };
 
-  const addBan = () => {
+  const addBan = async () => {
     if(!form.nationalId.trim()){showBlToast("⚠️ National ID required");return;}
     if(!/^[12]\d{9}$/.test(form.nationalId.trim())){showBlToast("⚠️ Invalid National ID — must be 10 digits starting with 1 or 2");return;}
     if(!form.reason.trim()){showBlToast("⚠️ Reason required");return;}
@@ -2526,6 +2529,7 @@ const Blacklist = () => {
       bannedBy:"Admin",
       date:new Date().toISOString().slice(0,10),
     };
+    try{await apiFetch("/blacklist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})})}catch(e){console.error("Ban failed:",e);}
     setBlacklist(prev=>[newEntry,...prev]);
     addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
     showBlToast("✅ User banned by National ID");
@@ -2666,9 +2670,10 @@ const ValidatorsTab = () => {
               style={{width:"100%",padding:"8px 11px",borderRadius:8,fontSize:16,border:`1px solid ${C.border}`,color:C.text,outline:"none",boxSizing:"border-box"}}/>
           </div>
           <div style={{display:"flex",gap:8,marginTop:4}}>
-            <Btn variant="teal" onClick={()=>{
+            <Btn variant="teal" onClick={async()=>{
               if(!vName||!vAddr){showBlkToast(isAr?"⚠️ الاسم والعنوان مطلوبان":"⚠️ Name and address required");return;}
               const newV={id:"VAL-"+(validators.length+1).toString().padStart(3,"0"),name:vName,address:vAddr,status:"ACTIVE",blocksValidated:0,weight:"0%",commissionEarned:"0",joined:new Date().toISOString().slice(0,10)};
+              try{await apiFetch("/validators",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:vEnd||null})})}catch(e){console.error("Add validator failed:",e);}
               setValidators(p=>[...p,newV]);
               showBlkToast(isAr?"✅ تم إضافة المدقق":"✅ Validator added");
               setShowAdd(false);setVName("");setVAddr("");setVEnd("");
@@ -6383,7 +6388,7 @@ const CommCenter = () => {
     setCompose(null); setTab("inbox");
   };
 
-  const saveDraft = () => {
+  const saveDraft = async () => {
     if(!compose) return;
     const msg = {
       id:"MSG-D"+String(Date.now()).slice(-5),
@@ -6394,11 +6399,12 @@ const CommCenter = () => {
       sentAt:null, template:compose.template,
     };
     setMessages(p=>[msg,...p]);
+    try{await apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DRAFT_SAVED",entity_type:"communication",entity_id:msg.id,details:compose.subject||"",level:"INFO"})})}catch(e){}
     showToast(isAr?"✅ تم حفظ المسودة":"✅ Draft saved");
     setCompose(null); setTab("drafts");
   };
 
-  const sendBroadcast = (group) => {
+  const sendBroadcast = async (group) => {
     if(!broadcastModal) return;
     const grp = recipientGroups.find(g=>g.id===broadcastModal.groupId);
     const now = new Date().toISOString().slice(0,16).replace("T"," ");
@@ -6869,7 +6875,8 @@ const TreasuryReconciliation = () => {
     }
   };
 
-  const resolveDiscrep = (id) => {
+  const resolveDiscrep = async (id) => {
+    try{await apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DISCREPANCY_RESOLVED",entity_type:"treasury",entity_id:id,details:resolveNote,level:"INFO"})})}catch(e){}
     setDiscrep(prev=>prev.map(d=>d.id===id?{...d,status:"resolved",resolution:resolveNote,by:"admin@tanaqul.sa",at:new Date().toISOString()}:d));
     addAudit("DISCREPANCY_RESOLVED","Treasury",`Resolved ${id}: ${resolveNote}`);
     setResolveId(null); setResolveNote("");
