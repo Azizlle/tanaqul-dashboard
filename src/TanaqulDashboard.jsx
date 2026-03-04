@@ -5738,8 +5738,8 @@ const AccountProfile = () => {
     name:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"Admin", nameAr:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"مسؤول",
     email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").phone)||"",
     phoneVerified:!!(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").phone),
-    recoveryPhone:"", recoveryPhoneVerified:false,
-    recoveryEmail:"",
+    recoveryPhone:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").recoveryPhone)||"", recoveryPhoneVerified:!!(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").recoveryPhone),
+    recoveryEmail:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").recoveryEmail)||"",
     role:"Super Admin", roleAr:"مسؤول أعلى",
     joined:"2025-09-01", lastLogin:"2026-03-02 09:14",
     twoFA:true, lang:"ar",
@@ -5842,7 +5842,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async()=>{const admin=JSON.parse(localStorage.getItem("tanaqul_admin")||"{}");admin.name=profile.name;admin.email=profile.email;admin.phone=profile.phone;localStorage.setItem("tanaqul_admin",JSON.stringify(admin));try{await apiFetch("/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:profile.name,phone:profile.phone})})}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async()=>{const admin=JSON.parse(localStorage.getItem("tanaqul_admin")||"{}");admin.name=profile.name;admin.email=profile.email;admin.phone=profile.phone;admin.recoveryPhone=profile.recoveryPhone;admin.recoveryEmail=profile.recoveryEmail;localStorage.setItem("tanaqul_admin",JSON.stringify(admin));try{await apiFetch("/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:profile.name,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})})}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
