@@ -113,7 +113,7 @@ body::before {
 
 /* Stats bar */
 .stats-bar {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
   margin-bottom: 28px;
 }
 .stat-card {
@@ -295,7 +295,7 @@ tr:hover { background: rgba(196,149,106,0.03); }
     <div class="stat-card"><div class="stat-label">Transactions</div><div class="stat-value" id="s-txs">—</div></div>
     <div class="stat-card"><div class="stat-label">Validators</div><div class="stat-value" id="s-vals">—</div></div>
     <div class="stat-card"><div class="stat-label">Tokens Active</div><div class="stat-value gold" id="s-tokens">—</div></div>
-    <div class="stat-card"><div class="stat-label">Commission (SAR)</div><div class="stat-value" id="s-comm">—</div><div class="stat-sub" id="s-comm-sub"></div></div>
+    <div class="stat-card"><div class="stat-label">Tokenized (g)</div><div class="stat-value" id="s-grams">—</div></div>
     <div class="stat-card"><div class="stat-label">Latest Block</div><div class="stat-value gold" id="s-latest">—</div><div class="stat-sub" id="s-latest-sub"></div></div>
   </div>
 
@@ -309,8 +309,8 @@ tr:hover { background: rgba(196,149,106,0.03); }
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Block</th><th>Hash</th><th>Txns</th><th>Creator</th><th>Commission</th><th>Size</th><th>Time</th></tr></thead>
-        <tbody id="blocksTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Loading blocks...</div></td></tr></tbody>
+        <thead><tr><th>Block</th><th>Hash</th><th>Txns</th><th>Creator</th><th>Size</th><th>Time</th></tr></thead>
+        <tbody id="blocksTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading blocks...</div></td></tr></tbody>
       </table>
       <div class="pagination" id="blocksPagination"></div>
     </div>
@@ -322,8 +322,8 @@ tr:hover { background: rgba(196,149,106,0.03); }
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Hash</th><th>Type</th><th>Investor</th><th>Metal</th><th>Grams</th><th>SAR</th><th>Status</th><th>Time</th></tr></thead>
-        <tbody id="txTable"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+        <thead><tr><th>Hash</th><th>Type</th><th>Metal</th><th>Grams</th><th>Status</th><th>Time</th></tr></thead>
+        <tbody id="txTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -385,8 +385,7 @@ async function loadStats() {
   document.getElementById("s-txs").textContent = fmt(d.total_transactions);
   document.getElementById("s-vals").textContent = fmt(d.active_validators);
   document.getElementById("s-tokens").textContent = fmt(d.active_tokens);
-  document.getElementById("s-comm").textContent = fmt(Math.round(d.total_commission_sar));
-  document.getElementById("s-comm-sub").textContent = fmt(d.total_tokenized_grams)+"g tokenized";
+  document.getElementById("s-grams").textContent = fmt(Math.round(d.total_tokenized_grams))+"g";
   if(d.latest_block) {
     document.getElementById("s-latest").textContent = "#"+fmt(d.latest_block.number);
     document.getElementById("s-latest-sub").textContent = ago(d.latest_block.created_at);
@@ -398,14 +397,13 @@ async function loadBlocks(page=1) {
   currentPage = page;
   const d = await api(`/public/explorer/blocks?page=${page}&limit=15`);
   const tb = document.getElementById("blocksTable");
-  if(!d||!d.blocks.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">⛓️</div>No blocks yet</div></td></tr>'; return; }
+  if(!d||!d.blocks.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">⛓️</div>No blocks yet</div></td></tr>'; return; }
   tb.innerHTML = d.blocks.map(b => `
     <tr style="cursor:pointer" onclick="loadBlockDetail(${b.number})">
       <td><strong style="color:var(--gold)">#${fmt(b.number)}</strong></td>
       <td><span class="mono hash">${short(b.hash,8)}</span></td>
       <td>${b.tx_count}</td>
       <td>${b.creator||"—"}</td>
-      <td class="mono">${fmt(Math.round(b.commission_total))} SAR</td>
       <td class="mono">${b.size_mb} MB</td>
       <td style="color:var(--text-muted)">${ago(b.created_at)}</td>
     </tr>
@@ -438,21 +436,17 @@ async function loadBlockDetail(num) {
       <div class="detail-row"><div class="detail-label">Created</div><div class="detail-value">${new Date(d.created_at).toLocaleString()}</div></div>
       <div class="detail-row"><div class="detail-label">Creator</div><div class="detail-value">${d.creator} <span class="mono" style="color:var(--text-muted)">${d.creator_id}</span></div></div>
       <div class="detail-row"><div class="detail-label">Size</div><div class="detail-value">${d.size_mb} MB (${fmt(d.size_bytes)} bytes)</div></div>
-      <div class="detail-row"><div class="detail-label">Commission Total</div><div class="detail-value" style="color:var(--gold)">${fmt(d.commission_total)} SAR</div></div>
-      <div class="detail-row"><div class="detail-label">Split</div><div class="detail-value">Tanaqul: ${fmt(d.tanaqul_share)} · Creator: ${fmt(d.creator_share)} · Validators: ${fmt(d.validators_share)}</div></div>
     </div>
     <div style="margin-top:16px">
       <div class="section-title" style="font-size:15px;margin-bottom:12px">${d.transactions.length} Transaction${d.transactions.length!==1?"s":""}</div>
       ${d.transactions.length?`<div class="table-wrap"><table>
-        <thead><tr><th>Hash</th><th>Type</th><th>Investor</th><th>Metal</th><th>Grams</th><th>SAR</th></tr></thead>
+        <thead><tr><th>Hash</th><th>Type</th><th>Metal</th><th>Grams</th></tr></thead>
         <tbody>${d.transactions.map(tx=>`
           <tr>
             <td><span class="mono hash">${short(tx.tx_hash,8)}</span></td>
             <td>${typeBadge(tx.tx_type)}</td>
-            <td>${tx.investor_display||"—"}</td>
             <td>${tx.metal||"—"}</td>
             <td class="mono">${tx.grams||"—"}</td>
-            <td class="mono">${tx.amount_sar?fmt(tx.amount_sar)+" SAR":"—"}</td>
           </tr>
         `).join("")}</tbody>
       </table></div>`:'<div class="empty-state">No transactions in this block</div>'}
@@ -465,15 +459,13 @@ async function loadBlockDetail(num) {
 async function loadTransactions() {
   const d = await api("/public/explorer/transactions/recent?limit=30");
   const tb = document.getElementById("txTable");
-  if(!d||!d.transactions.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div>No transactions yet</div></td></tr>'; return; }
+  if(!d||!d.transactions.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div>No transactions yet</div></td></tr>'; return; }
   tb.innerHTML = d.transactions.map(tx => `
     <tr>
       <td><span class="mono hash" onclick="loadTxDetail('${tx.tx_hash}')">${short(tx.tx_hash,8)}</span></td>
       <td>${typeBadge(tx.tx_type)}</td>
-      <td>${tx.investor_display||"—"}</td>
       <td>${tx.metal||"—"}</td>
       <td class="mono">${tx.grams||"—"}</td>
-      <td class="mono">${tx.amount_sar?fmt(tx.amount_sar):"—"}</td>
       <td>${typeBadge(tx.status)}</td>
       <td style="color:var(--text-muted)">${ago(tx.created_at)}</td>
     </tr>
@@ -493,11 +485,8 @@ async function loadTxDetail(hash) {
     <div class="detail-grid">
       <div class="detail-row"><div class="detail-label">Hash</div><div class="detail-value mono">${d.tx_hash}</div></div>
       <div class="detail-row"><div class="detail-label">Type</div><div class="detail-value">${typeBadge(d.tx_type)}</div></div>
-      <div class="detail-row"><div class="detail-label">Investor</div><div class="detail-value">${d.investor_display||"—"}</div></div>
       <div class="detail-row"><div class="detail-label">Metal</div><div class="detail-value">${d.metal||"—"}</div></div>
       <div class="detail-row"><div class="detail-label">Grams</div><div class="detail-value">${d.grams||"—"}</div></div>
-      <div class="detail-row"><div class="detail-label">Amount</div><div class="detail-value" style="color:var(--gold)">${d.amount_sar?fmt(d.amount_sar)+" SAR":"—"}</div></div>
-      <div class="detail-row"><div class="detail-label">Commission</div><div class="detail-value">${d.commission?fmt(d.commission)+" SAR":"—"}</div></div>
       <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value">${typeBadge(d.status)}</div></div>
       ${d.block?`<div class="detail-row"><div class="detail-label">Block</div><div class="detail-value"><span style="color:var(--gold);cursor:pointer" onclick="loadBlockDetail(${d.block.number})">#${d.block.number}</span> <span class="mono" style="color:var(--text-muted)">${short(d.block.hash,8)}</span></div></div>`:""}
       <div class="detail-row"><div class="detail-label">Created</div><div class="detail-value">${new Date(d.created_at).toLocaleString()}</div></div>
@@ -518,13 +507,11 @@ async function loadValidators() {
         <span class="val-name">${v.name}</span>
         ${v.can_create?'<span class="badge badge-mint" style="font-size:10px">Creator</span>':""}
       </div>
-      <div class="val-addr">${v.wallet_address}</div>
       <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">
-        <span class="mono">${v.display_id}</span> · Joined ${v.joined_at?new Date(v.joined_at).toLocaleDateString():"—"}
+        Joined Joined ${v.joined_at?new Date(v.joined_at).toLocaleDateString():"—"}
       </div>
       <div class="val-stats">
         <div><div class="val-stat-label">Blocks</div><div class="val-stat-value">${fmt(v.blocks_validated)}</div></div>
-        <div><div class="val-stat-label">Commission</div><div class="val-stat-value" style="color:var(--gold)">${fmt(Math.round(v.commission_earned))}</div></div>
         <div><div class="val-stat-label">Weight</div><div class="val-stat-value">${v.weight}%</div></div>
       </div>
     </div>
