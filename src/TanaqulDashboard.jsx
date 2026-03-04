@@ -2786,29 +2786,32 @@ const Blocks = () => {
   const { t, isAr, commSplit } = useLang();
   const { matches, appBlocks, appBlockStats } = useAppData();
   const [tab,setTab]=useState("BLOCKS");
-  const tanaqulPct = (commSplit.buying||30)+(commSplit.selling||30);
-  const creatorPct = commSplit.creator||20;
-  const validatorsPct = commSplit.validators||20;
+  const apiSplit = appBlockStats?.commission_split;
+  const tanaqulPct = apiSplit ? apiSplit.platform_percent : ((commSplit.buying||30)+(commSplit.selling||30));
+  const creatorPct = apiSplit ? apiSplit.creator_percent : (commSplit.creator||20);
+  const validatorsPct = apiSplit ? apiSplit.validators_percent : (commSplit.validators||20);
+  const triggerSettings = appBlockStats?.trigger_settings;
+  const triggerText = triggerSettings ? `${triggerSettings.size_mb}MB or ${triggerSettings.hours}hrs` : "1MB or 24hrs";
   const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
   return (
     <div>
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:18}}>
-        <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Latest Block"} value={"#"+(appBlockStats?.latest_block_number || MOCK.stats.blockNumber)} gold />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value="0" />
-        <StatCard icon={Icons.fire(22,"#C85C3E")} title={isAr?"الرموز المحروقة":"Tokens Burned"} value="340" />
-        <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"العمولات الموزعة":"Commission Distributed"} value={<SARAmount amount={matches.reduce((a,m)=>a+m.commission,0).toLocaleString("en-SA",{maximumFractionDigits:0})}/>} gold />
-        <StatCard icon={Icons.investors(22,C.navy)} title={isAr?"المصادقون النشطون":"Active Validators"} value="1" />
+        <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Latest Block"} value={"#"+(appBlockStats?.latest_block_number || 0)} gold />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value={appBlockStats?.total_blocks || 0} />
+        <StatCard icon={Icons.fire(22,"#C85C3E")} title={isAr?"الرموز المحروقة":"Tokens Burned"} value={appBlockStats?.commission_breakdown?.tanaqul ? Number(appBlockStats.commission_breakdown.tanaqul).toLocaleString("en-SA",{maximumFractionDigits:0}) : "0"} />
+        <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"العمولات الموزعة":"Commission Distributed"} value={<SARAmount amount={appBlockStats?.total_commission ? Number(appBlockStats.total_commission).toLocaleString("en-SA",{maximumFractionDigits:0}) : matches.reduce((a,m)=>a+m.commission,0).toLocaleString("en-SA",{maximumFractionDigits:0})}/>} gold />
+        <StatCard icon={Icons.investors(22,C.navy)} title={isAr?"المصادقون النشطون":"Active Validators"} value={appBlockStats?.active_validators || 1} />
         <StatCard icon={Icons.network(22,C.teal)} title={isAr?"الشبكة":"Network"} value="✅ Online" />
       </div>
       <div style={{background:C.navyDark,borderRadius:12,padding:"12px 16px",marginBottom:18,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:7,height:7,borderRadius:"50%",background:"#4ADE80",boxShadow:"0 0 8px #4ADE80"}} /><span style={{fontSize:13,color:"#A89880",fontWeight:500}}>{isAr?"الشبكة متصلة":"Network Online"}</span></div>
         <span style={{color:C.silverText}}>|</span>
-        <span style={{fontSize:13,color:"#A89880"}}>Trigger: <span style={{color:C.gold}}>1MB or 24hrs</span></span>
+        <span style={{fontSize:13,color:"#A89880"}}>Trigger: <span style={{color:C.gold}}>{triggerText}</span></span>
         <span style={{color:C.silverText}}>|</span>
         <span style={{fontSize:13,color:"#A89880"}}>Split: <span style={{color:C.teal}}>{tanaqulPct}% Tanaqul / {creatorPct}% Creator / {validatorsPct}% Validators</span></span>
         <span style={{color:C.silverText}}>|</span>
-        <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>Last: {(appBlockStats?.latest_block_hash || MOCK.stats.lastBlock)}</span>
+        <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>Last: {(appBlockStats?.latest_block_hash ? (appBlockStats.latest_block_hash.substring(0,10)+"..."+appBlockStats.latest_block_hash.slice(-4)) : "–")}</span>
       </div>
       <TabBar tabs={[{id:"BLOCKS",label:isAr?"البلوكات":"BLOCKS"},{id:"TRANSACTIONS",label:isAr?"المعاملات":"TRANSACTIONS"},{id:"VALIDATORS",label:isAr?"المدققون":"VALIDATORS"}]} active={tab} onChange={setTab} />
       {tab==="BLOCKS"&&<TTable cols={[
@@ -2820,7 +2823,7 @@ const Blocks = () => {
         {key:"creatorShare",label:`Creator ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validatorsShare",label:`Validators ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validator",label:"Creator"},{key:"size",label:"Size"},{key:"timestamp",label:"Time"},
-      ]} rows={appBlocks.length > 0 ? appBlocks : MOCK.blocks} />}
+      ]} rows={appBlocks} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />}
       {tab==="TRANSACTIONS"&&<TTable cols={[
         {key:"id",label:"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
         {key:"investor",label:"Investor"},{key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
@@ -8891,7 +8894,7 @@ const HeaderPills = () => {
       <div style={{display:"flex",alignItems:"center",gap:0,background:C.goldLight,borderRadius:7,border:`1px solid ${C.gold}44`,overflow:"hidden",direction:"ltr"}}>
         <div style={{padding:"4px 9px",display:"flex",alignItems:"center",gap:4}}>
           {Icons.block(11,C.goldDim)}
-          <span style={{fontSize:11,color:C.goldDim,fontWeight:700}}>#{(appBlockStats?.latest_block_number || MOCK.stats.blockNumber)}</span>
+          <span style={{fontSize:11,color:C.goldDim,fontWeight:700}}>#{(appBlockStats?.latest_block_number || 0)}</span>
         </div>
         <div style={{width:1,height:18,background:C.gold+"44"}}/>
         <div style={{padding:"4px 9px",display:"flex",alignItems:"center",gap:3}}>
@@ -9520,14 +9523,18 @@ export default function App() {
           if (!Array.isArray(items)) return null;
           return items.map(b => ({
             number: b.number, hash: b.hash || "",
-            txCount: b.tx_count || 0, commission: String(b.commission_total || 0),
+            txCount: b.tx_count || 0, commission: String(b.commission || b.commission_total || 0),
             tanaqulShare: String(b.tanaqul_share || 0),
             creatorShare: String(b.creator_share || 0),
             validatorsShare: String(b.validators_share || 0),
-            validator: b.creator_name || "Tanaqul",
+            validator: b.validator_name || b.creator_name || "Tanaqul",
             timestamp: b.created_at || "", size: b.size_bytes ? (b.size_bytes/1048576).toFixed(2)+" MB" : "0 MB",
             quorumMet: b.quorum_met || false,
           }));
+          // Also store commission_split if returned
+          if (data.commission_split) {
+            try { window.__tanaqulSplit = data.commission_split; } catch(_){}
+          }
         }},
       ];
 
@@ -9548,10 +9555,21 @@ export default function App() {
       if (anySuccess) setApiConnected(true);
       // Fetch block network stats
       try {
-        const bsResp = await apiFetch("/blocks/stats/network");
+        const bsResp = await apiFetch("/blocks/chain/stats");
         if (bsResp.ok) {
           const bs = await bsResp.json();
-          setAppBlockStats(bs);
+          setAppBlockStats({
+            latest_block_number: bs.last_block?.number || 0,
+            latest_block_hash: bs.last_block?.hash || "",
+            total_blocks: bs.total_blocks || 0,
+            total_transactions: bs.total_transactions || 0,
+            active_validators: bs.active_validators || 0,
+            pending_matches: bs.pending_matches || 0,
+            commission_split: bs.commission_split || null,
+            trigger_settings: bs.trigger_settings || null,
+            total_commission: bs.total_commission || 0,
+            commission_breakdown: bs.commission_breakdown || {},
+          });
         }
       } catch(_){}
       // Fetch dashboard stats
