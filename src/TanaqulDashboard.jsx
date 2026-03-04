@@ -177,6 +177,19 @@ const AR = {
   "Silver in Vault":"الفضة في الخزينة","Platinum in Vault":"البلاتين في الخزينة","In Circulation":"في التداول",
   "Assets under management":"الأصول المُدارة","Gold · SAR/g":"الذهب · ريال/غ","Silver · SAR/g":"الفضة · ريال/غ",
   "Platinum · SAR/g":"البلاتين · ريال/غ","Sealed":"مختوم","No records found":"لا توجد سجلات",
+  "Storage Fees":"رسوم التخزين","Vault storage fee management":"إدارة رسوم تخزين الخزنة",
+  "Fee Config":"إعدادات الرسوم","Billing":"الفواتير","History":"السجل",
+  "Billed This Month":"فوترة هذا الشهر","Collected":"مُحصّل","Outstanding":"مستحق","At Risk (>75%)":"في خطر (>75%)",
+  "Grace Period (days)":"فترة السماح (أيام)","Gold Rate (SAR/g/month)":"رسم الذهب (ريال/غ/شهر)",
+  "Silver Rate (SAR/g/month)":"رسم الفضة (ريال/غ/شهر)","Platinum Rate (SAR/g/month)":"رسم البلاتين (ريال/غ/شهر)",
+  "Run Billing Now":"تشغيل الفوترة الآن","Force Sell":"بيع إجباري","Exempt":"إعفاء","Waive":"تنازل",
+  "PAID":"مدفوع","PENDING":"معلق","OVERDUE":"متأخر","EXEMPT":"معفى","WAIVED":"متنازل عنه","FORCE_SOLD":"بيع إجباري",
+  "Fee/Cap %":"الرسم/القيمة %","Vault Cap":"قيمة الخزنة","Fee This Month":"رسم هذا الشهر",
+  "Days Held":"أيام الاحتفاظ","Collection":"طريقة التحصيل",
+  "Cannot ban — investor has metals in vault. Suspend only.":"لا يمكن الحظر — المستثمر لديه معادن في الخزنة. يمكن التعليق فقط.",
+  "Storage fee auto-deducted":"تم خصم رسوم التخزين تلقائياً","Save Config":"حفظ الإعدادات",
+  "Enable Storage Fees":"تفعيل رسوم التخزين","Alert Threshold %":"حد التنبيه %",
+  "Billing runs on 1st of each month":"يتم إصدار الفواتير في أول كل شهر",
   "ID":"م","Holdings":"الحيازات","Barcode":"الباركود","Manufacturer":"الشركة المصنّعة",
   "Vault":"الخزنة","Depositor":"المودِع","Date In":"تاريخ الإيداع","Date Out":"تاريخ السحب",
   "Qty":"الكمية","Fee":"الرسوم","Method":"الطريقة","Bank":"البنك","Processed":"تمت المعالجة",
@@ -1311,7 +1324,7 @@ const Dashboard = () => {
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:28}}>
         <StatCard icon={Icons.pending(22,C.orange)} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={pendingW} />
-        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walletBal))}/>} />
+        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<span style={{color:walletBal<0?"#C85C3E":undefined}}>{walletBal<0?"-":""}<SARAmount amount={fmtK(Math.abs(walletBal))}/></span>} />
         <StatCard icon={Icons.orders(22,C.navy)} title={isAr?"الأوامر النشطة":"Active Orders"} value={activeOrd} />
         <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المواعيد المعلقة":"Pending Appointments"} value={pendingAppt} />
         <StatCard icon={Icons.investors(22,C.navy)} title={isAr?"إجمالي المستثمرين":"Total Investors"} value={totalInv} />
@@ -2210,7 +2223,7 @@ const Financials = () => {
         <StatCard icon={Icons.commission(22,C.gold)} title="Commission Today" value={<SARAmount amount={fmtK(commToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(commAll)} gold />
         <StatCard icon={Icons.settings(22,C.textMuted)} title="Admin Fees Today" value={<SARAmount amount={fmtK(adminToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(adminAll)} />
         <StatCard icon={Icons.pending(22,"#D4943A")} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={withdrawals.filter(w=>w.status==="PENDING").length+(isAr?" طلب":" requests")} />
-        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walBal))}/>} />
+        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<span style={{color:walBal<0?"#C85C3E":undefined}}>{walBal<0?"-":""}<SARAmount amount={fmtK(Math.abs(walBal))}/></span>} />
       </div>
       <TabBar tabs={["ORDERS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS"]} active={tab} onChange={setTab} />
       {tab==="ORDERS"&&<>
@@ -6790,6 +6803,238 @@ const CommCenter = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAGE 18 — STORAGE FEES
+// ═══════════════════════════════════════════════════════════════════════════════
+const StorageFees = () => {
+  const { t, isAr } = useLang();
+  const { investors, setInvestors, walletMovements, setWalletMovements, addAudit } = useAppData();
+  const { gold: gp, silver: sp, plat: pp } = useLivePrices();
+  const { C } = useTheme();
+
+  // Fee config state
+  const [feeEnabled, setFeeEnabled] = useState(true);
+  const [graceDays, setGraceDays] = useState(30);
+  const [goldRate, setGoldRate] = useState(2.00);
+  const [silverRate, setSilverRate] = useState(0.50);
+  const [platRate, setPlatRate] = useState(1.00);
+  const [alertThreshold, setAlertThreshold] = useState(75);
+  const [tab, setTab] = useState("billing");
+  const [toast, setToast] = useState("");
+  const [exemptList, setExemptList] = useState(new Set());
+  const [waivedList, setWaivedList] = useState(new Set());
+  const [feeHistory, setFeeHistory] = useState([]);
+  const [configSaving, setConfigSaving] = useState(false);
+
+  const showSfToast = (msg) => { setToast(msg); setTimeout(()=>setToast(""),3000); };
+
+  // Calculate fees for each investor
+  const now = new Date();
+  const feeData = investors.filter(inv => inv.status !== "BANNED" && (inv.gold > 0 || inv.silver > 0 || inv.platinum > 0)).map(inv => {
+    const joined = new Date(inv.joined);
+    const daysHeld = Math.floor((now - joined) / 86400000);
+    const qualifying = daysHeld >= graceDays;
+
+    const goldFee = qualifying ? inv.gold * goldRate : 0;
+    const silverFee = qualifying ? inv.silver * silverRate : 0;
+    const platFee = qualifying ? inv.platinum * platRate : 0;
+    const totalFee = Math.round((goldFee + silverFee + platFee) * 100) / 100;
+
+    const goldCap = inv.gold * (gp?.priceSAR || 839);
+    const silverCap = inv.silver * (sp?.priceSAR || 10.42);
+    const platCap = inv.platinum * (pp?.priceSAR || 138.5);
+    const vaultCap = Math.round(goldCap + silverCap + platCap);
+
+    const feeCapPct = vaultCap > 0 ? Math.round((totalFee / vaultCap) * 10000) / 100 : 0;
+
+    // Wallet balance for this investor
+    const walBal = walletMovements
+      .filter(w => w.nationalId === inv.nationalId)
+      .reduce((a, w) => {
+        const amt = typeof w.amount === "number" ? w.amount : parseFloat(String(w.amount).replace(/,/g, "")) || 0;
+        return a + (w.type === "CREDIT" ? amt : -amt);
+      }, 0);
+
+    let status = "PENDING";
+    if (exemptList.has(inv.id)) status = "EXEMPT";
+    else if (waivedList.has(inv.id)) status = "WAIVED";
+    else if (!qualifying) status = "—";
+    else if (walBal >= totalFee) status = "PAID";
+    else status = "OVERDUE";
+
+    const canForceSell = inv.status === "SUSPENDED" && feeCapPct >= alertThreshold;
+
+    return {
+      ...inv, daysHeld, qualifying, goldFee, silverFee, platFee, totalFee,
+      vaultCap, feeCapPct, walBal, status, canForceSell
+    };
+  });
+
+  const totalBilled = feeData.filter(f => f.qualifying).reduce((a, f) => a + f.totalFee, 0);
+  const totalCollected = feeData.filter(f => f.status === "PAID").reduce((a, f) => a + f.totalFee, 0);
+  const totalOutstanding = feeData.filter(f => f.status === "OVERDUE").reduce((a, f) => a + f.totalFee, 0);
+  const atRiskCount = feeData.filter(f => f.feeCapPct >= alertThreshold).length;
+
+  // Run billing — auto-deduct from wallets
+  const runBilling = async () => {
+    let deducted = 0;
+    const newMoves = [];
+    feeData.filter(f => f.qualifying && f.status !== "EXEMPT" && f.status !== "WAIVED").forEach(f => {
+      const entry = {
+        id: "WM-SF-" + String(Date.now()).slice(-6) + String(Math.random()).slice(2, 5),
+        investor: f.nameEn, nationalId: f.nationalId, vaultKey: f.vaultKey,
+        type: "DEBIT", amount: f.totalFee,
+        reason: "Vault Storage Fee — " + now.toLocaleString("en-SA", { month: "long", year: "numeric" }),
+        date: new Date().toISOString().slice(0, 16).replace("T", " "),
+      };
+      newMoves.push(entry);
+      deducted += f.totalFee;
+    });
+    if (newMoves.length > 0) {
+      setWalletMovements(prev => [...newMoves, ...prev]);
+      setFeeHistory(prev => [{ month: now.toLocaleString("en-SA", { month: "long", year: "numeric" }), total: deducted, count: newMoves.length, date: new Date().toISOString().slice(0, 10) }, ...prev]);
+      addAudit("STORAGE_FEE_BILLING", "System", deducted.toLocaleString("en-SA") + " SAR deducted from " + newMoves.length + " investors");
+      try { await apiFetch("/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "STORAGE_FEE_BILLING", entity_type: "storage_fees", entity_id: "monthly", details: deducted + " SAR from " + newMoves.length + " investors", level: "INFO" }) }); } catch (e) {}
+    }
+    showSfToast(isAr ? "\u2705 \u062a\u0645 \u062e\u0635\u0645 " + deducted.toLocaleString("en-SA") + " \u0631\u064a\u0627\u0644" : "\u2705 Deducted SAR " + deducted.toLocaleString("en-SA") + " from " + newMoves.length + " investors");
+  };
+
+  // Force sell
+  const forceSell = (inv) => {
+    const fee = inv.totalFee;
+    // Create sell wallet credit
+    const entry = {
+      id: "WM-FS-" + String(Date.now()).slice(-6),
+      investor: inv.nameEn, nationalId: inv.nationalId, vaultKey: inv.vaultKey,
+      type: "CREDIT", amount: fee,
+      reason: "Force Sell — Storage Fee Recovery",
+      date: new Date().toISOString().slice(0, 16).replace("T", " "),
+    };
+    const debit = {
+      id: "WM-SFD-" + String(Date.now()).slice(-6),
+      investor: inv.nameEn, nationalId: inv.nationalId, vaultKey: inv.vaultKey,
+      type: "DEBIT", amount: fee,
+      reason: "Vault Storage Fee — Force Sell Deduction",
+      date: new Date().toISOString().slice(0, 16).replace("T", " "),
+    };
+    setWalletMovements(prev => [debit, entry, ...prev]);
+
+    // Reduce holdings proportionally
+    const ratio = Math.min(fee / Math.max(inv.vaultCap, 1), 1);
+    setInvestors(prev => prev.map(i => i.id === inv.id ? {
+      ...i,
+      gold: Math.round(i.gold * (1 - ratio)),
+      silver: Math.round(i.silver * (1 - ratio)),
+      platinum: Math.round(i.platinum * (1 - ratio)),
+      holdingsValue: String(Math.round(parseFloat(String(i.holdingsValue).replace(/,/g, "")) * (1 - ratio))),
+    } : i));
+
+    addAudit("FORCE_SELL", inv.id + " — " + inv.nameEn, "Liquidated " + Math.round(ratio * 100) + "% of holdings to cover SAR " + fee + " storage fees");
+    showSfToast(isAr ? "\u2705 \u062a\u0645 \u0627\u0644\u0628\u064a\u0639 \u0627\u0644\u0625\u062c\u0628\u0627\u0631\u064a" : "\u2705 Force sell executed — SAR " + fee + " recovered");
+  };
+
+  // Save config
+  const saveConfig = async () => {
+    setConfigSaving(true);
+    try {
+      await apiFetch("/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "STORAGE_FEE_CONFIG", entity_type: "storage_fees", entity_id: "config", details: JSON.stringify({ goldRate, silverRate, platRate, graceDays, alertThreshold, feeEnabled }), level: "INFO" }) });
+    } catch (e) {}
+    setConfigSaving(false);
+    showSfToast(isAr ? "\u2705 \u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a" : "\u2705 Config saved");
+  };
+
+  const StatusBadge = ({ s }) => {
+    const colors = { PAID: "#4A7A68:#EFF5F2", PENDING: "#C4956A:#FDF4EC", OVERDUE: "#C85C3E:#FBEAE5", EXEMPT: "#6B9080:#EFF5F2", WAIVED: "#8B6540:#FDF4EC", FORCE_SOLD: "#8B3520:#FBEAE5", "—": "#999:#F5F5F5" };
+    const [fg, bg] = (colors[s] || "#999:#F5F5F5").split(":");
+    return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: fg, background: bg }}>{t(s)}</span>;
+  };
+
+  const fmtS = v => typeof v === "number" ? v.toLocaleString("en-SA", { maximumFractionDigits: 0 }) : v;
+
+  return (
+    <div>
+      {toast && <div style={{ position: "fixed", top: 20, right: 20, background: C.navy, color: C.white, padding: "12px 20px", borderRadius: 12, fontSize: 15, fontWeight: 600, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>{toast}</div>}
+
+      <SectionHeader title={t("Storage Fees")} sub={t("Vault storage fee management")}
+        action={<div style={{ display: "flex", gap: 8 }}>
+          <Btn variant="outline" onClick={() => downloadCSV("tanaqul_storage_fees_" + new Date().toISOString().slice(0, 10), ["ID", "Name", "National ID", "Gold(g)", "Silver(g)", "Plat(g)", "Days", "Fee(SAR)", "Vault Cap", "Fee/Cap%", "Wallet", "Status"], feeData.map(f => [f.id, f.nameEn, f.nationalId, f.gold, f.silver, f.platinum, f.daysHeld, f.totalFee, f.vaultCap, f.feeCapPct + "%", Math.round(f.walBal), f.status]))}><span style={{ display: "flex", alignItems: "center", gap: 4 }}>{Icons.download(14, C.navy)} {isAr ? "\u062a\u0635\u062f\u064a\u0631" : "Export"}</span></Btn>
+          <Btn variant="gold" onClick={runBilling}>{t("Run Billing Now")}</Btn>
+        </div>}
+      />
+
+      {/* Summary Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 22 }}>
+        <StatCard icon={Icons.commission(22, C.gold)} title={t("Billed This Month")} value={<SARAmount amount={fmtS(Math.round(totalBilled))} />} gold />
+        <StatCard icon={Icons.check(22, C.greenSolid)} title={t("Collected")} value={<SARAmount amount={fmtS(Math.round(totalCollected))} />} />
+        <StatCard icon={Icons.pending(22, "#C85C3E")} title={t("Outstanding")} value={<span style={{ color: totalOutstanding > 0 ? "#C85C3E" : undefined }}>-<SARAmount amount={fmtS(Math.round(totalOutstanding))} /></span>} />
+        <StatCard icon={Icons.blacklist(22, "#8B3520")} title={t("At Risk (>75%)")} value={atRiskCount} />
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {[["billing", isAr ? "\u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631" : "Billing"], ["config", isAr ? "\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a" : "Fee Config"], ["history", isAr ? "\u0627\u0644\u0633\u062c\u0644" : "History"]].map(([k, v]) => (
+          <button key={k} onClick={() => setTab(k)} style={{ padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", border: `1px solid ${tab === k ? C.teal : C.border}`, background: tab === k ? C.tealLight : C.white, color: tab === k ? C.teal : C.textMuted }}>{v}</button>
+        ))}
+      </div>
+
+      {/* TAB: Billing */}
+      {tab === "billing" && <div>
+        <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>{t("Billing runs on 1st of each month")} — {isAr ? "فترة سماح" : "Grace"}: {graceDays} {isAr ? "يوم" : "days"} | Au: {goldRate} SAR/g | Ag: {silverRate} SAR/g | Pt: {platRate} SAR/g</p>
+        <TTable cols={[
+          { key: "id", label: "ID" },
+          { key: "nameEn", label: "Name" },
+          { key: "gold", label: "Gold(g)" },
+          { key: "silver", label: "Silver(g)" },
+          { key: "platinum", label: "Pt(g)" },
+          { key: "daysHeld", label: "Days Held" },
+          { key: "totalFee", label: "Fee This Month", render: v => <SARAmount amount={v > 0 ? v.toFixed(2) : "0"} /> },
+          { key: "walBal", label: "Wallet", render: v => <span style={{ color: v < 0 ? "#C85C3E" : C.text, fontWeight: v < 0 ? 700 : 400 }}>{v < 0 ? "-" : ""}<SARAmount amount={fmtS(Math.abs(Math.round(v)))} /></span> },
+          { key: "vaultCap", label: "Vault Cap", render: v => <SARAmount amount={fmtS(v)} /> },
+          { key: "feeCapPct", label: "Fee/Cap %", render: (v, row) => <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700, color: v >= 75 ? "#C85C3E" : v >= 50 ? "#D4943A" : C.greenSolid, background: v >= 75 ? "#FBEAE5" : v >= 50 ? "#FDF4EC" : "#EFF5F2" }}>{v}%</span> },
+          { key: "status", label: "Status", render: v => <StatusBadge s={v} /> },
+          { key: "id", label: "Actions", render: (_, row) => (
+            <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+              {row.canForceSell && <Btn small variant="danger" onClick={() => forceSell(row)}>{t("Force Sell")}</Btn>}
+              {row.status !== "EXEMPT" && <Btn small variant="outline" onClick={() => { setExemptList(prev => new Set([...prev, row.id])); showSfToast("\u2705 " + row.nameEn + (isAr ? " \u0645\u0639\u0641\u0649" : " exempted")); }}>{t("Exempt")}</Btn>}
+              {row.qualifying && row.status !== "WAIVED" && row.status !== "EXEMPT" && <Btn small variant="ghost" onClick={() => { setWaivedList(prev => new Set([...prev, row.id])); showSfToast("\u2705 " + (isAr ? "\u062a\u0645 \u0627\u0644\u062a\u0646\u0627\u0632\u0644" : "Waived for " + row.nameEn)); }}>{t("Waive")}</Btn>}
+            </div>
+          )},
+        ]} rows={feeData} />
+      </div>}
+
+      {/* TAB: Config */}
+      {tab === "config" && <div style={{ maxWidth: 600 }}>
+        <div style={{ background: C.white, borderRadius: 14, padding: 24, border: `1px solid ${C.border}`, boxShadow: C.cardShadow }}>
+          <Toggle label={t("Enable Storage Fees")} value={feeEnabled} onChange={setFeeEnabled} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 20 }}>
+            <Inp label={t("Grace Period (days)")} value={graceDays} onChange={v => setGraceDays(parseInt(v) || 30)} type="number" />
+            <Inp label={t("Alert Threshold %")} value={alertThreshold} onChange={v => setAlertThreshold(parseInt(v) || 75)} type="number" />
+            <Inp label={t("Gold Rate (SAR/g/month)")} value={goldRate} onChange={v => setGoldRate(parseFloat(v) || 0)} type="number" />
+            <Inp label={t("Silver Rate (SAR/g/month)")} value={silverRate} onChange={v => setSilverRate(parseFloat(v) || 0)} type="number" />
+            <Inp label={t("Platinum Rate (SAR/g/month)")} value={platRate} onChange={v => setPlatRate(parseFloat(v) || 0)} type="number" />
+          </div>
+          <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
+            <Btn variant="teal" onClick={saveConfig}>{configSaving ? "..." : t("Save Config")}</Btn>
+          </div>
+        </div>
+      </div>}
+
+      {/* TAB: History */}
+      {tab === "history" && <div>
+        {feeHistory.length === 0 && <div style={{ background: C.white, borderRadius: 14, padding: 40, textAlign: "center", color: C.textMuted, border: `1px solid ${C.border}` }}>{isAr ? "لا توجد سجلات فوترة بعد" : "No billing records yet. Run billing to generate history."}</div>}
+        {feeHistory.length > 0 && <TTable cols={[
+          { key: "month", label: isAr ? "الشهر" : "Month" },
+          { key: "total", label: isAr ? "الإجمالي" : "Total", render: v => <SARAmount amount={fmtS(Math.round(v))} /> },
+          { key: "count", label: isAr ? "المستثمرين" : "Investors" },
+          { key: "date", label: isAr ? "التاريخ" : "Date" },
+        ]} rows={feeHistory} />}
+      </div>}
+    </div>
+  );
+};
+
+
 // PAGE 17 — TREASURY & RECONCILIATION
 // Golden Rules:
 //   1. Pool Bank = Investor Wallets + Platform Revenue + MM Cash
@@ -8289,6 +8534,7 @@ const PAGES = [
   {id:"settings",     icon:"settings",     label:"Settings"},
   {id:"health",       icon:"health",       label:"System Health"},
   {id:"treasury",     icon:"treasury",     label:"Treasury & Recon"},
+  {id:"storagefees",  icon:"treasury",     label:"Storage Fees"},
   {id:"profile",      icon:"profile",      label:"Account Profile"},
 ];
 
@@ -9576,7 +9822,8 @@ export default function App() {
     appointments:<Appointments/>, financials:<Financials/>, reports:<Reports/>,
     blacklist:<Blacklist/>, blocks:<Blocks/>, settings:<Settings onLangChange={switchLang}/>, auditlog:<AuditLog/>,
     commcenter:<CommCenter/>, usermgmt:<UserManagement/>, profile:<AccountProfile/>, health:<SystemHealth/>,
-    treasury:<TreasuryReconciliation/>
+    treasury:<TreasuryReconciliation/>,
+    storagefees:<StorageFees/>
   }[page] || <Dashboard/>);
 
   return (
