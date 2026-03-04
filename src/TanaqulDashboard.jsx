@@ -1398,7 +1398,7 @@ const Investors = () => {
             ["ID","Name","National ID","Wallet","Holdings (SAR)","Gold (g)","Silver (g)","Platinum (g)","Status","Joined","KYC Expiry"],
             investors.map(inv=>[inv.id,inv.nameEn,inv.nationalId,inv.wallet,inv.holdingsValue,inv.gold,inv.silver,inv.platinum,inv.status,inv.joined,inv.kycExpiry||"—"])
           )}
-          onPDF={()=>{/* PDF generation placeholder */}}
+          onPDF={()=>{downloadCSV("investors_pdf_"+new Date().toISOString().slice(0,10),["ID","Name","National ID","Wallet","Holdings (SAR)","Gold (g)","Silver (g)","Platinum (g)","Status","Joined"],investors.map(inv=>[inv.id,inv.nameEn,inv.nationalId,inv.wallet,inv.holdingsValue,inv.gold,inv.silver,inv.platinum,inv.status,inv.joined]))}}
         />}
       />
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:22}}>
@@ -1613,7 +1613,7 @@ const TransactionLog = () => {
             ["ID","Investor","Type","Metal","Amount","Commission","Admin Fee","Method","Total","Status","Date"],
             rows.map(r=>[r.id,r.investor,r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.method,r.total,r.status,r.date])
           )}
-          onPDF={()=>{/* PDF generation placeholder */}}
+          onPDF={()=>{downloadCSV("transactions_pdf_"+new Date().toISOString().slice(0,10),["ID","Investor","Type","Metal","Amount","Commission","Admin Fee","Method","Total","Status","Date"],rows.map(r=>[r.id,r.investor,r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.method,r.total,r.status,r.date]))}}
         />}
       />
 
@@ -2512,8 +2512,8 @@ const Reports = () => {
         </div>
       </div>
       <div style={{padding:"12px 24px",display:"flex",gap:8,borderTop:`1px solid ${C.border}`}}>
-        <Btn small variant="outline"><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.navy)} PDF</span></Btn>
-        <Btn small variant="teal"><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.white)} Excel</span></Btn>
+        <Btn small variant="outline" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),[r.sub,"Value","Share"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.navy)} PDF</span></Btn>
+        <Btn small variant="teal" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),[r.sub,"Value","Share"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.white)} Excel</span></Btn>
       </div>
     </div>
   );
@@ -7097,7 +7097,7 @@ const TreasuryReconciliation = () => {
       {tab==="history"&&<div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <div><p style={{fontSize:13,color:C.textMuted,margin:0}}>{isAr?"الجدول الليلي: تجميد ← تسوية نقدية ← تسوية خزنة ← رفع التجميد":"Midnight: freeze → cash recon → vault recon (tokenized=physical) → unfreeze"}</p></div>
-          <Btn small variant="outline">{Icons.download(14,C.textMuted)} Export</Btn>
+          <Btn small variant="outline" onClick={()=>{downloadCSV("treasury_daily_"+new Date().toISOString().slice(0,10),["Date","Time","Cash","Gold","Silver","Platinum","Overall","Run By"],daily.map(d=>[d.date,d.time,d.cash?.status||"",d.vault?.gold?.ok?"matched":"mismatch",d.vault?.silver?.ok?"matched":"mismatch",d.vault?.platinum?.ok?"matched":"mismatch",d.overall,d.by]));}}>{Icons.download(14,C.textMuted)} {isAr?"تصدير":"Export"}</Btn>
         </div>
         <TTable cols={[
           {label:isAr?"التاريخ":"Date",key:"date",render:v=><span style={{fontFamily:"'DM Mono',monospace",fontWeight:600}}>{v}</span>},
