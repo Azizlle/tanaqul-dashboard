@@ -33,7 +33,20 @@ const apiFetch = async (path, options = {}) => {
 };
 
 // Helper: API login
+// SECURITY: Login rate limiting
+let _loginAttempts = 0;
+let _loginLockout = 0;
 const apiLogin = async (email, password, totp_code) => {
+  if (Date.now() < _loginLockout) {
+    const secs = Math.ceil((_loginLockout - Date.now()) / 1000);
+    return { ok: false, status: 429, detail: "Too many attempts. Wait " + secs + "s" };
+  }
+  _loginAttempts++;
+  if (_loginAttempts >= 5) {
+    _loginLockout = Date.now() + 60000; // 1 min lockout
+    _loginAttempts = 0;
+    return { ok: false, status: 429, detail: "Too many attempts. Locked for 60s" };
+  }
   const body = { email, password };
   if (totp_code) body.totp_code = totp_code;
   const resp = await fetch(`${API_BASE}/auth/login`, {
@@ -46,8 +59,9 @@ const apiLogin = async (email, password, totp_code) => {
     if (data.requires_2fa_setup) {
       return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
     }
+    _loginAttempts = 0; // Reset on success
     localStorage.setItem("tanaqul_token", data.access_token);
-      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "super_admin"}));
+      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "viewer"})) // SECURITY: Default to viewer, not super_admin;
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
   }
@@ -1156,7 +1170,7 @@ const PriceTicker = () => {
 
 
 // ─── Shared initial order book data (used by Dashboard widget + OrderBook) ───
-const INITIAL_OB_ORDERS = [];
+const INITIAL_OB_ORDERS = []; // SECURITY: Hardcoded orders removed
 
 // ─── Mini Order Book Widget (Dashboard) ──────────────────────────────────────
 const MiniOrderBook = ({ orders, isAr }) => {
@@ -1865,7 +1879,7 @@ const Appointments = () => {
   const showApptToast=(msg)=>{setApptToast(msg);setTimeout(()=>setApptToast(""),4000);};
   // ⚠️ SECURITY: In production, OTP must be generated server-side and delivered via SMS/push.
   // This mock value exists only for prototype demonstration. Remove before deployment.
-  const MOCK_OTP = null; // Disabled
+  const MOCK_OTP = null; // SECURITY: Mock OTP disabled
 
   const closeAll = (interrupted=false) => { if(interrupted&&sel&&startStep>1){setInProgress(p=>new Set([...p,sel.id]));} setSel(null); setModal(null); setStartStep(1); setOtpVal(""); setOtpError(""); setOtpSecs(300); setOtpExpired(false); setReschedDate(""); setReschedTime(""); };
 
