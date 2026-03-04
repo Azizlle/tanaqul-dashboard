@@ -1250,7 +1250,7 @@ const MiniOrderBook = ({ orders, isAr }) => {
 
 const Dashboard = () => {
   const { t, isAr } = useLang();
-  const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts, cmaAlerts, amlDismissed } = useAppData();
+  const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts, cmaAlerts, amlDismissed, appDashStats } = useAppData();
   const s = appDashStats ? {...MOCK.stats, ...appDashStats} : MOCK.stats;
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
@@ -2203,7 +2203,7 @@ const Financials = () => {
   useEffect(()=>{
     if(pageHint?.tab){setTab(pageHint.tab);setPageHint(null);}
   },[pageHint]);
-  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(appMatches.length > 0 ? [] : MOCK.transactions);
+  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
   const [wModal,setWModal]=useState(null);
   const [wReason,setWReason]=useState("");
   const [finToast,setFinToast]=useState("");
@@ -2784,12 +2784,12 @@ const ValidatorsTab = () => {
 
 const Blocks = () => {
   const { t, isAr, commSplit } = useLang();
-  const { matches } = useAppData();
+  const { matches, appBlocks, appBlockStats } = useAppData();
   const [tab,setTab]=useState("BLOCKS");
   const tanaqulPct = (commSplit.buying||30)+(commSplit.selling||30);
   const creatorPct = commSplit.creator||20;
   const validatorsPct = commSplit.validators||20;
-  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(appMatches.length > 0 ? [] : MOCK.transactions);
+  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
   return (
     <div>
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
@@ -8866,7 +8866,7 @@ const MetalPill = ({ symbol, label, color, bgColor, price, change }) => {
 const HeaderPills = () => {
   const { t, isAr } = useLang();
   const { gold, silver, plat, status } = useLivePrices();
-  const { validators } = useAppData();
+  const { validators, appBlockStats } = useAppData();
   const [, tick] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => tick(n => n + 1), 15000);
