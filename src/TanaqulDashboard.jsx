@@ -1251,7 +1251,7 @@ const MiniOrderBook = ({ orders, isAr }) => {
 const Dashboard = () => {
   const { t, isAr } = useLang();
   const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts, cmaAlerts, amlDismissed, appDashStats } = useAppData();
-  const s = appDashStats ? {...MOCK.stats, ...appDashStats} : MOCK.stats;
+  const s = appDashStats || {};
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
   const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
@@ -1864,7 +1864,7 @@ const Appointments = () => {
   const showApptToast=(msg)=>{setApptToast(msg);setTimeout(()=>setApptToast(""),4000);};
   // ⚠️ SECURITY: In production, OTP must be generated server-side and delivered via SMS/push.
   // This mock value exists only for prototype demonstration. Remove before deployment.
-  const MOCK_OTP = "847291";
+  const MOCK_OTP = null; // Removed - use real OTP
 
   const closeAll = (interrupted=false) => { if(interrupted&&sel&&startStep>1){setInProgress(p=>new Set([...p,sel.id]));} setSel(null); setModal(null); setStartStep(1); setOtpVal(""); setOtpError(""); setOtpSecs(300); setOtpExpired(false); setReschedDate(""); setReschedTime(""); };
 
@@ -2203,7 +2203,7 @@ const Financials = () => {
   useEffect(()=>{
     if(pageHint?.tab){setTab(pageHint.tab);setPageHint(null);}
   },[pageHint]);
-  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
+  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
   const [wModal,setWModal]=useState(null);
   const [wReason,setWReason]=useState("");
   const [finToast,setFinToast]=useState("");
@@ -2792,7 +2792,7 @@ const Blocks = () => {
   const validatorsPct = apiSplit ? apiSplit.validators_percent : (commSplit.validators||20);
   const triggerSettings = appBlockStats?.trigger_settings;
   const triggerText = triggerSettings ? `${triggerSettings.size_mb}MB or ${triggerSettings.hours}hrs` : "1MB or 24hrs";
-  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
+  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
   return (
     <div>
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
@@ -3037,14 +3037,14 @@ const AuditLog = () => {
 
   const buildInvestorProfiles = () => {
     const allTxns = [
-      ...(MOCK.transactions||[]),
+      
       ...matches.map(m=>({
         id:m.id, buyerNationalId:m.buyerNid||"", sellerNationalId:m.sellerNid||"",
         total:String(m.totalSAR), metal:m.metal, status:"COMPLETED", date:m.date,
       })),
     ];
     const allWM = [...walletMovements];
-    const allAppts = [...(MOCK.appointments||[]), ...appointments];
+    const allAppts = [...appointments];
     const profiles = {};
 
     investors.forEach(inv => {
@@ -6106,7 +6106,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       });
     });
     // Search transactions
-    (MOCK.transactions||[]).forEach(tx => {
+    ([]).forEach(tx => {
       if(results.length >= MAX) return;
       const haystack = `${tx.id} ${tx.buyerNationalId} ${tx.sellerNationalId} ${tx.metal} ${tx.type} ${tx.method||""} ${tx.total}`.toLowerCase();
       if(haystack.includes(q)) results.push({
@@ -6179,7 +6179,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
         results.push({type:"rule",icon:"🔍",label:`${rule.id} — ${rule.label}`,sub:isAr?"قاعدة AML/CMA":"AML/CMA Rule",action:()=>{setPage("auditlog");onClose();}});
     });
     // Search messages
-    (MOCK_MESSAGES||[]).forEach(msg => {
+    ([]).forEach(msg => {
       if(results.length >= MAX) return;
       const haystack = `${msg.id} ${msg.to} ${msg.subject} ${msg.body}`.toLowerCase();
       if(haystack.includes(q)) results.push({
@@ -6264,7 +6264,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
     color:"#6B9080"});
 
   // Transactions
-  (MOCK.transactions||[]).forEach(tx => {
+  ([]).forEach(tx => {
     if(tx.buyerNationalId===nid) events.push({date:tx.date, type:"transaction", icon:tx.type==="BUY"?"🟢":"💰",
       title:`${isAr?"شراء":"Buy"} ${tx.metal} — ${tx.amount}`,
       detail:`SAR ${tx.total} · ${tx.method||"—"} · ${tx.status}`,
@@ -6300,7 +6300,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
   });
 
   // Messages sent to this investor
-  (MOCK_MESSAGES||[]).forEach(msg => {
+  ([]).forEach(msg => {
     if(msg.toNid===nid) events.push({date:msg.sentAt||msg.scheduledFor||"", type:"message", icon:"✉️",
       title:`${isAr?"رسالة":"Message"}: ${msg.subject}`,
       detail:`${msg.channel} · ${msg.status}`,
@@ -6482,7 +6482,7 @@ const CommCenter = () => {
   const { t, isAr } = useLang();
   const { investors } = useAppData();
   const [tab, setTab] = useState("inbox");
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
+  const [messages, setMessages] = useState([]);
   const [templates] = useState(COMM_TEMPLATES);
   const [filter, setFilter] = useState("ALL");
   const [channelFilter, setChannelFilter] = useState("ALL");
@@ -8939,7 +8939,7 @@ const parseSARGlobal = v => { if(typeof v === "number") return v; return parseFl
 const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals, bars, blacklist, transactions, appointments}) => {
   const alerts = [];
   const now = new Date();
-  const allTxns = transactions || MOCK.transactions || [];
+  const allTxns = transactions || [];
 
   investors.forEach(inv => {
     const nid = inv.nationalId;
@@ -8960,7 +8960,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     const wdReqs = withdrawals.filter(w=>w.nationalId===nid||w.investor===inv.nameEn);
     const totalWithdrawn = wdReqs.filter(w=>w.status==="PROCESSED"||w.status==="APPROVED").reduce((a,w)=>a+parseSARGlobal(w.amount),0);
     const holdings = parseSARGlobal(inv.holdingsValue);
-    const noShows = (appointments||MOCK.appointments||[]).filter(a=>a.nationalId===nid&&a.status==="NO_SHOW").length;
+    const noShows = (appointments||[]).filter(a=>a.nationalId===nid&&a.status==="NO_SHOW").length;
     const daysSinceJoin = inv.joined ? (now - new Date(inv.joined))/(86400000) : 999;
 
     const push = (rule,level,title,detail,category) => alerts.push({rule,level,nid,name:inv.nameEn,title,detail,category,automatedAt:now.toISOString(),key:rule+":"+nid});
@@ -9026,7 +9026,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
 const runCMAManipulation = ({investors, orders, matches, blacklist, transactions}) => {
   const alerts = [];
   const now = new Date();
-  const allTxns = transactions || MOCK.transactions || [];
+  const allTxns = transactions || [];
   const push = (rule,level,nid,name,title,detail,article,category) =>
     alerts.push({rule,level,nid,name,title,detail,article,category,automatedAt:now.toISOString(),key:rule+":"+nid});
 
@@ -9654,7 +9654,7 @@ export default function App() {
     if(!loggedIn) return;
     // Build combined transactions list: MOCK + match-generated
     const allTransactions = [
-      ...(MOCK.transactions||[]),
+      
       ...appMatches.map(m=>({
         id:m.id, buyerNationalId:m.buyerNid||"", sellerNationalId:m.sellerNid||"",
         buyerName:m.filledFor, sellerName:m.filledFor,
