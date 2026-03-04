@@ -9409,7 +9409,7 @@ export default function App() {
 
   // ═══ MARKET MAKER ACCOUNT STATE ═══
   const [mmAccount, setMMAccount] = useState({
-    cash: 500000, gold:{g:1200,avg:68.5}, silver:{g:25000,avg:0.85}, platinum:{g:400,avg:32.0},
+    cash: 0, gold:{g:0,avg:0}, silver:{g:0,avg:0}, platinum:{g:0,avg:0,avg:32.0},
     trades:[], pnl:{realized:12450,unrealized:3200,fees:890},
   });
   // ═══ TREASURY / RECONCILIATION STATE ═══
