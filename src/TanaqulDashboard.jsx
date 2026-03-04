@@ -208,7 +208,6 @@ const AR = {
   "Tanaqul Precious Metals Trading Co.":"شركة تنقُّل لتداول المعادن الثمينة",
   "SAMA License No. 12345":"ترخيص ساما رقم 12345",
   "King Fahd Road, Riyadh 12345":"طريق الملك فهد، الرياض 12345",
-  "Banned by National ID — blocked from login and registration until admin unbans":"محظور بالهوية الوطنية — ممنوع من الدخول والتسجيل حتى رفع الحظر",
   "BAR BARCODE (to be withdrawn)":"باركود السبيكة (للسحب)",
   "Pool Bank updated":"تم تحديث رصيد البنك",
   "Alert dismissed":"تم تجاهل التنبيه","NO_SHOW":"لم يحضر",
@@ -278,7 +277,6 @@ const AR = {
   "Export Access":"صلاحية التصدير","Can export reports":"يمكنه تصدير التقارير",
   "Bulk Actions":"إجراءات جماعية","Can perform bulk operations":"يمكنه تنفيذ إجراءات جماعية",
   // ═══ FIXED: Missing t() translation keys ═══
-  "Alert dismissed":"تم إغلاق التنبيه",
   "Cannot reschedule within 24 hours of appointment":"لا يمكن إعادة الجدولة قبل 24 ساعة من الموعد",
   "Dismissed":"مُغلق",
   "Please select a date and time":"يرجى اختيار التاريخ والوقت",
