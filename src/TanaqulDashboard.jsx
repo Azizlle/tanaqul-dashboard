@@ -1168,7 +1168,7 @@ const Dashboard = () => {
   };
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
-  const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
+  const fmtK = n => (n == null || isNaN(n) ? "0" : Number(n).toLocaleString("en-SA",{maximumFractionDigits:0}));
   const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
   const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
   const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
@@ -2124,7 +2124,7 @@ const Financials = () => {
   const showFinToast = (m)=>{ setFinToast(m); setTimeout(()=>setFinToast(""),3000); };
 
   // Live-computed financial stats
-  const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
+  const fmtK = n => (n == null || isNaN(n) ? "0" : Number(n).toLocaleString("en-SA",{maximumFractionDigits:0}));
   const today = new Date().toISOString().slice(0,10);
   const todayM = matches.filter(m=>m.date&&m.date.startsWith(today));
   const volToday  = todayM.reduce((a,m)=>a+m.totalSAR,0);
@@ -2340,7 +2340,7 @@ const Reports = () => {
   const { t, isAr } = useLang();
   const { matches, investors, walletMovements, bars } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
-  const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
+  const fmtK = n => (n == null || isNaN(n) ? "0" : Number(n).toLocaleString("en-SA",{maximumFractionDigits:0}));
   const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
