@@ -23,8 +23,9 @@ Opens at http://localhost:3000
 ## Login Credentials
 
 - Email: `admin@tanaqul.sa`
-- Password: `Tanaqul@2026`
+- Password: `*(redacted - change immediately)*`
 
 ## Backend API
 
 Swagger docs: https://tanaqul-production.up.railway.app/docs
+
