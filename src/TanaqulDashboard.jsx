@@ -1374,6 +1374,11 @@ const Investors = () => {
   const doAction = (inv, act) => { setSel(inv); setAction(act); setReason(""); setNotifyMsg(""); };
 
   const confirmAction = async () => {
+    // GUARD: Cannot ban investor with metals in vault — suspend only
+    if(action==="ban" && (sel.gold>0 || sel.silver>0 || sel.platinum>0)) {
+      showToast(t("Cannot ban — investor has metals in vault. Suspend only."));
+      return;
+    }
     const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE"}[action];
     try{await apiFetch("/investors/"+sel.uuid+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:newStatus,reason:reason||"Admin action"})})}catch(e){console.error("Investor update failed:",e);}
     setInvestors(prev => prev.map(i => i.id===sel.id ? {...i, status:newStatus} : i));
