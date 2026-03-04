@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanaqul Block Explorer</title>
+<meta name="description" content="Tanaqul Precious Metals Blockchain — Public Block Explorer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1A2E4A;
+  --navy-deep: #0F1D30;
+  --navy-light: #243F72;
+  --gold: #C4956A;
+  --gold-light: #D4A97A;
+  --gold-dim: #8B6540;
+  --gold-glow: rgba(196,149,106,0.15);
+  --teal: #6B9080;
+  --teal-light: #8AB4A1;
+  --bg: #0B1420;
+  --card: #111E30;
+  --card-border: #1E3250;
+  --text: #E8E0D4;
+  --text-muted: #7A8BA0;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Outfit', sans-serif;
+  --red: #E8826A;
+  --green: #6B9080;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 400px;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(196,149,106,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11,20,32,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--card-border);
+  padding: 0 24px;
+}
+.header-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.logo {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--text);
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--navy-light), var(--gold-dim));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; color: var(--gold);
+  letter-spacing: -1px;
+}
+.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+.logo-text span { color: var(--gold); }
+.logo-badge {
+  font-size: 10px; font-weight: 600; color: var(--teal);
+  background: rgba(107,144,128,0.15);
+  padding: 3px 8px; border-radius: 20px;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 8px 14px;
+  width: 380px; transition: border-color 0.2s;
+}
+.search-box:focus-within { border-color: var(--gold-dim); }
+.search-box input {
+  flex: 1; background: none; border: none; outline: none;
+  font-family: var(--mono); font-size: 13px; color: var(--text);
+}
+.search-box input::placeholder { color: var(--text-muted); }
+.search-btn {
+  background: var(--gold); color: var(--navy-deep); border: none;
+  border-radius: 6px; padding: 5px 12px; font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: var(--sans);
+  transition: background 0.2s;
+}
+.search-btn:hover { background: var(--gold-light); }
+
+.nav-links { display: flex; gap: 6px; }
+.nav-links a {
+  color: var(--text-muted); text-decoration: none;
+  font-size: 13px; font-weight: 500; padding: 6px 12px;
+  border-radius: 8px; transition: all 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--gold); background: var(--gold-glow); }
+
+/* Main */
+.main { max-width: 1280px; margin: 0 auto; padding: 28px 24px; position: relative; z-index: 1; }
+
+/* Stats bar */
+.stats-bar {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 14px; padding: 18px 16px;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.stat-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
+.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 8px; }
+.stat-value { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+.stat-value.gold { color: var(--gold); }
+.stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+
+/* Section */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.section-title .accent { color: var(--gold); }
+
+/* Table */
+.table-wrap {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 16px; overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+thead { background: rgba(196,149,106,0.05); }
+th {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--card-border);
+}
+td {
+  padding: 14px 16px; font-size: 13px; border-bottom: 1px solid rgba(30,50,80,0.5);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover { background: rgba(196,149,106,0.03); }
+.mono { font-family: var(--mono); font-size: 12px; }
+.hash { color: var(--teal-light); cursor: pointer; }
+.hash:hover { text-decoration: underline; }
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+}
+.badge-mint { background: rgba(107,144,128,0.15); color: var(--teal-light); }
+.badge-burn { background: rgba(232,130,106,0.12); color: var(--red); }
+.badge-match { background: rgba(196,149,106,0.12); color: var(--gold-light); }
+.badge-pending { background: rgba(122,139,160,0.15); color: var(--text-muted); }
+.badge-confirmed { background: rgba(107,144,128,0.15); color: var(--green); }
+
+/* Block detail panel */
+.block-detail {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 16px; padding: 28px; margin-bottom: 24px;
+  display: none;
+}
+.block-detail.active { display: block; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.detail-row { display: flex; flex-direction: column; gap: 4px; }
+.detail-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.detail-value { font-size: 14px; font-weight: 500; }
+.detail-value.mono { font-family: var(--mono); font-size: 13px; color: var(--teal-light); word-break: break-all; }
+.detail-value.lg { font-size: 28px; font-weight: 800; color: var(--gold); }
+
+/* Pagination */
+.pagination {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 16px; border-top: 1px solid var(--card-border);
+}
+.page-btn {
+  background: transparent; border: 1px solid var(--card-border);
+  color: var(--text-muted); padding: 6px 14px; border-radius: 8px;
+  font-size: 13px; cursor: pointer; font-family: var(--sans);
+  transition: all 0.2s;
+}
+.page-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+.page-btn.active { background: var(--gold); color: var(--navy-deep); border-color: var(--gold); font-weight: 600; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Validators */
+.val-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.val-card {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 14px; padding: 20px; transition: all 0.3s;
+}
+.val-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
+.val-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.val-addr { font-family: var(--mono); font-size: 11px; color: var(--teal-light); margin-bottom: 12px; word-break: break-all; }
+.val-stats { display: flex; gap: 16px; }
+.val-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+.val-stat-value { font-size: 16px; font-weight: 700; }
+
+.status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;
+}
+.status-dot.active { background: var(--green); box-shadow: 0 0 6px rgba(107,144,128,0.5); }
+.status-dot.creator { background: var(--gold); box-shadow: 0 0 6px rgba(196,149,106,0.5); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+.tab-btn {
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-muted); padding: 8px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: var(--sans); transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--gold); background: var(--gold-glow); border-color: rgba(196,149,106,0.2); }
+
+/* Loading */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px; color: var(--text-muted);
+}
+.spinner {
+  width: 24px; height: 24px; border: 2px solid var(--card-border);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin-right: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+
+/* Footer */
+.footer {
+  max-width: 1280px; margin: 40px auto 0; padding: 24px;
+  border-top: 1px solid var(--card-border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .search-box { width: 240px; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .search-box { display: none; }
+  .nav-links { display: none; }
+  .header-inner { height: 56px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <a href="#" class="logo" onclick="showTab('blocks')">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">Tanaqul <span>Explorer</span></div>
+      <div class="logo-badge">Mainnet</div>
+    </a>
+    <div class="search-box">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+      <input type="text" id="searchInput" placeholder="Search by block number, tx hash, or validator..." onkeydown="if(event.key==='Enter')doSearch()">
+      <button class="search-btn" onclick="doSearch()">Search</button>
+    </div>
+    <nav class="nav-links">
+      <a href="#" class="active" onclick="showTab('blocks')" id="nav-blocks">Blocks</a>
+      <a href="#" onclick="showTab('transactions')" id="nav-transactions">Transactions</a>
+      <a href="#" onclick="showTab('validators')" id="nav-validators">Validators</a>
+      <a href="#" onclick="showTab('tokens')" id="nav-tokens">Tokens</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main">
+  <!-- Stats Bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-card"><div class="stat-label">Total Blocks</div><div class="stat-value" id="s-blocks">—</div></div>
+    <div class="stat-card"><div class="stat-label">Transactions</div><div class="stat-value" id="s-txs">—</div></div>
+    <div class="stat-card"><div class="stat-label">Validators</div><div class="stat-value" id="s-vals">—</div></div>
+    <div class="stat-card"><div class="stat-label">Tokens Active</div><div class="stat-value gold" id="s-tokens">—</div></div>
+    <div class="stat-card"><div class="stat-label">Commission (SAR)</div><div class="stat-value" id="s-comm">—</div><div class="stat-sub" id="s-comm-sub"></div></div>
+    <div class="stat-card"><div class="stat-label">Latest Block</div><div class="stat-value gold" id="s-latest">—</div><div class="stat-sub" id="s-latest-sub"></div></div>
+  </div>
+
+  <!-- Block Detail (shown when clicking a block) -->
+  <div class="block-detail" id="blockDetail"></div>
+
+  <!-- Tabs Content -->
+  <div id="tab-blocks">
+    <div class="section-header">
+      <div class="section-title">Latest <span class="accent">Blocks</span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Block</th><th>Hash</th><th>Txns</th><th>Creator</th><th>Commission</th><th>Size</th><th>Time</th></tr></thead>
+        <tbody id="blocksTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Loading blocks...</div></td></tr></tbody>
+      </table>
+      <div class="pagination" id="blocksPagination"></div>
+    </div>
+  </div>
+
+  <div id="tab-transactions" style="display:none">
+    <div class="section-header">
+      <div class="section-title">Recent <span class="accent">Transactions</span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Hash</th><th>Type</th><th>Investor</th><th>Metal</th><th>Grams</th><th>SAR</th><th>Status</th><th>Time</th></tr></thead>
+        <tbody id="txTable"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-validators" style="display:none">
+    <div class="section-header">
+      <div class="section-title">Active <span class="accent">Validators</span></div>
+    </div>
+    <div class="val-grid" id="validatorsGrid"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+  </div>
+
+  <div id="tab-tokens" style="display:none">
+    <div class="section-header">
+      <div class="section-title">Token <span class="accent">Supply</span></div>
+    </div>
+    <div id="tokenSupply"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>Tanaqul Blockchain Explorer — Proof of Authority (PoA)</div>
+  <div>Powered by Tanaqul Platform</div>
+</footer>
+
+<script>
+const API = window.TANAQUL_API || "https://tanaqul-production.up.railway.app/api/v1";
+let currentPage = 1;
+let currentTab = "blocks";
+
+// ── Utilities ───────────────────────────────────────────────────────────────
+const fmt = n => typeof n==="number" ? n.toLocaleString() : n;
+const short = (h,n=10) => h ? (h.length>n*2 ? h.slice(0,n)+"..."+h.slice(-n) : h) : "—";
+const ago = iso => {
+  if(!iso) return "—";
+  const s = Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if(s<60) return s+"s ago";
+  if(s<3600) return Math.floor(s/60)+"m ago";
+  if(s<86400) return Math.floor(s/3600)+"h ago";
+  return Math.floor(s/86400)+"d ago";
+};
+const typeBadge = t => {
+  const m = {MINT:"badge-mint",BURN:"badge-burn",MATCH:"badge-match",PENDING:"badge-pending",CONFIRMED:"badge-confirmed"};
+  return `<span class="badge ${m[t]||"badge-pending"}">${t}</span>`;
+};
+
+async function api(path) {
+  try {
+    const r = await fetch(API+path);
+    if(!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) { console.error("API Error:",path,e); return null; }
+}
+
+// ── Load Network Stats ──────────────────────────────────────────────────────
+async function loadStats() {
+  const d = await api("/public/explorer/network");
+  if(!d) return;
+  document.getElementById("s-blocks").textContent = fmt(d.total_blocks);
+  document.getElementById("s-txs").textContent = fmt(d.total_transactions);
+  document.getElementById("s-vals").textContent = fmt(d.active_validators);
+  document.getElementById("s-tokens").textContent = fmt(d.active_tokens);
+  document.getElementById("s-comm").textContent = fmt(Math.round(d.total_commission_sar));
+  document.getElementById("s-comm-sub").textContent = fmt(d.total_tokenized_grams)+"g tokenized";
+  if(d.latest_block) {
+    document.getElementById("s-latest").textContent = "#"+fmt(d.latest_block.number);
+    document.getElementById("s-latest-sub").textContent = ago(d.latest_block.created_at);
+  }
+}
+
+// ── Blocks ──────────────────────────────────────────────────────────────────
+async function loadBlocks(page=1) {
+  currentPage = page;
+  const d = await api(`/public/explorer/blocks?page=${page}&limit=15`);
+  const tb = document.getElementById("blocksTable");
+  if(!d||!d.blocks.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">⛓️</div>No blocks yet</div></td></tr>'; return; }
+  tb.innerHTML = d.blocks.map(b => `
+    <tr style="cursor:pointer" onclick="loadBlockDetail(${b.number})">
+      <td><strong style="color:var(--gold)">#${fmt(b.number)}</strong></td>
+      <td><span class="mono hash">${short(b.hash,8)}</span></td>
+      <td>${b.tx_count}</td>
+      <td>${b.creator||"—"}</td>
+      <td class="mono">${fmt(Math.round(b.commission_total))} SAR</td>
+      <td class="mono">${b.size_mb} MB</td>
+      <td style="color:var(--text-muted)">${ago(b.created_at)}</td>
+    </tr>
+  `).join("");
+  // Pagination
+  const pg = document.getElementById("blocksPagination");
+  let html = `<button class="page-btn" ${page<=1?"disabled":""} onclick="loadBlocks(${page-1})">← Prev</button>`;
+  html += `<span style="font-size:13px;color:var(--text-muted)">Page ${page} of ${d.pages}</span>`;
+  html += `<button class="page-btn" ${page>=d.pages?"disabled":""} onclick="loadBlocks(${page+1})">Next →</button>`;
+  pg.innerHTML = html;
+}
+
+async function loadBlockDetail(num) {
+  const d = await api(`/public/explorer/blocks/${num}`);
+  if(!d) return;
+  const el = document.getElementById("blockDetail");
+  el.className = "block-detail active";
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px;font-weight:800;color:var(--gold)">Block #${fmt(d.number)}</span>
+        ${d.quorum_met?'<span class="badge badge-confirmed">Quorum Met</span>':'<span class="badge badge-pending">Pending</span>'}
+      </div>
+      <button onclick="document.getElementById('blockDetail').className='block-detail'" style="background:none;border:1px solid var(--card-border);color:var(--text-muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:var(--sans)">✕ Close</button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-row"><div class="detail-label">Block Hash</div><div class="detail-value mono">${d.hash}</div></div>
+      <div class="detail-row"><div class="detail-label">Previous Hash</div><div class="detail-value mono">${d.prev_hash}</div></div>
+      <div class="detail-row"><div class="detail-label">Merkle Root</div><div class="detail-value mono">${d.merkle_root}</div></div>
+      <div class="detail-row"><div class="detail-label">Created</div><div class="detail-value">${new Date(d.created_at).toLocaleString()}</div></div>
+      <div class="detail-row"><div class="detail-label">Creator</div><div class="detail-value">${d.creator} <span class="mono" style="color:var(--text-muted)">${d.creator_id}</span></div></div>
+      <div class="detail-row"><div class="detail-label">Size</div><div class="detail-value">${d.size_mb} MB (${fmt(d.size_bytes)} bytes)</div></div>
+      <div class="detail-row"><div class="detail-label">Commission Total</div><div class="detail-value" style="color:var(--gold)">${fmt(d.commission_total)} SAR</div></div>
+      <div class="detail-row"><div class="detail-label">Split</div><div class="detail-value">Tanaqul: ${fmt(d.tanaqul_share)} · Creator: ${fmt(d.creator_share)} · Validators: ${fmt(d.validators_share)}</div></div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="section-title" style="font-size:15px;margin-bottom:12px">${d.transactions.length} Transaction${d.transactions.length!==1?"s":""}</div>
+      ${d.transactions.length?`<div class="table-wrap"><table>
+        <thead><tr><th>Hash</th><th>Type</th><th>Investor</th><th>Metal</th><th>Grams</th><th>SAR</th></tr></thead>
+        <tbody>${d.transactions.map(tx=>`
+          <tr>
+            <td><span class="mono hash">${short(tx.tx_hash,8)}</span></td>
+            <td>${typeBadge(tx.tx_type)}</td>
+            <td>${tx.investor_display||"—"}</td>
+            <td>${tx.metal||"—"}</td>
+            <td class="mono">${tx.grams||"—"}</td>
+            <td class="mono">${tx.amount_sar?fmt(tx.amount_sar)+" SAR":"—"}</td>
+          </tr>
+        `).join("")}</tbody>
+      </table></div>`:'<div class="empty-state">No transactions in this block</div>'}
+    </div>
+  `;
+  el.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+// ── Transactions ────────────────────────────────────────────────────────────
+async function loadTransactions() {
+  const d = await api("/public/explorer/transactions/recent?limit=30");
+  const tb = document.getElementById("txTable");
+  if(!d||!d.transactions.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div>No transactions yet</div></td></tr>'; return; }
+  tb.innerHTML = d.transactions.map(tx => `
+    <tr>
+      <td><span class="mono hash" onclick="loadTxDetail('${tx.tx_hash}')">${short(tx.tx_hash,8)}</span></td>
+      <td>${typeBadge(tx.tx_type)}</td>
+      <td>${tx.investor_display||"—"}</td>
+      <td>${tx.metal||"—"}</td>
+      <td class="mono">${tx.grams||"—"}</td>
+      <td class="mono">${tx.amount_sar?fmt(tx.amount_sar):"—"}</td>
+      <td>${typeBadge(tx.status)}</td>
+      <td style="color:var(--text-muted)">${ago(tx.created_at)}</td>
+    </tr>
+  `).join("");
+}
+
+async function loadTxDetail(hash) {
+  const d = await api(`/public/explorer/tx/${hash}`);
+  if(!d) { alert("Transaction not found"); return; }
+  const el = document.getElementById("blockDetail");
+  el.className = "block-detail active";
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <span style="font-size:20px;font-weight:700">Transaction Detail</span>
+      <button onclick="document.getElementById('blockDetail').className='block-detail'" style="background:none;border:1px solid var(--card-border);color:var(--text-muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:var(--sans)">✕ Close</button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-row"><div class="detail-label">Hash</div><div class="detail-value mono">${d.tx_hash}</div></div>
+      <div class="detail-row"><div class="detail-label">Type</div><div class="detail-value">${typeBadge(d.tx_type)}</div></div>
+      <div class="detail-row"><div class="detail-label">Investor</div><div class="detail-value">${d.investor_display||"—"}</div></div>
+      <div class="detail-row"><div class="detail-label">Metal</div><div class="detail-value">${d.metal||"—"}</div></div>
+      <div class="detail-row"><div class="detail-label">Grams</div><div class="detail-value">${d.grams||"—"}</div></div>
+      <div class="detail-row"><div class="detail-label">Amount</div><div class="detail-value" style="color:var(--gold)">${d.amount_sar?fmt(d.amount_sar)+" SAR":"—"}</div></div>
+      <div class="detail-row"><div class="detail-label">Commission</div><div class="detail-value">${d.commission?fmt(d.commission)+" SAR":"—"}</div></div>
+      <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value">${typeBadge(d.status)}</div></div>
+      ${d.block?`<div class="detail-row"><div class="detail-label">Block</div><div class="detail-value"><span style="color:var(--gold);cursor:pointer" onclick="loadBlockDetail(${d.block.number})">#${d.block.number}</span> <span class="mono" style="color:var(--text-muted)">${short(d.block.hash,8)}</span></div></div>`:""}
+      <div class="detail-row"><div class="detail-label">Created</div><div class="detail-value">${new Date(d.created_at).toLocaleString()}</div></div>
+    </div>
+  `;
+  el.scrollIntoView({behavior:"smooth"});
+}
+
+// ── Validators ──────────────────────────────────────────────────────────────
+async function loadValidators() {
+  const d = await api("/public/explorer/validators");
+  const grid = document.getElementById("validatorsGrid");
+  if(!d||!d.validators.length) { grid.innerHTML = '<div class="empty-state"><div class="icon">🛡️</div>No active validators</div>'; return; }
+  grid.innerHTML = d.validators.map(v => `
+    <div class="val-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="status-dot ${v.can_create?'creator':'active'}"></span>
+        <span class="val-name">${v.name}</span>
+        ${v.can_create?'<span class="badge badge-mint" style="font-size:10px">Creator</span>':""}
+      </div>
+      <div class="val-addr">${v.wallet_address}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">
+        <span class="mono">${v.display_id}</span> · Joined ${v.joined_at?new Date(v.joined_at).toLocaleDateString():"—"}
+      </div>
+      <div class="val-stats">
+        <div><div class="val-stat-label">Blocks</div><div class="val-stat-value">${fmt(v.blocks_validated)}</div></div>
+        <div><div class="val-stat-label">Commission</div><div class="val-stat-value" style="color:var(--gold)">${fmt(Math.round(v.commission_earned))}</div></div>
+        <div><div class="val-stat-label">Weight</div><div class="val-stat-value">${v.weight}%</div></div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ── Token Supply ────────────────────────────────────────────────────────────
+async function loadTokenSupply() {
+  const d = await api("/public/explorer/tokens/supply");
+  const el = document.getElementById("tokenSupply");
+  if(!d) { el.innerHTML = '<div class="empty-state"><div class="icon">🪙</div>No token data</div>'; return; }
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:24px">
+      <div class="stat-card">
+        <div class="stat-label">Circulating Tokens</div>
+        <div class="stat-value gold">${fmt(d.circulating.count)}</div>
+        <div class="stat-sub">${fmt(d.circulating.grams)}g total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Burned Tokens</div>
+        <div class="stat-value">${fmt(d.burned.count)}</div>
+        <div class="stat-sub">${fmt(d.burned.grams)}g burned</div>
+      </div>
+    </div>
+    <div class="section-title" style="font-size:15px;margin-bottom:14px">Supply by <span class="accent">Metal</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+      ${["Gold","Silver","Platinum"].map(m => {
+        const data = d.by_metal[m]||{count:0,grams:0};
+        const colors = {Gold:"#C4956A",Silver:"#A8B4C0",Platinum:"#8B9DAF"};
+        return `<div class="stat-card" style="border-left:3px solid ${colors[m]}">
+          <div class="stat-label">${m}</div>
+          <div class="stat-value" style="color:${colors[m]}">${fmt(data.count)}</div>
+          <div class="stat-sub">${fmt(data.grams)}g</div>
+        </div>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+function showTab(tab) {
+  currentTab = tab;
+  ["blocks","transactions","validators","tokens"].forEach(t => {
+    document.getElementById("tab-"+t).style.display = t===tab?"block":"none";
+    const nav = document.getElementById("nav-"+t);
+    if(nav) nav.className = t===tab?"active":"";
+  });
+  document.getElementById("blockDetail").className = "block-detail";
+  if(tab==="blocks") loadBlocks(1);
+  if(tab==="transactions") loadTransactions();
+  if(tab==="validators") loadValidators();
+  if(tab==="tokens") loadTokenSupply();
+}
+
+// ── Search ──────────────────────────────────────────────────────────────────
+async function doSearch() {
+  const q = document.getElementById("searchInput").value.trim();
+  if(!q) return;
+  if(/^\d+$/.test(q)) { loadBlockDetail(parseInt(q)); return; }
+  if(q.startsWith("0x")||q.length===64||q.length===66) { loadTxDetail(q); return; }
+  if(q.toUpperCase().startsWith("VAL")||q.toUpperCase().startsWith("TANAQUL")) { showTab("validators"); return; }
+  showTab("blocks");
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+loadStats();
+loadBlocks(1);
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>
