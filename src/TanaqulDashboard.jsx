@@ -1681,8 +1681,8 @@ const Vault = () => {
         <StatCard icon={Icons.block(22,C.teal)} title={t("Linked")} value={bars.filter(b=>b.status==="LINKED").length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Free")} value={bars.filter(b=>b.status==="FREE").length} />
         <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="0" gold />
-        <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value="8,340" />
-        <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value="15,840" />
+        <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value={bars.filter(b=>b.status==="FREE").reduce((s,b)=>s+parseFloat(b.weight||0),0).toLocaleString("en-SA")} />
+        <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value={bars.filter(b=>b.status==="LINKED").reduce((s,b)=>s+parseFloat(b.weight||0),0).toLocaleString("en-SA")} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Integrity")} value={bars.filter(b=>b.status==="DAMAGED").length===0&&bars.filter(b=>b.status==="LEFT").length===bars.filter(b=>b.leftOn).length&&bars.filter(b=>b.leftOn&&b.status!=="LEFT").length===0?"1:1 ✓":"⚠ Check"} gold />
       </div>
       <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center",justifyContent:"center"}}>
