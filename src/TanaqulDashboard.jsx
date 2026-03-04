@@ -1251,7 +1251,16 @@ const MiniOrderBook = ({ orders, isAr }) => {
 const Dashboard = () => {
   const { t, isAr } = useLang();
   const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts, cmaAlerts, amlDismissed, appDashStats } = useAppData();
-  const s = appDashStats || {};
+  const s = appDashStats || {
+    aum:"0", volumeToday:"0", volumeMonth:"0",
+    commissionToday:"0", commissionMonth:"0",
+    adminFeesToday:"0", adminFeesMonth:"0",
+    pendingWithdrawals:"0", totalWalletBalance:"0",
+    activeOrders:0, pendingAppointments:0, totalInvestors:0,
+    goldGrams:"0", silverGrams:"0", platinumGrams:"0",
+    tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
+    lastBlock:"—", blockNumber:0,
+  };
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
   const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
@@ -2823,7 +2832,7 @@ const Blocks = () => {
         {key:"creatorShare",label:`Creator ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validatorsShare",label:`Validators ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validator",label:"Creator"},{key:"size",label:"Size"},{key:"timestamp",label:"Time"},
-      ]} rows={appBlocks} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />}
+      ]} rows={appBlocks || []} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />}
       {tab==="TRANSACTIONS"&&<TTable cols={[
         {key:"id",label:"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
         {key:"investor",label:"Investor"},{key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
@@ -3044,7 +3053,7 @@ const AuditLog = () => {
       })),
     ];
     const allWM = [...walletMovements];
-    const allAppts = [...appointments];
+    const allAppts = [...(appointments||[])];
     const profiles = {};
 
     investors.forEach(inv => {
