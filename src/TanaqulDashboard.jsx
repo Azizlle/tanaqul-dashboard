@@ -2685,7 +2685,7 @@ const ValidatorsTab = () => {
                 setValidators(p=>p.map(v=>v.id===row.id?{...v,status:"INACTIVE"}:v));showBlkToast(isAr?"✅ تم تعطيل المدقق":"✅ Validator deactivated");}}>{isAr?"تعطيل":"Deactivate"}</Btn>
               :<Btn small variant="teal"   onClick={()=>{setValidators(p=>p.map(v=>v.id===row.id?{...v,status:"ACTIVE"} :v));showBlkToast(isAr?"✅ تم تفعيل المدقق":"✅ Validator activated");}}>{isAr?"تفعيل":"Activate"}</Btn>
             }
-            <Btn small variant="outline" onClick={()=>showBlkToast(isAr?"تم تصدير السجل":"📋 History exported")}>{isAr?"سجل":"History"}</Btn>
+            <Btn small variant="outline" onClick={()=>{downloadCSV("validator_"+row.id,["ID","Name","Status","Blocks","Weight","Earned","Joined"],[[row.id,row.name,row.status,row.blocksValidated,row.weight,row.commissionEarned,row.joined]]);showBlkToast(isAr?"✅ تم تصدير":"✅ Exported");}}>{isAr?"سجل":"History"}</Btn>
           </div>
         )},
       ]} rows={validators} />
