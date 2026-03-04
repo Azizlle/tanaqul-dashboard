@@ -33,20 +33,7 @@ const apiFetch = async (path, options = {}) => {
 };
 
 // Helper: API login
-// SECURITY: Login rate limiting
-let _loginAttempts = 0;
-let _loginLockout = 0;
 const apiLogin = async (email, password, totp_code) => {
-  if (Date.now() < _loginLockout) {
-    const secs = Math.ceil((_loginLockout - Date.now()) / 1000);
-    return { ok: false, status: 429, detail: "Too many attempts. Wait " + secs + "s" };
-  }
-  _loginAttempts++;
-  if (_loginAttempts >= 5) {
-    _loginLockout = Date.now() + 60000; // 1 min lockout
-    _loginAttempts = 0;
-    return { ok: false, status: 429, detail: "Too many attempts. Locked for 60s" };
-  }
   const body = { email, password };
   if (totp_code) body.totp_code = totp_code;
   const resp = await fetch(`${API_BASE}/auth/login`, {
@@ -59,9 +46,8 @@ const apiLogin = async (email, password, totp_code) => {
     if (data.requires_2fa_setup) {
       return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
     }
-    _loginAttempts = 0; // Reset on success
     localStorage.setItem("tanaqul_token", data.access_token);
-      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "viewer"})) // SECURITY: Default to viewer, not super_admin;
+      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "super_admin"}));
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
   }
@@ -176,54 +162,7 @@ const AR = {
   "Pending Withdrawals":"طلبات السحب","Wallet Balances":"أرصدة المحافظ","Volume Today":"حجم اليوم","Gold in Vault":"الذهب في الخزينة",
   "Silver in Vault":"الفضة في الخزينة","Platinum in Vault":"البلاتين في الخزينة","In Circulation":"في التداول",
   "Assets under management":"الأصول المُدارة","Gold · SAR/g":"الذهب · ريال/غ","Silver · SAR/g":"الفضة · ريال/غ",
-  "Platinum · SAR/g":"البلاتين · ريال/غ","Sealed":"مختوم","No records found":"لا توجد سجلات",
-  "Storage Fees":"رسوم التخزين","Vault storage fee management":"إدارة رسوم تخزين الخزنة",
-  "Fee Config":"إعدادات الرسوم","Billing":"الفواتير",
-  "Billed This Month":"فوترة هذا الشهر","Collected":"مُحصّل","Outstanding":"مستحق","At Risk (>75%)":"في خطر (>75%)",
-  "Grace Period (days)":"فترة السماح (أيام)","Gold Rate (SAR/g/month)":"رسم الذهب (ريال/غ/شهر)",
-  "Silver Rate (SAR/g/month)":"رسم الفضة (ريال/غ/شهر)","Platinum Rate (SAR/g/month)":"رسم البلاتين (ريال/غ/شهر)",
-  "Run Billing Now":"تشغيل الفوترة الآن","Force Sell":"بيع إجباري","Exempt":"إعفاء","Waive":"تنازل",
-  "PAID":"مدفوع","OVERDUE":"متأخر","EXEMPT":"معفى","WAIVED":"متنازل عنه","FORCE_SOLD":"بيع إجباري",
-  "Fee/Cap %":"الرسم/القيمة %","Vault Cap":"قيمة الخزنة","Fee This Month":"رسم هذا الشهر",
-  "Days Held":"أيام الاحتفاظ","Collection":"طريقة التحصيل",
-  "Cannot ban — investor has metals in vault. Suspend only.":"لا يمكن الحظر — المستثمر لديه معادن في الخزنة. يمكن التعليق فقط.",
-  "Storage fee auto-deducted":"تم خصم رسوم التخزين تلقائياً","Save Config":"حفظ الإعدادات",
-  "Enable Storage Fees":"تفعيل رسوم التخزين","Alert Threshold %":"حد التنبيه %",
-  "Billing runs on 1st of each month":"يتم إصدار الفواتير في أول كل شهر",
-  "ID":"م","Holdings":"الحيازات","Barcode":"الباركود","Manufacturer":"الشركة المصنّعة",
-  "Vault":"الخزنة","Depositor":"المودِع","Date In":"تاريخ الإيداع","Date Out":"تاريخ السحب",
-  "Qty":"الكمية","Fee":"الرسوم","Method":"الطريقة","Bank":"البنك","Processed":"تمت المعالجة",
-  "Hash":"الهاش","TXs":"المعاملات","TX Hash":"هاش المعاملة",
-  "Gold(g)":"ذهب(غ)","Silver(g)":"فضة(غ)","Pt(g)":"بلاتين(غ)",
-  "Dismiss":"تجاهل","Discrepancy resolved":"تم حل التعارض",
-  "Enter reason...":"أدخل السبب...","Type custom message...":"اكتب رسالة مخصصة...",
-  "Scan or enter barcode...":"امسح أو أدخل الباركود...",
-  "Enter reason for rejection...":"أدخل سبب الرفض...",
-  "Describe the reason for ban...":"اكتب سبب الحظر...",
-  "Search alerts...":"بحث في التنبيهات...","Review Now":"مراجعة الآن",
-  "Confirm Ban":"تأكيد الحظر","Full Name (optional)":"الاسم الكامل (اختياري)",
-  "SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED":"اختر المزوّد — يمكنك التبديل في أي وقت",
-  "BLOCKS PER PERIOD (ESTIMATE)":"عدد البلوكات لكل فترة (تقديري)",
-  "MIN BLOCK PARTICIPATION TO QUALIFY":"الحد الأدنى للمشاركة في البلوكات للتأهل",
-  "What happens to forfeited earnings:":"ماذا يحدث للأرباح المصادرة:",
-  "Two-Factor Authentication (2FA) 🔒":"المصادقة الثنائية (2FA) 🔒",
-  "Required for all admin logins — cannot be disabled":"مطلوبة لجميع تسجيلات الدخول — لا يمكن تعطيلها",
-  "Mohammed Al-...":"محمد ال...","Any additional notes...":"أي ملاحظات إضافية...",
-  "Vault name...":"اسم الخزنة...","Account review notice":"إشعار مراجعة الحساب",
-  "Please complete your KYC verification.":"يرجى إكمال التحقق من هويتك.",
-  "Your appointment is confirmed.":"تم تأكيد موعدك.","Action required on your account.":"إجراء مطلوب على حسابك.",
-  "Your account has been reviewed.":"تمت مراجعة حسابك.",
-  "MLRO Title (English)":"منصب مسؤول الإبلاغ (إنجليزي)",
-  "Company Name (English)":"اسم الشركة (إنجليزي)",
-  "License Number (English)":"رقم الترخيص (إنجليزي)",
-  "Company Address (English)":"عنوان الشركة (إنجليزي)",
-  "Money Laundering Reporting Officer":"مسؤول الإبلاغ عن غسل الأموال",
-  "Tanaqul Precious Metals Trading Co.":"شركة تنقُّل لتداول المعادن الثمينة",
-  "SAMA License No. 12345":"ترخيص ساما رقم 12345",
-  "King Fahd Road, Riyadh 12345":"طريق الملك فهد، الرياض 12345",
-  "BAR BARCODE (to be withdrawn)":"باركود السبيكة (للسحب)",
-  "Pool Bank updated":"تم تحديث رصيد البنك",
-  "Alert dismissed":"تم تجاهل التنبيه","NO_SHOW":"لم يحضر",
+  "Platinum · SAR/g":"البلاتين · ريال/غ","Sealed":"مختوم","No records found":"لا توجد سجلات","NO_SHOW":"لم يحضر",
   // Header
   "Dashboard Overview":"نظرة عامة",
   // Vault
@@ -290,6 +229,7 @@ const AR = {
   "Export Access":"صلاحية التصدير","Can export reports":"يمكنه تصدير التقارير",
   "Bulk Actions":"إجراءات جماعية","Can perform bulk operations":"يمكنه تنفيذ إجراءات جماعية",
   // ═══ FIXED: Missing t() translation keys ═══
+  "Alert dismissed":"تم إغلاق التنبيه",
   "Cannot reschedule within 24 hours of appointment":"لا يمكن إعادة الجدولة قبل 24 ساعة من الموعد",
   "Dismissed":"مُغلق",
   "Please select a date and time":"يرجى اختيار التاريخ والوقت",
@@ -506,9 +446,110 @@ const TanaqulLogo = ({ size=36 }) => (
   </svg>
 );
 
-// MOCK data removed — all data comes from live API
+const MOCK = {
+  prices: [
+    { symbol:"XAU", name:"Gold",     priceSAR:839.00,  change:+0.60 },
+    { symbol:"XAG", name:"Silver",   priceSAR:10.42,   change:-0.22 },
+    { symbol:"XPT", name:"Platinum", priceSAR:138.50,  change:+1.10 },
+  ],
+  stats: {
+    aum:"4,821,600", volumeToday:"182,400", volumeMonth:"3,240,000",
+    commissionToday:"3,648", commissionMonth:"64,800",
+    adminFeesToday:"912", adminFeesMonth:"16,200",
+    pendingWithdrawals:"124,500", totalWalletBalance:"890,200",
+    activeOrders:14, pendingAppointments:7, totalInvestors:312,
+    goldGrams:"4,820", silverGrams:"18,400", platinumGrams:"960",
+    tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
+    lastBlock:"—", blockNumber:0,
+  },
+  investors: [
+    { id:"INV-001", nameEn:"Mohammed Al-Otaibi", nameAr:"محمد العتيبي", wallet:"0x1234...abcd", holdingsValue:"1,248,000", gold:820, silver:0,    platinum:0,  status:"ACTIVE",    joined:"2025-11-01", vaultKey:"VK-AX9F2", nationalId:"1012345678", kycExpiry:"2027-11-01", noShowCount:0 },
+    { id:"INV-002", nameEn:"Sara Al-Qahtani",    nameAr:"سارة القحطاني", wallet:"0x5678...efgh", holdingsValue:"245,200",   gold:180, silver:2400, platinum:50, status:"ACTIVE",    joined:"2025-12-15", vaultKey:"VK-BQ7T4", nationalId:"1098765432", kycExpiry:"2027-12-15", noShowCount:0 },
+    { id:"INV-003", nameEn:"Ahmed Saad",          nameAr:"أحمد سعد",      wallet:"0x9abc...ijkl", holdingsValue:"98,750",    gold:60,  silver:800,  platinum:20, status:"ACTIVE",    joined:"2026-01-03", vaultKey:"VK-CR1M8", nationalId:"1078901234", kycExpiry:"2026-04-01", noShowCount:1 },
+    { id:"INV-004", nameEn:"Fatima Hassan",       nameAr:"فاطمة حسن",     wallet:"pending",        holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"SUSPENDED", joined:"2026-01-20", vaultKey:"VK-DS5K3", nationalId:"1090123456" },
+    { id:"INV-007", nameEn:"Tariq Al-Mansour",    nameAr:"طارق المنصور",  wallet:"banned",         holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"BANNED",    joined:"2025-09-10", vaultKey:"VK-GZ9V7", nationalId:"1077654321" },
+    { id:"INV-005", nameEn:"Khalid Al-Ghamdi",   nameAr:"خالد الغامدي",  wallet:"0x2345...mnop", holdingsValue:"560,000",   gold:400, silver:1200, platinum:80, status:"ACTIVE",    joined:"2025-10-08", vaultKey:"VK-ET2P6", nationalId:"1023456789", kycExpiry:"2027-10-08", noShowCount:0 },
+    { id:"INV-006", nameEn:"Nora Al-Shehri",     nameAr:"نورة الشهري",   wallet:"0x3456...qrst", holdingsValue:"76,400",    gold:50,  silver:1000, platinum:0,  status:"ACTIVE",    joined:"2026-02-01", vaultKey:"VK-FU8N1", nationalId:"1056789012", kycExpiry:"2027-02-01", noShowCount:2 },
+    // ═══ NEW MOCK INVESTORS — expanded scenarios ═══
+    { id:"INV-008", nameEn:"Omar Al-Zahrani",    nameAr:"عمر الزهراني",  wallet:"0x4567...uvwx", holdingsValue:"312,800",   gold:200, silver:3200, platinum:40, status:"ACTIVE",    joined:"2025-08-15", vaultKey:"VK-HX3R9", nationalId:"1089012345", kycExpiry:"2026-03-10", noShowCount:0 },
+    { id:"INV-009", nameEn:"Layla Al-Dossari",   nameAr:"ليلى الدوسري",  wallet:"0x5678...yzab", holdingsValue:"890,000",   gold:600, silver:4800, platinum:100, status:"ACTIVE",   joined:"2025-07-01", vaultKey:"VK-JY4S1", nationalId:"1067890123", kycExpiry:"2027-07-01", noShowCount:0 },
+    { id:"INV-010", nameEn:"Fahad Al-Dosari",    nameAr:"فهد الدوسري",   wallet:"0x6789...cdef", holdingsValue:"45,600",    gold:30,  silver:600,  platinum:10, status:"ACTIVE",    joined:"2026-02-20", vaultKey:"VK-KZ5T2", nationalId:"1045678901", kycExpiry:"2028-02-20", noShowCount:1 },
+    { id:"INV-011", nameEn:"Reem Al-Mutairi",    nameAr:"ريم المطيري",   wallet:"0x7890...ghij", holdingsValue:"128,500",   gold:90,  silver:1800, platinum:25, status:"ACTIVE",    joined:"2025-12-01", vaultKey:"VK-LA6U3", nationalId:"1034567890", kycExpiry:"2027-12-01", noShowCount:0 },
+    { id:"INV-012", nameEn:"Bader Al-Shimmari",  nameAr:"بدر الشمري",    wallet:"0x8901...klmn", holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"ACTIVE",    joined:"2026-03-01", vaultKey:"VK-MB7V4", nationalId:"1023450987", kycExpiry:"2028-03-01", noShowCount:0 },
+  ],
+  bars: [
+    { id:"BAR-001", metal:"Gold",     weight:"100g", barcode:"PAMP-G100-001",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-001", deposited:"2025-11-01" },
+    { id:"BAR-002", metal:"Gold",     weight:"50g",  barcode:"PAMP-G050-002",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"FREE",   depositor:"INV-002", deposited:"2025-12-15" },
+    { id:"BAR-003", metal:"Silver",   weight:"100g", barcode:"VALC-S100-003",  manufacturer:"Valcambi SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-002", deposited:"2025-12-16" },
+    { id:"BAR-004", metal:"Gold",     weight:"25g",  barcode:"ARGOR-G025-004", manufacturer:"Argor-Heraeus", vault:"Jeddah", status:"FREE",   depositor:"INV-003", deposited:"2026-01-05" },
+    { id:"BAR-005", metal:"Platinum", weight:"10g",  barcode:"PAMP-P010-005",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-005", deposited:"2025-10-10" },
+    { id:"BAR-006", metal:"Gold",     weight:"1g",   barcode:"PAMP-G001-006",  manufacturer:"MKS PAMP SA",   vault:"Jeddah", status:"FREE",    depositor:"INV-006", deposited:"2026-02-02" },
+    { id:"BAR-007", metal:"Silver",   weight:"50g",  barcode:"VALC-S050-007",  manufacturer:"Valcambi SA",   vault:"Riyadh", status:"DAMAGED", depositor:"INV-001", deposited:"2025-11-15" },
+    { id:"BAR-008", metal:"Gold",     weight:"100g", barcode:"PAMP-G100-008",  manufacturer:"MKS PAMP SA",   vault:"—",      status:"LEFT",    depositor:"INV-003", deposited:"2025-08-10", leftOn:"2026-01-20" },
+  ],
+  appointments: [
+    { id:"APT-001", investor:"Mohammed Al-Otaibi", investorPhone:"0501234567", nationalId:"1012345678", type:"DEPOSIT",    metal:"Gold",     qty:"100g", vault:"Riyadh Vault 1", date:"2026-03-01 10:00", status:"BOOKED",      fee:150, paymentMethod:"Wallet" },
+    { id:"APT-002", investor:"Sara Al-Qahtani",    investorPhone:"0507654321", nationalId:"1098765432", type:"WITHDRAWAL", metal:"Gold",     qty:"50g",  vault:"Riyadh Vault 1", date:"2026-02-28 11:00", status:"EXPIRED",     fee:100, paymentMethod:"MADA" },
+    { id:"APT-003", investor:"Ahmed Saad",         investorPhone:"0509876543", nationalId:"1078901234", type:"DEPOSIT",    metal:"Silver",   qty:"500g", vault:"Jeddah Vault 1", date:"2026-03-03 14:00", status:"BOOKED",      fee:150, paymentMethod:"Wallet" },
+    { id:"APT-004", investor:"Khalid Al-Ghamdi",   investorPhone:"0501112233", nationalId:"1023456789", type:"WITHDRAWAL", metal:"Platinum", qty:"25g",  vault:"Riyadh Vault 1", date:"2026-02-27 15:00", status:"COMPLETED",   fee:100, paymentMethod:"Visa" },
+    { id:"APT-005", investor:"Nora Al-Shehri",     investorPhone:"0503334455", nationalId:"1056789012", type:"DEPOSIT",    metal:"Gold",     qty:"200g", vault:"Jeddah Vault 1", date:"2026-03-04 09:00", status:"RESCHEDULED", fee:150, paymentMethod:"Wallet" },
+    { id:"APT-006", investor:"Fahad Al-Dosari",    investorPhone:"0506667788", nationalId:"1045678901", type:"DEPOSIT",    metal:"Gold",     qty:"50g",  vault:"Riyadh Vault 1", date:"2026-02-26 10:00", status:"NO_SHOW",     fee:150, paymentMethod:"MADA" },
+    { id:"APT-007", investor:"Lina Al-Harbi",      investorPhone:"0508889900", nationalId:"1034567890", type:"WITHDRAWAL", metal:"Silver",   qty:"250g", vault:"Jeddah Vault 1", date:"2026-02-25 14:00", status:"CANCELED",    fee:100, paymentMethod:"Wallet" },
+  ],
+  transactions: [
+    { id:"TXN-001", investor:"Mohammed Al-Otaibi", investorAr:"محمد العتيبي",   vaultKey:"VK-AX9F2", type:"BUY",  metal:"Gold",     metalAmt:"83,900",  commission:"1,678", adminFee:"420", method:"MADA",    total:"85,998",  status:"COMPLETED",  date:"2026-02-28 09:15", buyerName:"Mohammed Al-Otaibi",  buyerNationalId:"1012345678", sellerName:"Sara Al-Qahtani",    sellerNationalId:"1098765432" },
+    { id:"TXN-002", investor:"Sara Al-Qahtani",    investorAr:"سارة القحطاني", vaultKey:"VK-BQ7T4", type:"SELL", metal:"Silver",   metalAmt:"5,200",   commission:"104",   adminFee:"0",   method:"—",       total:"5,096",   status:"COMPLETED",  date:"2026-02-28 09:10", buyerName:"Khalid Al-Ghamdi",    buyerNationalId:"1023456789", sellerName:"Sara Al-Qahtani",    sellerNationalId:"1098765432" },
+    { id:"TXN-003", investor:"Khalid Al-Ghamdi",   investorAr:"خالد الغامدي",  vaultKey:"VK-ET2P6", type:"BUY",  metal:"Gold",     metalAmt:"419,455", commission:"8,389", adminFee:"0",   method:"SADAD",   total:"427,844", status:"CANCELLED",  date:"2026-02-27 14:20", buyerName:"Khalid Al-Ghamdi", buyerNationalId:"1023456789", sellerName:"Nora Al-Shehri", sellerNationalId:"1056789012" },
+    { id:"TXN-004", investor:"Ahmed Saad",          investorAr:"أحمد سعد",      vaultKey:"VK-CR1M8", type:"BUY",  metal:"Platinum", metalAmt:"6,925",   commission:"139",   adminFee:"75",  method:"Visa",    total:"7,139",   status:"COMPLETED",  date:"2026-02-27 10:00", buyerName:"Ahmed Saad", buyerNationalId:"1078901234", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
+    { id:"TXN-005", investor:"Nora Al-Shehri",     investorAr:"نورة الشهري",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Silver",   metalAmt:"10,420",  commission:"208",   adminFee:"420", method:"MADA",    total:"11,048",  status:"COMPLETED",  date:"2026-02-26 11:05", buyerName:"Nora Al-Shehri",      buyerNationalId:"1056789012", sellerName:"Fahad Al-Dosari",    sellerNationalId:"1034567890" },
+    { id:"TXN-006", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-AX9F2", type:"SELL", metal:"Gold",     metalAmt:"42,000",  commission:"840",   adminFee:"0",   method:"—",       total:"41,160",  status:"COMPLETED",  date:"2026-02-25 14:30", buyerName:"Mohammed Al-Otaibi", buyerNationalId:"1012345678", sellerName:"Fahad Al-Dosari", sellerNationalId:"1045678901" },
+    { id:"TXN-007", investor:"Mohammed Al-Otaibi", investorAr:"محمد العتيبي",   vaultKey:"VK-AX9F2", type:"BUY",  metal:"Silver",   metalAmt:"12,800",  commission:"256",   adminFee:"420", method:"Visa/MC", total:"13,476",  status:"COMPLETED",  date:"2026-02-24 10:05", buyerName:"Mohammed Al-Otaibi", buyerNationalId:"1012345678", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
+    { id:"TXN-008", investor:"Lina Al-Harbi",      investorAr:"لينا الحربي",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Gold",     metalAmt:"95,200",  commission:"1,904", adminFee:"420", method:"MADA",    total:"97,524",  status:"CANCELLED",  date:"2026-02-23 16:45", buyerName:"Lina Al-Harbi",       buyerNationalId:"1067890123", sellerName:"Omar Al-Zahrani",    sellerNationalId:"1045678901" },
+    { id:"TXN-009", investor:"Sara Al-Qahtani",    investorAr:"سارة القحطاني", vaultKey:"VK-BQ7T4", type:"SELL", metal:"Platinum", metalAmt:"8,100",   commission:"162",   adminFee:"0",   method:"—",       total:"7,938",   status:"COMPLETED",  date:"2026-02-22 09:00", buyerName:"Ahmed Saad", buyerNationalId:"1078901234", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
+    { id:"TXN-010", investor:"Ahmed Saad",          investorAr:"أحمد سعد",      vaultKey:"VK-CR1M8", type:"BUY",  metal:"Gold",     metalAmt:"210,000", commission:"4,200", adminFee:"420", method:"SADAD",   total:"214,620", status:"COMPLETED",  date:"2026-02-21 11:20", buyerName:"Ahmed Saad",          buyerNationalId:"1078901234", sellerName:"Bader Al-Shimmari",  sellerNationalId:"1089012345" },
+    { id:"TXN-011", investor:"Khalid Al-Ghamdi",   investorAr:"خالد الغامدي",  vaultKey:"VK-ET2P6", type:"SELL", metal:"Silver",   metalAmt:"3,600",   commission:"72",    adminFee:"0",   method:"—",       total:"3,528",   status:"COMPLETED",  date:"2026-02-20 13:15", buyerName:"Nora Al-Shehri", buyerNationalId:"1056789012", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
+    { id:"TXN-012", investor:"Nora Al-Shehri",     investorAr:"نورة الشهري",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Platinum", metalAmt:"15,500",  commission:"310",   adminFee:"420", method:"Visa/MC", total:"16,230",  status:"COMPLETED",  date:"2026-02-19 08:50", buyerName:"Nora Al-Shehri", buyerNationalId:"1056789012", sellerName:"Fahad Al-Dosari", sellerNationalId:"1045678901" },
+    // ═══ NEW TRANSACTIONS — trigger more AML/CMA scenarios ═══
+    { id:"TXN-013", investor:"Omar Al-Zahrani",    investorAr:"عمر الزهراني",  vaultKey:"VK-HX3R9", type:"BUY",  metal:"Gold",     metalAmt:"75,000",  commission:"1,500", adminFee:"420", method:"MADA",    total:"76,920",  status:"COMPLETED",  date:"2026-03-01 09:00", buyerName:"Omar Al-Zahrani", buyerNationalId:"1089012345", sellerName:"Layla Al-Dossari", sellerNationalId:"1067890123" },
+    { id:"TXN-014", investor:"Omar Al-Zahrani",    investorAr:"عمر الزهراني",  vaultKey:"VK-HX3R9", type:"SELL", metal:"Gold",     metalAmt:"70,000",  commission:"1,400", adminFee:"0",   method:"—",       total:"68,600",  status:"COMPLETED",  date:"2026-03-01 14:30", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Omar Al-Zahrani", sellerNationalId:"1089012345" },
+    { id:"TXN-015", investor:"Bader Al-Shimmari",  investorAr:"بدر الشمري",    vaultKey:"VK-MB7V4", type:"BUY",  metal:"Gold",     metalAmt:"50,000",  commission:"1,000", adminFee:"420", method:"SADAD",   total:"51,420",  status:"COMPLETED",  date:"2026-03-01 15:00", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Reem Al-Mutairi", sellerNationalId:"1034567890" },
+    { id:"TXN-016", investor:"Bader Al-Shimmari",  investorAr:"بدر الشمري",    vaultKey:"VK-MB7V4", type:"BUY",  metal:"Silver",   metalAmt:"10,000",  commission:"200",   adminFee:"420", method:"MADA",    total:"10,620",  status:"COMPLETED",  date:"2026-03-01 15:30", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Ahmed Saad", sellerNationalId:"1078901234" },
+    { id:"TXN-017", investor:"Layla Al-Dossari",   investorAr:"ليلى الدوسري",  vaultKey:"VK-JY4S1", type:"BUY",  metal:"Gold",     metalAmt:"250,000", commission:"5,000", adminFee:"420", method:"MADA",    total:"255,420", status:"COMPLETED",  date:"2026-02-28 10:00", buyerName:"Layla Al-Dossari", buyerNationalId:"1067890123", sellerName:"Mohammed Al-Otaibi", sellerNationalId:"1012345678" },
+    { id:"TXN-018", investor:"Reem Al-Mutairi",    investorAr:"ريم المطيري",   vaultKey:"VK-LA6U3", type:"BUY",  metal:"Platinum", metalAmt:"20,000",  commission:"400",   adminFee:"420", method:"Visa/MC", total:"20,820",  status:"COMPLETED",  date:"2026-03-02 08:00", buyerName:"Reem Al-Mutairi", buyerNationalId:"1034567890", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
+    // Round-amount structuring pattern (R10 trigger)
+    { id:"TXN-019", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-KZ5T2", type:"BUY",  metal:"Gold",     metalAmt:"10,000",  commission:"200",   adminFee:"420", method:"MADA",    total:"10,620",  status:"COMPLETED",  date:"2026-03-01 11:00", buyerName:"Fahad Al-Dosari", buyerNationalId:"1045678901", sellerName:"Nora Al-Shehri", sellerNationalId:"1056789012" },
+    { id:"TXN-020", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-KZ5T2", type:"BUY",  metal:"Gold",     metalAmt:"20,000",  commission:"400",   adminFee:"420", method:"SADAD",   total:"20,820",  status:"COMPLETED",  date:"2026-03-02 09:00", buyerName:"Fahad Al-Dosari", buyerNationalId:"1045678901", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
+  ],
+  walletMovements: [
+    { id:"WM-001", investor:"Sara Al-Qahtani",  nationalId:"1098765432", vaultKey:"VK-BQ7T4", type:"CREDIT", amount:"5,096",   reason:"Sell Proceeds",     date:"2026-02-28 09:10" },
+    { id:"WM-002", investor:"Khalid Al-Ghamdi", nationalId:"1023456789", vaultKey:"VK-ET2P6", type:"CREDIT", amount:"427,844", reason:"Order Cancellation", date:"2026-02-27 14:25" },
+    { id:"WM-003", investor:"Ahmed Saad",        nationalId:"1078901234", vaultKey:"VK-CR1M8", type:"DEBIT",  amount:"7,139",   reason:"Buy Order",          date:"2026-02-27 10:00" },
+    { id:"WM-004", investor:"Nora Al-Shehri",   nationalId:"1056789012", vaultKey:"VK-FU8N1", type:"DEBIT",  amount:"11,048",  reason:"Buy Order",          date:"2026-02-26 11:05" },
+  ],
+  withdrawalRequests: [
+    { id:"WR-001", investor:"Mohammed Al-Otaibi", nationalId:"1012345678", amount:"50,000",  bank:"SNB — ****4521",   status:"PENDING",   requested:"2026-02-27", processed:"—" },
+    { id:"WR-002", investor:"Khalid Al-Ghamdi",   nationalId:"1023456789", amount:"120,000", bank:"Riyad — ****8832", status:"APPROVED",  requested:"2026-02-25", processed:"2026-02-26" },
+    { id:"WR-003", investor:"Sara Al-Qahtani",    nationalId:"1098765432", amount:"5,096",   bank:"ANB — ****3310",   status:"PROCESSED", requested:"2026-02-24", processed:"2026-02-25" },
+    { id:"WR-004", investor:"Nora Al-Shehri",     nationalId:"1056789012", amount:"25,000",  bank:"AlRajhi — ****7712", status:"REJECTED", requested:"2026-02-23", processed:"2026-02-24", rejectReason:"Insufficient balance" },
+    { id:"WR-005", investor:"Ahmed Saad",          nationalId:"1078901234", amount:"8,400",   bank:"SNB — ****9901",   status:"PENDING",   requested:"2026-03-01", processed:"—" },
+    { id:"WR-006", investor:"Fahad Al-Dosari",    nationalId:"1034567890", amount:"200,000", bank:"Riyad — ****8832", status:"PROCESSED", requested:"2026-02-20", processed:"2026-02-22" },
+  ],
+  blacklist: [
+    { id:"BL-001", name:"Unknown",       nationalId:"1090123456", vaultKey:"—",        reason:"Pre-registration ban — fraud suspicion", bannedBy:"admin@tanaqul.sa", date:"2026-02-10" },
+    { id:"BL-002", name:"Fatima Hassan", nationalId:"1023456789", vaultKey:"VK-DS5K3", reason:"Suspicious trading activity",            bannedBy:"admin@tanaqul.sa", date:"2026-02-20" },
+  ],
+  blocks: [
+    { number:1847, hash:"0x3f9a...c821", txCount:12, commission:"3,648", tanaqulShare:"2,189", creatorShare:"730",   validatorsShare:"729",   validator:"Tanaqul Node 1", timestamp:"2026-02-28 23:59", size:"0.82 MB" },
+    { number:1846, hash:"0x2e8b...d910", txCount:8,  commission:"2,240", tanaqulShare:"1,344", creatorShare:"448",   validatorsShare:"448",   validator:"Tanaqul Node 1", timestamp:"2026-02-27 23:59", size:"0.61 MB" },
+    { number:1845, hash:"0x1d7c...e009", txCount:18, commission:"5,120", tanaqulShare:"3,072", creatorShare:"1,024", validatorsShare:"1,024", validator:"Tanaqul Node 1", timestamp:"2026-02-26 23:59", size:"0.94 MB" },
+  ],
+  validators: [
+    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"60%", joined:"2025-09-01" },
+    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"40%", joined:"2025-11-15" },
+    { id:"VAL-003", name:"Partner Node — Elm", address:"0xCCC3...0003", status:"STANDBY", blocksValidated:0, lastBlock:1800, commissionEarned:"0", weight:"0%", joined:"2026-01-10" },
+  ],
+};
 
-// ─── Theme System
 // ─── Theme System — Light & Dark modes ──────────────────────────────────────
 const LIGHT_THEME = {
   navy:"#2D2418", navyDark:"#1E1810", navyLight:"#3D3225",
@@ -1115,8 +1156,15 @@ const PriceTicker = () => {
 
 
 // ─── Shared initial order book data (used by Dashboard widget + OrderBook) ───
-const INITIAL_OB_ORDERS = [];
-// SECURITY: Hardcoded orders removed
+const INITIAL_OB_ORDERS = [
+  {id:"ORD-001",investor:"Mohammed Al-Otaibi",investorAr:"محمد العتيبي",  nationalId:"1012345678", side:"BUY", metal:"Gold",    qty:50, filled:0,  price:842.00,payment:"MADA",    expiry:"GTC",expiryDate:"",          status:"OPEN",    placed:"2026-03-01 08:10"},
+  {id:"ORD-002",investor:"Sara Al-Qahtani",   investorAr:"سارة القحطاني", nationalId:"1098765432", side:"SELL",metal:"Gold",    qty:30, filled:20, price:840.50,payment:"SADAD",   expiry:"GTC",expiryDate:"",          status:"PARTIAL", placed:"2026-03-01 08:05"},
+  {id:"ORD-003",investor:"Khalid Al-Ghamdi",  investorAr:"خالد الغامدي",  nationalId:"1023456789", side:"BUY", metal:"Gold",    qty:20, filled:20, price:841.00,payment:"Visa",    expiry:"GTD",expiryDate:"2026-03-05",status:"FILLED",  placed:"2026-03-01 07:55"},
+  {id:"ORD-004",investor:"Nora Al-Shehri",    investorAr:"نورة الشهري",   nationalId:"1056789012", side:"SELL",metal:"Silver",  qty:500,filled:300,price:10.45, payment:"Apple Pay",expiry:"GTC",expiryDate:"",          status:"PARTIAL", placed:"2026-03-01 07:50"},
+  {id:"ORD-008",investor:"Omar Al-Zahrani",   investorAr:"عمر الزهراني",  nationalId:"1067890123", side:"BUY", metal:"Platinum",qty:40, filled:0,  price:139.00,payment:"STC Pay", expiry:"GTC",expiryDate:"",          status:"OPEN",    placed:"2026-03-01 06:30"},
+  {id:"ORD-009",investor:"Reem Al-Mutairi",   investorAr:"ريم المطيري",   nationalId:"1089012345", side:"SELL",metal:"Platinum",qty:25, filled:0,  price:138.50,payment:"SADAD",   expiry:"GTD",expiryDate:"2026-04-10",status:"OPEN",    placed:"2026-03-01 06:00"},
+  {id:"SYN-001",investor:"[Stabilizer]",      investorAr:"[موازن]",        nationalId:"SYSTEM",     side:"BUY", metal:"Gold",    qty:15, filled:0,  price:840.00,payment:"Wallet",  expiry:"GTC",expiryDate:"",          status:"OPEN",synthetic:true,placed:"2026-03-01 08:00"},
+];
 
 // ─── Mini Order Book Widget (Dashboard) ──────────────────────────────────────
 const MiniOrderBook = ({ orders, isAr }) => {
@@ -1203,19 +1251,10 @@ const MiniOrderBook = ({ orders, isAr }) => {
 const Dashboard = () => {
   const { t, isAr } = useLang();
   const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts, cmaAlerts, amlDismissed, appDashStats } = useAppData();
-  const s = appDashStats || {
-    aum:"0", volumeToday:"0", volumeMonth:"0",
-    commissionToday:"0", commissionMonth:"0",
-    adminFeesToday:"0", adminFeesMonth:"0",
-    pendingWithdrawals:"0", totalWalletBalance:"0",
-    activeOrders:0, pendingAppointments:0, totalInvestors:0,
-    goldGrams:"0", silverGrams:"0", platinumGrams:"0",
-    tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
-    lastBlock:"—", blockNumber:0,
-  };
+  const s = appDashStats ? {...MOCK.stats, ...appDashStats} : MOCK.stats;
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
-  const fmtK = n => (n == null || isNaN(n) ? "0" : Number(n).toLocaleString("en-SA",{maximumFractionDigits:0}));
+  const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
   const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
   const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
   const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
@@ -1324,7 +1363,7 @@ const Dashboard = () => {
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:28}}>
         <StatCard icon={Icons.pending(22,C.orange)} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={pendingW} />
-        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<span style={{color:walletBal<0?"#C85C3E":undefined}}>{walletBal<0?"-":""}<SARAmount amount={fmtK(Math.abs(walletBal))}/></span>} />
+        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walletBal))}/>} />
         <StatCard icon={Icons.orders(22,C.navy)} title={isAr?"الأوامر النشطة":"Active Orders"} value={activeOrd} />
         <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المواعيد المعلقة":"Pending Appointments"} value={pendingAppt} />
         <StatCard icon={Icons.investors(22,C.navy)} title={isAr?"إجمالي المستثمرين":"Total Investors"} value={totalInv} />
@@ -1344,8 +1383,8 @@ const Dashboard = () => {
         <StatCard icon={Icons.bar(22,C.orange)} title={isAr?"الذهب في الخزنة":"Gold in Vault"} value={fmtK(goldGrams)+"g"} sub={<SARAmount amount={fmtK(goldGrams*(gp?.priceSAR||839))}/>} gold />
         <StatCard icon={Icons.bar(22,"#A89880")} title={isAr?"الفضة في الخزنة":"Silver in Vault"} value={fmtK(silverGrams)+"g"} sub={<SARAmount amount={fmtK(silverGrams*(sp?.priceSAR||10.42))}/>} />
         <StatCard icon={Icons.bar(22,C.teal)} title={isAr?"البلاتين في الخزنة":"Platinum in Vault"} value={fmtK(platGrams)+"g"} sub={<SARAmount amount={fmtK(platGrams*(pp?.priceSAR||138.5))}/>} />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value={(s.tokensMinted||0).toLocaleString()} />
-        <StatCard icon={Icons.token(22,C.navy)} title={isAr?"المتداولة":"In Circulation"} value={(s.tokensCirculating||0).toLocaleString()} />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value={s.tokensMinted.toLocaleString()} />
+        <StatCard icon={Icons.token(22,C.navy)} title={isAr?"المتداولة":"In Circulation"} value={s.tokensCirculating.toLocaleString()} />
         <StatCard icon={Icons.fire(22,C.red)} title={isAr?"بانتظار الحرق":"Pending Burn"} value={s.tokensPendingBurn} />
         <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Last Block"} value={"#"+s.blockNumber} sub={s.lastBlock} gold />
       </div>
@@ -1373,14 +1412,8 @@ const Investors = () => {
 
   const doAction = (inv, act) => { setSel(inv); setAction(act); setReason(""); setNotifyMsg(""); };
 
-  const confirmAction = async () => {
-    // GUARD: Cannot ban investor with metals in vault — suspend only
-    if(action==="ban" && (sel.gold>0 || sel.silver>0 || sel.platinum>0)) {
-      showToast(t("Cannot ban — investor has metals in vault. Suspend only."));
-      return;
-    }
+  const confirmAction = () => {
     const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE"}[action];
-    try{await apiFetch("/investors/"+sel.uuid+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:newStatus,reason:reason||"Admin action"})})}catch(e){console.error("Investor update failed:",e);}
     setInvestors(prev => prev.map(i => i.id===sel.id ? {...i, status:newStatus} : i));
 
     // Auto-cancel appointments for suspended/banned investors
@@ -1408,11 +1441,11 @@ const Investors = () => {
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{toast}</div>}
       <SectionHeader title={isAr?"المستثمرون":"Investors"} sub={investors.length+" total — Suspended: can login, no actions | Banned: blocked by National ID"}
         action={<ExportMenu isAr={isAr}
-          onCSV={()=>downloadCSV("tanaqul_investors_"+new Date().toISOString().slice(0,10),
+          onCSV={()=>downloadCSV("investors_"+new Date().toISOString().slice(0,10),
             ["ID","Name","National ID","Wallet","Holdings (SAR)","Gold (g)","Silver (g)","Platinum (g)","Status","Joined","KYC Expiry"],
             investors.map(inv=>[inv.id,inv.nameEn,inv.nationalId,inv.wallet,inv.holdingsValue,inv.gold,inv.silver,inv.platinum,inv.status,inv.joined,inv.kycExpiry||"—"])
           )}
-          onPDF={()=>{downloadCSV("investors_pdf_"+new Date().toISOString().slice(0,10),["ID","Name","National ID","Wallet","Holdings (SAR)","Gold (g)","Silver (g)","Platinum (g)","Status","Joined"],investors.map(inv=>[inv.id,inv.nameEn,inv.nationalId,inv.wallet,inv.holdingsValue,inv.gold,inv.silver,inv.platinum,inv.status,inv.joined]))}}
+          onPDF={()=>{/* PDF generation placeholder */}}
         />}
       />
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:22}}>
@@ -1481,7 +1514,7 @@ const Investors = () => {
           ))}
         </div>
         <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>
-          {sel.status!=="BANNED"&&<Btn variant="danger" onClick={()=>setAction("ban")}>{isAr?"حظر":"Ban"}</Btn>}
+          {sel.status!=="BANNED"&&<Btn variant="danger" onClick={()=>setAction("ban")}>Ban</Btn>}
           {sel.status==="BANNED"&&<Btn variant="teal" onClick={()=>setAction("unban")}>{t("Unban")}</Btn>}
           {sel.status==="ACTIVE"&&<Btn variant="ghost" onClick={()=>setAction("suspend")}>{t("Suspend")}</Btn>}
           {sel.status==="SUSPENDED"&&<Btn variant="teal" onClick={()=>setAction("activate")}>{t("Activate")}</Btn>}
@@ -1506,7 +1539,7 @@ const Investors = () => {
         {(action==="suspend"||action==="ban")&&(
           <div style={{marginBottom:14}}>
             <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>REASON (required)</label>
-            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder={isAr?"أدخل السبب...":"Enter reason..."}
+            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Enter reason..."
               style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:70,boxSizing:"border-box",fontFamily:"inherit"}}/>
           </div>
         )}
@@ -1524,18 +1557,18 @@ const Investors = () => {
         <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>Send SMS + push notification to investor.</p>
         <Sel label={isAr?"القالب":"Template"} value="" onChange={v=>setNotifyMsg(v)} options={[
           {value:"",label:"— Select template or write custom —"},
-          {value:"Your account has been reviewed.",label:isAr?"إشعار مراجعة الحساب":"Account review notice"},
-          {value:"Please complete your KYC verification.",label:isAr?"تذكير التحقق من الهوية":"KYC reminder"},
-          {value:"Your appointment is confirmed.",label:isAr?"تأكيد الموعد":"Appointment confirmed"},
-          {value:"Action required on your account.",label:isAr?"إجراء مطلوب":"Action required"},
+          {value:"Your account has been reviewed.",label:"Account review notice"},
+          {value:"Please complete your KYC verification.",label:"KYC reminder"},
+          {value:"Your appointment is confirmed.",label:"Appointment confirmed"},
+          {value:"Action required on your account.",label:"Action required"},
         ]} />
         <div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"الرسالة":"MESSAGE"}</label>
-          <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} placeholder={isAr?"اكتب رسالة مخصصة...":"Type custom message..."}
+          <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} placeholder="Type custom message..."
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="teal" onClick={async()=>{if(!notifyMsg.trim()){showToast("⚠️ Message is empty");return;}try{await apiFetch("/notifications/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({template:"custom",phone:sel.phone||"",email:sel.email||"",lang:"en",params:{body:notifyMsg}})})}catch(e){}showToast("✅ Notification sent to "+sel.nameEn);setSel(null);setAction(null);}}>{isAr?"إرسال إشعار":"Send Notification"}</Btn>
+          <Btn variant="teal" onClick={()=>{if(!notifyMsg.trim()){showToast("⚠️ Message is empty");return;}showToast("✅ Notification sent to "+sel.nameEn);setSel(null);setAction(null);}}>{isAr?"إرسال إشعار":"Send Notification"}</Btn>
           <Btn variant="outline" onClick={()=>{setSel(null);setAction(null);}}>{t("Cancel")}</Btn>
         </div>
       </Modal>}
@@ -1567,7 +1600,7 @@ const TransactionLog = () => {
     const headers = ["Txn ID","Buyer","Buyer NID","Seller","Seller NID","Type","Metal","Amount","Commission","Admin Fee","Total","Payment","Status","Date"];
     const csvRows = [headers.join(","), ...rows.map(r=>[r.id,r.buyerName||"",r.buyerNationalId||"",r.sellerName||"",r.sellerNationalId||"",r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.total,r.method,r.status,r.date].map(v=>`"${sanitize(v)}"`).join(","))];
     const blob = new Blob([csvRows.join("\n")],{type:"text/csv"});
-    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="tanaqul_vault_transactions.csv"; a.click();
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="transactions.csv"; a.click();
     URL.revokeObjectURL(a.href); // SEC-MEM-01: prevent blob URL leak
   };
 
@@ -1586,7 +1619,7 @@ const TransactionLog = () => {
   const totalComm  = rows.reduce((a,t)=>a+parseFloat(t.commission.replace(/,/g,"")),0);
   const totalCount = rows.length;
 
-  const fmtNum = n => (n||0).toLocaleString("en-SA", {maximumFractionDigits:0});
+  const fmtNum = n => n.toLocaleString("en-SA", {maximumFractionDigits:0});
 
   const TxBadge = ({type}) => (
     <span style={{
@@ -1623,11 +1656,11 @@ const TransactionLog = () => {
         title={t("Transaction Log")}
         sub={isAr?"سجل كامل بجميع معاملات المنصة":"Complete record of all platform trades"}
         action={<ExportMenu isAr={isAr}
-          onCSV={()=>downloadCSV("tanaqul_transactions_"+new Date().toISOString().slice(0,10),
+          onCSV={()=>downloadCSV("transactions_"+new Date().toISOString().slice(0,10),
             ["ID","Investor","Type","Metal","Amount","Commission","Admin Fee","Method","Total","Status","Date"],
             rows.map(r=>[r.id,r.investor,r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.method,r.total,r.status,r.date])
           )}
-          onPDF={()=>{downloadCSV("transactions_pdf_"+new Date().toISOString().slice(0,10),["ID","Investor","Type","Metal","Amount","Commission","Admin Fee","Method","Total","Status","Date"],rows.map(r=>[r.id,r.investor,r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.method,r.total,r.status,r.date]))}}
+          onPDF={()=>{/* PDF generation placeholder */}}
         />}
       />
 
@@ -1733,8 +1766,8 @@ const Vault = () => {
         <StatCard icon={Icons.block(22,C.teal)} title={t("Linked")} value={bars.filter(b=>b.status==="LINKED").length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Free")} value={bars.filter(b=>b.status==="FREE").length} />
         <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="0" gold />
-        <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value={bars.filter(b=>b.status==="FREE").reduce((s,b)=>s+parseFloat(b.weight||0),0).toLocaleString("en-SA")} />
-        <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value={bars.filter(b=>b.status==="LINKED").reduce((s,b)=>s+parseFloat(b.weight||0),0).toLocaleString("en-SA")} />
+        <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value="8,340" />
+        <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value="15,840" />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Integrity")} value={bars.filter(b=>b.status==="DAMAGED").length===0&&bars.filter(b=>b.status==="LEFT").length===bars.filter(b=>b.leftOn).length&&bars.filter(b=>b.leftOn&&b.status!=="LEFT").length===0?"1:1 ✓":"⚠ Check"} gold />
       </div>
       <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center",justifyContent:"center"}}>
@@ -1831,7 +1864,7 @@ const Appointments = () => {
   const showApptToast=(msg)=>{setApptToast(msg);setTimeout(()=>setApptToast(""),4000);};
   // ⚠️ SECURITY: In production, OTP must be generated server-side and delivered via SMS/push.
   // This mock value exists only for prototype demonstration. Remove before deployment.
-  const MOCK_OTP = null;
+  const MOCK_OTP = "847291";
 
   const closeAll = (interrupted=false) => { if(interrupted&&sel&&startStep>1){setInProgress(p=>new Set([...p,sel.id]));} setSel(null); setModal(null); setStartStep(1); setOtpVal(""); setOtpError(""); setOtpSecs(300); setOtpExpired(false); setReschedDate(""); setReschedTime(""); };
 
@@ -1896,8 +1929,7 @@ const Appointments = () => {
   return (
     <div>
       {apptToast&&<div style={{position:"fixed",top:24,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#2D2418",color:"#FFF",padding:"12px 24px",borderRadius:12,fontSize:14,fontWeight:600,boxShadow:"0 8px 32px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",gap:8}}><span>⚠️</span>{apptToast}</div>}
-      <SectionHeader title={isAr?"المواعيد":"Appointments"} sub={isAr?"جدولة إيداع وسحب الخزنة":"Vault deposit & withdrawal scheduling"}
-        action={<Btn variant="outline" onClick={()=>downloadCSV("appointments_"+new Date().toISOString().slice(0,10),["ID","Investor","National ID","Phone","Type","Metal","Qty","Vault","Scheduled","Fee (SAR)","Payment","Status"],appointments.map(a=>[a.id,a.investor,a.nationalId||"",a.investorPhone,a.type,a.metal,a.qty,a.vault,a.date,a.fee,a.paymentMethod,a.status]))}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(14,C.navy)} {isAr?"تصدير":"Export"}</span></Btn>} />
+      <SectionHeader title={isAr?"المواعيد":"Appointments"} sub="Vault deposit & withdrawal scheduling" />
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.calendar(22,C.teal)} title={t("Booked")} value={appointments.filter(a=>a.status==="BOOKED").length} />
@@ -1934,8 +1966,7 @@ const Appointments = () => {
             <p style={{fontSize:13,color:"#8B6540",marginTop:2}}>Investor receives: <b>{sel.fee - cfee} SAR</b> back to their wallet.</p>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-            <Btn variant="danger" onClick={async()=>{
-              try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/cancel",{method:"PATCH"})}catch(e){}
+            <Btn variant="danger" onClick={()=>{
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Create wallet refund movement (fee minus cancellation charge from Settings)
               const refundAmt = Math.max(0, sel.fee - cfee);
@@ -1972,8 +2003,7 @@ const Appointments = () => {
             <p style={{fontSize:13,color:"#8B3520",marginTop:4}}>⚠️ Investors with 2+ no-shows are flagged and require a security deposit for future bookings.</p>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-            <Btn variant="danger" onClick={async()=>{
-              try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/no-show",{method:"PATCH"})}catch(e){}
+            <Btn variant="danger" onClick={()=>{
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
               setInvestors(prev=>prev.map(inv=>{
                 // nationalId is the universal key — name comes from NAFATH
@@ -2004,10 +2034,9 @@ const Appointments = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="teal" onClick={async()=>{
+          <Btn variant="teal" onClick={()=>{
             if(!reschedDate||!reschedTime){showApptToast(isAr?"يرجى اختيار التاريخ والوقت":"Please select a date and time");return;}
             const newDate = reschedDate+" "+reschedTime;
-            try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/reschedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({new_date:newDate})})}catch(e){}
             setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"RESCHEDULED",date:newDate}:a));
             addAudit("RESCHEDULE", sel.id, sel.investor+" → "+newDate);
             closeAll();
@@ -2043,7 +2072,7 @@ const Appointments = () => {
           {sel.type==="DEPOSIT"&&<>
             <div>
               <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الباركود":"BARCODE"}</label>
-              <input placeholder={isAr?"امسح أو أدخل الباركود...":"Scan or enter barcode..."} value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+              <input placeholder="Scan or enter barcode..." value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
             </div>
             <div>
               <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الشركة المصنعة":"MANUFACTURER"}</label>
@@ -2060,8 +2089,8 @@ const Appointments = () => {
           </>}
           {sel.type==="WITHDRAWAL"&&<>
             <div>
-              <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"باركود السبيكة (للسحب)":"BAR BARCODE (to be withdrawn)"}</label>
-              <input placeholder={isAr?"امسح أو أدخل الباركود...":"Scan or enter barcode..."} value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+              <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>BAR BARCODE (to be withdrawn)</label>
+              <input placeholder="Scan or enter barcode..." value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
             </div>
           </>}
           <div>
@@ -2070,7 +2099,7 @@ const Appointments = () => {
           </div>
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>NOTES (optional)</label>
-            <input placeholder={isAr?"أي ملاحظات إضافية...":"Any additional notes..."} value={startData.notes} onChange={e=>setStartData(d=>({...d,notes:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+            <input placeholder="Any additional notes..." value={startData.notes} onChange={e=>setStartData(d=>({...d,notes:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
           </div>
         </div>
         <div style={{marginTop:16,display:"flex",gap:8}}>
@@ -2174,14 +2203,14 @@ const Financials = () => {
   useEffect(()=>{
     if(pageHint?.tab){setTab(pageHint.tab);setPageHint(null);}
   },[pageHint]);
-  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
+  const txRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
   const [wModal,setWModal]=useState(null);
   const [wReason,setWReason]=useState("");
   const [finToast,setFinToast]=useState("");
   const showFinToast = (m)=>{ setFinToast(m); setTimeout(()=>setFinToast(""),3000); };
 
   // Live-computed financial stats
-  const fmtK = n => (n == null || isNaN(n) ? "0" : Number(n).toLocaleString("en-SA",{maximumFractionDigits:0}));
+  const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
   const today = new Date().toISOString().slice(0,10);
   const todayM = matches.filter(m=>m.date&&m.date.startsWith(today));
   const volToday  = todayM.reduce((a,m)=>a+m.totalSAR,0);
@@ -2194,9 +2223,8 @@ const Financials = () => {
 
   const doWithdrawal = (row, type) => { setWModal({type,row}); setWReason(""); };
 
-  const confirmWithdrawal = async () => {
+  const confirmWithdrawal = () => {
     const {type,row} = wModal;
-    try{await apiFetch("/withdrawals/"+(row.uuid||row.id)+"/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:type,reason:wReason||""})})}catch(e){console.error("Withdrawal action failed:",e);}
     // IBAN required and format validated before approval
     if(type==="approve" && (!row.iban || row.iban==="—")) {
       showFinToast("⚠️ IBAN is required before approving a withdrawal");
@@ -2228,7 +2256,7 @@ const Financials = () => {
         <StatCard icon={Icons.commission(22,C.gold)} title="Commission Today" value={<SARAmount amount={fmtK(commToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(commAll)} gold />
         <StatCard icon={Icons.settings(22,C.textMuted)} title="Admin Fees Today" value={<SARAmount amount={fmtK(adminToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(adminAll)} />
         <StatCard icon={Icons.pending(22,"#D4943A")} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={withdrawals.filter(w=>w.status==="PENDING").length+(isAr?" طلب":" requests")} />
-        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<span style={{color:walBal<0?"#C85C3E":undefined}}>{walBal<0?"-":""}<SARAmount amount={fmtK(Math.abs(walBal))}/></span>} />
+        <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walBal))}/>} />
       </div>
       <TabBar tabs={["ORDERS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS"]} active={tab} onChange={setTab} />
       {tab==="ORDERS"&&<>
@@ -2293,7 +2321,7 @@ const Financials = () => {
         </div>
         {wModal.type==="reject"&&<div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"سبب الرفض":"REJECTION REASON"}</label>
-          <textarea value={wReason} onChange={e=>setWReason(e.target.value)} placeholder={isAr?"أدخل سبب الرفض...":"Enter reason for rejection..."}
+          <textarea value={wReason} onChange={e=>setWReason(e.target.value)} placeholder="Enter reason for rejection..."
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:70,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>}
         <div style={{display:"flex",gap:8}}>
@@ -2398,7 +2426,7 @@ const Reports = () => {
   const { t, isAr } = useLang();
   const { matches, investors, walletMovements, bars } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
-  const fmtK = n => (n == null || isNaN(n) ? "0" : Number(n).toLocaleString("en-SA",{maximumFractionDigits:0}));
+  const fmtK = n => n.toLocaleString("en-SA",{maximumFractionDigits:0});
   const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
@@ -2408,33 +2436,52 @@ const Reports = () => {
   const adminAll    = matches.reduce((a,m)=>a+(m.adminFee||0),0);
   const REPORT_DATA = {
     financial: [
-      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount={fmtK(commAll+adminAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
-      { title:"Trading Volume by Metal", sub:"This month", value:<SARAmount amount={fmtK(volAll)}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
-      { title:"Volume by Period", sub:"Daily avg", value:<SARAmount amount={fmtK(Math.round(volAll/30))}/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#8B5CF6", breakdown:[] },
-      { title:"Payment Methods", sub:"Orders", value:"0 orders", prev:"0", change:"—", up:false, chart:[0], color:"#D4943A", breakdown:[] },
-      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
-      { title:"Withdrawal Requests", sub:"This month", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#C85C3E", breakdown:[] },
+      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount="81,000"/>, prev:<SARAmount amount="72,400"/>, change:"+11.9%", up:true, chart:[6200,7100,5800,8200,7600,9100,8400], color:C.gold,
+        breakdown:[{label:"Commission",val:"64,800",pct:80},{label:"Admin Fees",val:"16,200",pct:20}] },
+      { title:"Trading Volume by Metal", sub:"This month", value:<SARAmount amount="3,240,000"/>, prev:<SARAmount amount="2,980,000"/>, change:"+8.7%", up:true, chart:[240,280,220,320,290,350,340], color:C.teal,
+        breakdown:[{label:"Gold",val:"2,820,000",pct:87},{label:"Silver",val:"310,000",pct:10},{label:"Platinum",val:"110,000",pct:3}] },
+      { title:"Volume by Period", sub:"Daily avg this month", value:<SARAmount amount="108,000"/>, prev:<SARAmount amount="99,333"/>, change:"+8.7%", up:true, chart:[95,110,88,125,108,130,115], color:"#8B5CF6",
+        breakdown:[{label:"Avg/Day",val:"108,000",pct:100}] },
+      { title:"Payment Methods", sub:"Orders this month", value:"14 orders", prev:"11 orders", change:"+27%", up:true, chart:[2,5,1,3,1,1,1], color:"#D4943A",
+        breakdown:[{label:"MADA",val:"7",pct:50},{label:"SADAD",val:"4",pct:29},{label:"Visa/MC",val:"3",pct:21}] },
+      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount="890,200"/>, prev:<SARAmount amount="820,000"/>, change:"+8.6%", up:true, chart:[60,80,55,90,75,100,88], color:C.teal,
+        breakdown:[{label:"Credits",val:"950,400",pct:52},{label:"Debits",val:"875,200",pct:48}] },
+      { title:"Withdrawal Requests", sub:"This month", value:<SARAmount amount="124,500"/>, prev:<SARAmount amount="98,000"/>, change:"+27%", up:true, chart:[8,12,7,15,10,18,14], color:"#C85C3E",
+        breakdown:[{label:"Processed",val:"2",pct:67},{label:"Pending",val:"1",pct:33}] },
     ],
     vault: [
-      { title:"Bars by Metal", sub:"Physical inventory", value:fmtK(bars.length)+" bars", prev:"0", change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
-      { title:"Linked vs Floating Tokens", sub:"Circulation", value:"0 tokens", prev:"0", change:"—", up:false, chart:[0], color:C.navy, breakdown:[] },
-      { title:"Tokens Minted/Burned", sub:"This month", value:"0 minted", prev:"0", change:"—", up:false, chart:[0], color:C.greenSolid, breakdown:[] },
-      { title:"Deposit vs Withdrawal", sub:"Appointments", value:"0 this month", prev:"0", change:"—", up:false, chart:[0], color:"#8B5CF6", breakdown:[] },
+      { title:"Bars by Metal", sub:"Physical inventory", value:"6 bars", prev:"5 bars", change:"+20%", up:true, chart:[1,2,1,1,1,2,1], color:C.gold,
+        breakdown:[{label:"Gold",val:"3",pct:50},{label:"Silver",val:"2",pct:33},{label:"Platinum",val:"1",pct:17}] },
+      { title:"Linked vs Floating Tokens", sub:"Circulation status", value:"24,180 tokens", prev:"0", change:"+9.9%", up:true, chart:[0], color:C.navy,
+        breakdown:[{label:"Linked",val:"15,840",pct:65},{label:"Floating",val:"8,340",pct:35}] },
+      { title:"Tokens Minted/Burned", sub:"This month", value:"2,180 minted", prev:"1,900", change:"+14.7%", up:true, chart:[150,200,180,220,190,250,220], color:C.greenSolid,
+        breakdown:[{label:"Minted",val:"2,180",pct:86},{label:"Burned",val:"340",pct:14}] },
+      { title:"Deposit vs Withdrawal", sub:"Appointment types", value:"7 this month", prev:"5", change:"+40%", up:true, chart:[1,2,1,2,0,1,2], color:"#8B5CF6",
+        breakdown:[{label:"Deposits",val:"5",pct:71},{label:"Withdrawals",val:"2",pct:29}] },
     ],
     investors: [
-      { title:"Active / Suspended / Banned", sub:"Account status", value:fmtK(investors.length)+" total", prev:"0", change:"—", up:false, chart:[0], color:C.navy, breakdown:[] },
-      { title:"New Investors", sub:"This month", value:"0 new", prev:"0", change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
-      { title:"Top by Holdings", sub:"Highest portfolio", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
-      { title:"Top by Volume", sub:"Most active", value:<SARAmount amount="0"/>, prev:<SARAmount amount="0"/>, change:"—", up:false, chart:[0], color:"#8B5CF6", breakdown:[] },
+      { title:"Active / Suspended / Banned", sub:"Account status", value:"312 total", prev:"298", change:"+4.7%", up:true, chart:[280,290,295,300,305,308,312], color:C.navy,
+        breakdown:[{label:"Active",val:"305",pct:98},{label:"Suspended",val:"5",pct:2},{label:"Banned",val:"2",pct:1}] },
+      { title:"New Investors by Period", sub:"This month", value:"18 new", prev:"14", change:"+28.6%", up:true, chart:[1,3,2,4,2,3,3], color:C.teal,
+        breakdown:[{label:"This Month",val:"18",pct:100}] },
+      { title:"Top by Holdings Value", sub:"Highest portfolio", value:<SARAmount amount="1,248,000"/>, prev:<SARAmount amount="1,100,000"/>, change:"+13.5%", up:true, chart:[900,950,1000,1050,1100,1180,1248], color:C.gold,
+        breakdown:[{label:"INV-001",val:"1,248,000",pct:56},{label:"INV-005",val:"560,000",pct:25},{label:"Others",val:"420,350",pct:19}] },
+      { title:"Top by Trading Volume", sub:"Most active", value:<SARAmount amount="419,455"/>, prev:<SARAmount amount="380,000"/>, change:"+10.4%", up:true, chart:[300,330,360,380,395,410,419], color:"#8B5CF6",
+        breakdown:[{label:"INV-003",val:"419,455",pct:51},{label:"INV-001",val:"83,900",pct:10},{label:"Others",val:"322,000",pct:39}] },
     ],
     appointments: [
-      { title:"Total by Period", sub:"This month", value:"0 appointments", prev:"0", change:"—", up:false, chart:[0], color:C.teal, breakdown:[] },
-      { title:"Deposit vs Withdrawal", sub:"Type breakdown", value:"0 deposits", prev:"0", change:"—", up:false, chart:[0], color:C.gold, breakdown:[] },
-      { title:"No Show Rate", sub:"Missed", value:"0%", prev:"0%", change:"—", up:false, chart:[0], color:"#C85C3E", breakdown:[] },
-      { title:"Completion Rate", sub:"Done", value:"0%", prev:"0%", change:"—", up:false, chart:[0], color:C.greenSolid, breakdown:[] },
+      { title:"Total by Period", sub:"This month", value:"7 appointments", prev:"5", change:"+40%", up:true, chart:[0,1,1,2,1,1,1], color:C.teal,
+        breakdown:[{label:"Booked",val:"3",pct:43},{label:"Completed",val:"1",pct:14},{label:"Other",val:"3",pct:43}] },
+      { title:"Deposit vs Withdrawal Split", sub:"Type breakdown", value:"5 deposits", prev:"4", change:"+25%", up:true, chart:[1,1,2,1,1,2,1], color:C.gold,
+        breakdown:[{label:"Deposits",val:"5",pct:71},{label:"Withdrawals",val:"2",pct:29}] },
+      { title:"No Show Rate", sub:"Missed appointments", value:"0%", prev:"10%", change:"-100%", up:true, chart:[1,0,1,0,0,0,0], color:"#C85C3E",
+        breakdown:[{label:"Attended",val:"6",pct:100},{label:"No Show",val:"0",pct:0}] },
+      { title:"Completion Rate", sub:"Successfully done", value:"100%", prev:"80%", change:"+25%", up:true, chart:[70,80,80,90,90,100,100], color:C.greenSolid,
+        breakdown:[{label:"Completed",val:"1",pct:100}] },
     ],
   };
-// Combined multi-segment 3D donut for all breakdowns in one chart
+
+  // Combined multi-segment 3D donut for all breakdowns in one chart
   const SEGMENT_COLORS = ["#C4956A",C.greenSolid,C.blueSolid,"#8B5CF6","#C85C3E","#D4943A","#6B9080",C.purpleSolid];
   const MultiDonut = ({ segments, size=100 }) => {
     const cx=50,cy=40,orx=40,ory=26,irx=18,iry=12,d=10;
@@ -2488,28 +2535,7 @@ const Reports = () => {
     );
   };
 
-  
-// ═══ CSV Export Utilities (moved above ReportCard for scope) ═══
-const generateCSV = (headers, rows, meta) => {
-  const esc = v => `"${String(v||"").replace(/"/g,'""')}"`;
-  const lines = [];
-  lines.push(esc("Tanaqul Precious Metals — Export"));
-  lines.push(esc("Generated: "+new Date().toLocaleString("en-SA")));
-  if(meta){Object.entries(meta).forEach(([k,v])=>lines.push(esc(k)+","+esc(v)));}
-  lines.push("");
-  lines.push(headers.map(esc).join(","));
-  rows.forEach(r => lines.push(r.map(esc).join(",")));
-  return lines.join("\n");
-};
-const downloadCSV = (filename, headers, rows) => {
-  const csv = generateCSV(headers, rows);
-  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename+".csv"; a.click();
-  URL.revokeObjectURL(url);
-};
-const ReportCard = ({ r }) => (
+  const ReportCard = ({ r }) => (
     <div style={{background:C.white,borderRadius:18,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.07)"}}>
       <div style={{padding:"22px 24px 14px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -2545,8 +2571,8 @@ const ReportCard = ({ r }) => (
         </div>
       </div>
       <div style={{padding:"12px 24px",display:"flex",gap:8,borderTop:`1px solid ${C.border}`}}>
-        <Btn small variant="outline" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);rows.unshift(["— Total —",typeof r.value==="string"?r.value:"See dashboard",r.change]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),["Category","Value","Share %"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.navy)} PDF</span></Btn>
-        <Btn small variant="teal" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);rows.unshift(["— Total —",typeof r.value==="string"?r.value:"See dashboard",r.change]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),["Category","Value","Share %"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.white)} Excel</span></Btn>
+        <Btn small variant="outline"><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.navy)} PDF</span></Btn>
+        <Btn small variant="teal"><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.white)} Excel</span></Btn>
       </div>
     </div>
   );
@@ -2588,7 +2614,7 @@ const Blacklist = () => {
   const [blToast,setBlToast]=useState("");
   const showBlToast = (m)=>{ setBlToast(m); setTimeout(()=>setBlToast(""),3000); };
 
-  const addBan = async () => {
+  const addBan = () => {
     if(!form.nationalId.trim()){showBlToast("⚠️ National ID required");return;}
     if(!/^[12]\d{9}$/.test(form.nationalId.trim())){showBlToast("⚠️ Invalid National ID — must be 10 digits starting with 1 or 2");return;}
     if(!form.reason.trim()){showBlToast("⚠️ Reason required");return;}
@@ -2602,15 +2628,13 @@ const Blacklist = () => {
       bannedBy:"Admin",
       date:new Date().toISOString().slice(0,10),
     };
-    try{await apiFetch("/blacklist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})})}catch(e){console.error("Ban failed:",e);}
     setBlacklist(prev=>[newEntry,...prev]);
     addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
     showBlToast("✅ User banned by National ID");
     setShowAdd(false); setForm({nationalId:"",name:"",reason:""});
   };
 
-  const unban = async (id) => {
-    try{const entry=blacklist.find(b=>b.id===id);if(entry&&entry.uuid){await apiFetch("/blacklist/"+entry.uuid+"/unban",{method:"POST"})}}catch(e){console.error("Unban failed:",e);}
+  const unban = (id) => {
     setBlacklist(prev=>prev.filter(b=>b.id!==id));
     showBlToast("✅ User unbanned — account restored");
   };
@@ -2618,8 +2642,8 @@ const Blacklist = () => {
   return (
     <div>
       {blToast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{blToast}</div>}
-      <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub={t("Banned by National ID — blocked from login and registration until admin unbans")}
-        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>downloadCSV("blacklist_"+new Date().toISOString().slice(0,10),["Record ID","Name","National ID","Vault Key","Reason","Banned By","Date"],blacklist.map(b=>[b.id,b.name,b.nationalId,b.vaultKey,b.reason,b.bannedBy,b.date]))}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(14,C.navy)} {isAr?"تصدير":"Export"}</span></Btn><Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"حظر مستخدم":"Ban User"}</span></Btn></div>} />
+      <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub="Banned by National ID — blocked from login and registration until admin unbans"
+        action={<Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Ban User</span></Btn>} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.blacklist(22,"#C85C3E")} title={isAr?"إجمالي المحظورين":"Total Banned"} value={blacklist.length} />
         <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المحظورون هذا الشهر":"Banned This Month"} value={blacklist.filter(b=>b.date?.startsWith("2026-03")).length} />
@@ -2643,10 +2667,10 @@ const Blacklist = () => {
           {Icons.warning(16,"#C85C3E")}<p style={{fontSize:14,color:"#C85C3E",fontWeight:500}}>Ban is tied to National ID. Cannot login or re-register until manually unbanned.</p>
         </div>
         <Inp label="National ID *" value={form.nationalId} onChange={v=>setForm({...form,nationalId:v})} placeholder="1090123456" />
-        <Inp label="Full Name (optional)" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder={isAr?"محمد ال...":"Mohammed Al-..."} />
+        <Inp label="Full Name (optional)" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="Mohammed Al-..." />
         <div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>REASON *</label>
-          <textarea value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} placeholder={isAr?"اكتب سبب الحظر...":"Describe the reason for ban..."}
+          <textarea value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} placeholder="Describe the reason for ban..."
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}><Btn variant="danger" onClick={addBan}>{isAr?"تأكيد الحظر":"Confirm Ban"}</Btn><Btn variant="outline" onClick={()=>setShowAdd(false)}>{t("Cancel")}</Btn></div>
@@ -2717,7 +2741,7 @@ const ValidatorsTab = () => {
                 setValidators(p=>p.map(v=>v.id===row.id?{...v,status:"INACTIVE"}:v));showBlkToast(isAr?"✅ تم تعطيل المدقق":"✅ Validator deactivated");}}>{isAr?"تعطيل":"Deactivate"}</Btn>
               :<Btn small variant="teal"   onClick={()=>{setValidators(p=>p.map(v=>v.id===row.id?{...v,status:"ACTIVE"} :v));showBlkToast(isAr?"✅ تم تفعيل المدقق":"✅ Validator activated");}}>{isAr?"تفعيل":"Activate"}</Btn>
             }
-            <Btn small variant="outline" onClick={()=>{downloadCSV("validators_all",["ID","Name","Status","Blocks Validated","Weight","Commission Earned","Joined"],validators.map(v=>[v.id,v.name,v.status,v.blocksValidated,v.weight,v.commissionEarned,v.joined]));showBlkToast(isAr?"✅ تم تصدير":"✅ Exported");}}>{isAr?"سجل":"History"}</Btn>
+            <Btn small variant="outline" onClick={()=>showBlkToast(isAr?"تم تصدير السجل":"📋 History exported")}>{isAr?"سجل":"History"}</Btn>
           </div>
         )},
       ]} rows={validators} />
@@ -2743,10 +2767,9 @@ const ValidatorsTab = () => {
               style={{width:"100%",padding:"8px 11px",borderRadius:8,fontSize:16,border:`1px solid ${C.border}`,color:C.text,outline:"none",boxSizing:"border-box"}}/>
           </div>
           <div style={{display:"flex",gap:8,marginTop:4}}>
-            <Btn variant="teal" onClick={async()=>{
+            <Btn variant="teal" onClick={()=>{
               if(!vName||!vAddr){showBlkToast(isAr?"⚠️ الاسم والعنوان مطلوبان":"⚠️ Name and address required");return;}
               const newV={id:"VAL-"+(validators.length+1).toString().padStart(3,"0"),name:vName,address:vAddr,status:"ACTIVE",blocksValidated:0,weight:"0%",commissionEarned:"0",joined:new Date().toISOString().slice(0,10)};
-              try{await apiFetch("/validators",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:vEnd||null})})}catch(e){console.error("Add validator failed:",e);}
               setValidators(p=>[...p,newV]);
               showBlkToast(isAr?"✅ تم إضافة المدقق":"✅ Validator added");
               setShowAdd(false);setVName("");setVAddr("");setVEnd("");
@@ -2769,7 +2792,7 @@ const Blocks = () => {
   const validatorsPct = apiSplit ? apiSplit.validators_percent : (commSplit.validators||20);
   const triggerSettings = appBlockStats?.trigger_settings;
   const triggerText = triggerSettings ? `${triggerSettings.size_mb}MB or ${triggerSettings.hours}hrs` : "1MB or 24hrs";
-  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
+  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : MOCK.transactions);
   return (
     <div>
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
@@ -2800,7 +2823,7 @@ const Blocks = () => {
         {key:"creatorShare",label:`Creator ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validatorsShare",label:`Validators ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validator",label:"Creator"},{key:"size",label:"Size"},{key:"timestamp",label:"Time"},
-      ]} rows={appBlocks || []} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />}
+      ]} rows={appBlocks} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />}
       {tab==="TRANSACTIONS"&&<TTable cols={[
         {key:"id",label:"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
         {key:"investor",label:"Investor"},{key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
@@ -3014,14 +3037,14 @@ const AuditLog = () => {
 
   const buildInvestorProfiles = () => {
     const allTxns = [
-      
+      ...(MOCK.transactions||[]),
       ...matches.map(m=>({
         id:m.id, buyerNationalId:m.buyerNid||"", sellerNationalId:m.sellerNid||"",
         total:String(m.totalSAR), metal:m.metal, status:"COMPLETED", date:m.date,
       })),
     ];
     const allWM = [...walletMovements];
-    const allAppts = [...(appointments||[])];
+    const allAppts = [...(MOCK.appointments||[]), ...appointments];
     const profiles = {};
 
     investors.forEach(inv => {
@@ -3316,7 +3339,7 @@ const AuditLog = () => {
           <p style={{fontSize:16,fontWeight:800,color:"#FFF"}}>{critCount + cmaCritCount} CRITICAL Alert{(critCount+cmaCritCount)>1?"s":""} — {critCount>0?`${critCount} AML`:""}{critCount>0&&cmaCritCount>0?" + ":""}{cmaCritCount>0?`${cmaCritCount} Market Manipulation`:""}</p>
           <p style={{fontSize:13,color:"#E8C5BA"}}>{cmaCritCount>0?"CMA Market Conduct Regulations require immediate investigation of manipulation alerts. ":""}SAMA regulations require escalation within 24 hours.</p>
         </div>
-        <button onClick={()=>setTab(cmaCritCount>0?"cma":"aml")} style={{padding:"8px 16px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}>{t("Review Now")} →</button>
+        <button onClick={()=>setTab(cmaCritCount>0?"cma":"aml")} style={{padding:"8px 16px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}>Review Now →</button>
       </div>}
 
       {/* TAB BAR */}
@@ -3371,7 +3394,7 @@ const AuditLog = () => {
             border:`1px solid ${C.border}`,background:showDismissed?"#F5F0E8":C.white,color:C.textMuted}}>
             {showDismissed?"Hide":"Show"} Dismissed ({amlDismissed.size})
           </button>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder={isAr?"بحث في التنبيهات...":"Search alerts..."} style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:200,outline:"none"}}/>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search alerts..." style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:200,outline:"none"}}/>
         </div>
 
         {filteredAlerts.length===0?(
@@ -3401,7 +3424,7 @@ const AuditLog = () => {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                   <Btn small variant="outline" onClick={()=>setAmlModal(a)}>{isAr?"التفاصيل":"Details"}</Btn>
-                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم تجاهل التنبيه":"Alert dismissed");}}>{isAr?"تجاهل":"Dismiss"}</Btn>}
+                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Alert dismissed");}}>Dismiss</Btn>}
                   {amlDismissed.has(a.key)&&<span style={{fontSize:11,color:C.textMuted,textAlign:"center",fontWeight:600}}>✓ Dismissed</span>}
                 </div>
               </div>
@@ -3467,7 +3490,7 @@ const AuditLog = () => {
                     <div style={{display:"flex",gap:4}}>
                       <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                       <Btn small variant="outline" style={{borderColor:C.purpleSolid,color:C.purpleSolid}} onClick={()=>{const n=generateCMANotif(a);setCmaNotifModal(n);}}>{isAr?"إخطار الهيئة":"Notify CMA"}</Btn>
-                      {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم التجاهل":"Dismissed");}}>{isAr?"تجاهل":"Dismiss"}</Btn>}
+                      {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Dismissed");}}>Dismiss</Btn>}
                     </div>
                   </div>
                   <p style={{fontSize:13,color:C.text,lineHeight:"1.5"}}>{a.detail}</p>
@@ -3504,7 +3527,7 @@ const AuditLog = () => {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                   <Btn small variant="outline" style={{borderColor:C.purpleSolid,color:C.purpleSolid}} onClick={()=>{const n=generateCMANotif(a);setCmaNotifModal(n);}}>{isAr?"إخطار الهيئة":"Notify CMA"}</Btn>
-                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم التجاهل":"Dismissed");}}>{isAr?"تجاهل":"Dismiss"}</Btn>}
+                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Dismissed");}}>Dismiss</Btn>}
                 </div>
               </div>
             ))}
@@ -3999,7 +4022,7 @@ const AuditLog = () => {
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {reportingConfig?.sarEnabled&&<Btn variant="danger" onClick={()=>setSendConfirm({type:"SAR",data:sarModal})}>{Icons.send(14,"#FFF")} {isAr?"إرسال إلى ساما الآن":"Send to SAMA Now"}</Btn>}
-            <Btn variant="gold" onClick={async()=>{try{await apiFetch("/aml/report?alert_id="+encodeURIComponent(sarModal.reportId)+"&notes="+encodeURIComponent(sarModal.notes||""),{method:"POST"})}catch(e){}showToast("✅ "+sarModal.reportId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setSarModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
+            <Btn variant="gold" onClick={()=>{showToast("✅ "+sarModal.reportId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setSarModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
             <Btn variant="outline" onClick={()=>setSarModal(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
           </div>
         </div>
@@ -4035,7 +4058,7 @@ const AuditLog = () => {
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {reportingConfig?.cmaEnabled&&<Btn variant="danger" onClick={()=>setSendConfirm({type:"CMA",data:cmaNotifModal})}>{Icons.send(14,"#FFF")} {isAr?"إرسال إلى الهيئة الآن":"Send to CMA Now"}</Btn>}
-            <Btn variant="gold" onClick={async()=>{try{await apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"CMA_NOTIFICATION",entity_type:"cma",entity_id:cmaNotifModal.notifId,details:cmaNotifModal.notes||"",level:"WARNING"})})}catch(e){}showToast("✅ "+cmaNotifModal.notifId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setCmaNotifModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
+            <Btn variant="gold" onClick={()=>{showToast("✅ "+cmaNotifModal.notifId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setCmaNotifModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
             <Btn variant="outline" onClick={()=>setCmaNotifModal(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
           </div>
         </div>
@@ -4140,7 +4163,7 @@ const PriceFeedSettings = () => {
 
       {/* Provider Selector */}
       <div style={{marginBottom:18}}>
-        <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:10,letterSpacing:"0.05em"}}>{t("SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED")}</label>
+        <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:10,letterSpacing:"0.05em"}}>SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED</label>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {Object.values(PROVIDERS).map(p => {
             const ti   = TIER_INFO[p.tier];
@@ -4412,8 +4435,31 @@ const G = ({title, children}) => {
   );
 };
 
+// ─── Commission Error Boundary ───────────────────────────────────────────────
+class CommissionErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, info) { console.error("CommissionTab error:", error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{background:"#FBEAE5",borderRadius:14,padding:24,border:"2px solid #C85C3E33",textAlign:"center"}}>
+          <p style={{fontSize:16,fontWeight:700,color:"#C85C3E",marginBottom:8}}>⚠️ Commission tab encountered an error</p>
+          <p style={{fontSize:13,color:"#8B4A38",marginBottom:16}}>{this.state.error?.message || "Unknown error"}</p>
+          <button onClick={()=>this.setState({hasError:false,error:null})}
+            style={{padding:"8px 18px",borderRadius:8,background:"#C85C3E",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:600}}>
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ─── Commission Tab Component ─────────────────────────────────────────────────
 const CommissionTab = ({
+
   commBuyer, setCommBuyer, commSeller, setCommSeller,
   splitBuying, setSplitBuying, splitSelling, setSplitSelling,
   splitCreator, setSplitCreator, splitValidators, setSplitValidators,
@@ -4452,7 +4498,7 @@ const CommissionTab = ({
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("BUYER COMMISSION (%)")}</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>BUYER COMMISSION (%)</label>
             <select value={commBuyer} onChange={e=>setCommBuyer(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {commOpts.map(o=><option key={o.value} value={o.value}>{o.label} per trade</option>)}
@@ -4460,7 +4506,7 @@ const CommissionTab = ({
             <p style={{fontSize:12,color:C.textMuted,marginTop:4}}>{isAr?"تُضاف على قيمة الصفقة":"Charged on top of trade amount"}</p>
           </div>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("SELLER COMMISSION (%)")}</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>SELLER COMMISSION (%)</label>
             <select value={commSeller} onChange={e=>setCommSeller(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {commOpts.map(o=><option key={o.value} value={o.value}>{o.label} per trade</option>)}
@@ -4471,7 +4517,7 @@ const CommissionTab = ({
 
         {/* Live Trade Example */}
         <div style={{background:C.navyDark,borderRadius:12,padding:"14px 18px",marginBottom:4}}>
-          <p style={{fontSize:12,fontWeight:700,color:"#A89880",letterSpacing:"0.08em",marginBottom:12}}>{t("LIVE EXAMPLE — 10,000 SAR TRADE")}</p>
+          <p style={{fontSize:12,fontWeight:700,color:"#A89880",letterSpacing:"0.08em",marginBottom:12}}>LIVE EXAMPLE — 10,000 SAR TRADE</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             {/* Buyer */}
             <div style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"12px 14px",border:"1px solid rgba(255,255,255,0.08)"}}>
@@ -4559,14 +4605,14 @@ const CommissionTab = ({
           options={[{value:"daily",label:"Daily"},{value:"weekly",label:"Weekly"},{value:"perblock",label:"Per Block (instant)"}]} />
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:4}}>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("BLOCKS PER PERIOD (ESTIMATE)")}</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>BLOCKS PER PERIOD (ESTIMATE)</label>
             <select value={blocksInPeriod} onChange={e=>setBlocksInPeriod(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {["100","250","500","1000","2000","5000"].map(v=><option key={v} value={v}>{v} blocks</option>)}
             </select>
           </div>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("MIN BLOCK PARTICIPATION TO QUALIFY")}</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>MIN BLOCK PARTICIPATION TO QUALIFY</label>
             <select value={minValidator} onChange={e=>setMinValidator(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {["5","10","15","20","25","30","40","50"].map(v=><option key={v} value={v}>{v}%</option>)}
@@ -4634,7 +4680,7 @@ const CommissionTab = ({
           </div>
         </div>
         <div style={{background:"#FAF8F5",borderRadius:10,padding:"12px 16px",border:`1px solid ${C.border}`}}>
-          <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{t("What happens to forfeited earnings:")}</p>
+          <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>What happens to forfeited earnings:</p>
           {[
             ["1","Block closes → participation recorded on-chain"],
             ["2","Period ends → system checks each validator's block count"],
@@ -4776,7 +4822,11 @@ const OrderBook = () => {
 
   // orders and matches now from AppDataContext (persist across navigation)
   const [matchLog, setMatchLog] = useState([]); // live match events shown as toasts
-  const [synLog,   setSynLog]   = useState([]);
+  const [synLog,   setSynLog]   = useState([
+    {id:"SYN-001",metal:"Gold",  side:"BUY", qty:15, price:840.00,reason:"Spread 2.4% > 2.0%",date:"2026-03-01 08:00",status:"OPEN"},
+    {id:"SYN-002",metal:"Silver",side:"SELL",qty:200,price:10.46, reason:"Spread 2.1% > 2.0%",date:"2026-02-28 14:22",status:"FILLED"},
+    {id:"SYN-003",metal:"Gold",  side:"SELL",qty:10, price:843.50,reason:"Spread 2.7% > 2.0%",date:"2026-02-28 11:05",status:"CANCELLED"},
+  ]);
   const [matchToast, setMatchToast] = useState("");
   const showMatchToast = (msg) => { setMatchToast(msg); setTimeout(()=>setMatchToast(""),4000); };
 
@@ -4793,11 +4843,10 @@ const OrderBook = () => {
   const filledList    = orders.filter(o=>o.status==="FILLED");
   const cancelledList = orders.filter(o=>o.status==="CANCELLED");
 
-  const cancelOrder = async (id) => {
+  const cancelOrder = (id) => {
     const order = orders.find(o=>o.id===id);
     if(!order) return;
     if(order.status==="FILLED"||order.status==="CANCELLED") return;
-    try{await apiFetch("/orders/"+(order.uuid||id)+"/cancel",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason:"Admin cancelled"})})}catch(e){console.error("Cancel order failed:",e);}
     // Compute actual execution value from match records (not order.price which may differ from exec price)
     const orderMatches = matches.filter(m=>m.buyOrder===id||m.sellOrder===id);
     const actualExecSAR = orderMatches.reduce((a,m)=>a+m.totalSAR, 0);
@@ -5507,29 +5556,51 @@ const UserManagement = () => {
   const allRoles = [...ROLES.filter(r=>r.id!=="CUSTOM"), ...customRoles, ROLES.find(r=>r.id==="CUSTOM")];
   const allRolePerms = {...ROLE_PERMS};
   customRoles.forEach(r=>{ allRolePerms[r.id]=r.perms; });
-  const [users, setUsers] = useState(() => {
-    // Load current admin from localStorage (no hardcoded users)
-    try {
-      const admin = JSON.parse(localStorage.getItem("tanaqul_admin") || "{}");
-      if (admin.name || admin.email) {
-        return [{
-          id: "USR-001",
-          name: admin.name || "Admin",
-          nameAr: admin.name || "مسؤول",
-          email: admin.email || "",
-          role: (admin.role || "SUPER_ADMIN").toUpperCase(),
-          perms: ROLE_PERMS[(admin.role || "SUPER_ADMIN").toUpperCase()] || ROLE_PERMS.SUPER_ADMIN,
-          twoFA: true,
-          status: "ACTIVE",
-          lastLogin: new Date().toISOString().slice(0, 16).replace("T", " "),
-          sessions: 1,
-          created: "—",
-          log: []
-        }];
-      }
-    } catch(e) {}
-    return [];
-  });
+  const [users, setUsers] = useState([
+    {id:"USR-001",name:"Abdulaziz Al-Rashid",nameAr:"عبدالعزيز الراشد",email:"admin@tanaqul.sa",role:"SUPER_ADMIN",perms:ROLE_PERMS.SUPER_ADMIN,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-02 09:14",sessions:2,created:"2025-09-01",
+      log:[
+        {date:"2026-03-02 09:14",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (196.203.x.x)",ip:"196.203.x.x"},
+        {date:"2026-03-02 09:20",action:"Changed commission rates",actionAr:"تغيير أسعار العمولة",detail:"Buyer: 1.0% → 1.2%, Seller: 1.0% → 1.1%",ip:"196.203.x.x"},
+        {date:"2026-03-01 16:45",action:"Approved withdrawal",actionAr:"الموافقة على سحب",detail:"WR-003 — SAR 25,000 — Mohammed Al-Otaibi",ip:"196.203.x.x"},
+        {date:"2026-03-01 14:10",action:"Filed SAR report",actionAr:"تقديم بلاغ SAR",detail:"SAR-24819374 — Suspicious volume pattern",ip:"196.203.x.x"},
+        {date:"2026-03-01 10:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (196.203.x.x)",ip:"196.203.x.x"},
+        {date:"2026-02-28 15:30",action:"Suspended user USR-005",actionAr:"إيقاف المستخدم USR-005",detail:"Khalid Al-Mutairi — policy violation",ip:"196.203.x.x"},
+        {date:"2026-02-28 09:00",action:"Login",actionAr:"تسجيل دخول",detail:"Safari — iPhone (196.203.x.x)",ip:"196.203.x.x"},
+        {date:"2026-02-27 11:30",action:"Updated vault settings",actionAr:"تحديث إعدادات الخزينة",detail:"Added Jeddah Vault 2",ip:"196.203.x.x"},
+      ]},
+    {id:"USR-002",name:"Noura Al-Shamsi",nameAr:"نورة الشمسي",email:"compliance@tanaqul.sa",role:"COMPLIANCE",perms:ROLE_PERMS.COMPLIANCE,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-01 16:22",sessions:1,created:"2025-10-15",
+      log:[
+        {date:"2026-03-01 16:22",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (10.0.x.x)",ip:"10.0.x.x"},
+        {date:"2026-03-01 16:35",action:"Reviewed AML alerts",actionAr:"مراجعة تنبيهات غسل الأموال",detail:"Dismissed 3 LOW alerts, escalated 1 HIGH",ip:"10.0.x.x"},
+        {date:"2026-03-01 17:00",action:"Filed SAR report",actionAr:"تقديم بلاغ SAR",detail:"SAR-24819401 — Velocity-based detection",ip:"10.0.x.x"},
+        {date:"2026-02-28 09:15",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
+        {date:"2026-02-28 10:00",action:"PEP screening completed",actionAr:"اكتمال فحص الشخصيات المعرضة سياسياً",detail:"12 investors screened — 0 PEP matches",ip:"10.0.x.x"},
+        {date:"2026-02-27 14:20",action:"Sent CMA notification",actionAr:"إرسال إخطار الهيئة",detail:"CMA-NOTIF-38291 — Self-trade detected",ip:"10.0.x.x"},
+      ]},
+    {id:"USR-003",name:"Mohammed Al-Harbi",nameAr:"محمد الحربي",email:"vault@tanaqul.sa",role:"VAULT_MGR",perms:ROLE_PERMS.VAULT_MGR,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-02 08:05",sessions:1,created:"2025-11-01",
+      log:[
+        {date:"2026-03-02 08:05",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"192.168.x.x"},
+        {date:"2026-03-02 08:30",action:"Processed appointment",actionAr:"معالجة موعد",detail:"APT-012 — Gold deposit 500g — Fahad Al-Dosari",ip:"192.168.x.x"},
+        {date:"2026-03-02 09:15",action:"Verified bar authenticity",actionAr:"التحقق من أصالة السبيكة",detail:"BAR-AU-047 — LBMA certified — 1000g",ip:"192.168.x.x"},
+        {date:"2026-03-01 08:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"192.168.x.x"},
+        {date:"2026-03-01 10:45",action:"Processed withdrawal",actionAr:"معالجة سحب",detail:"APT-009 — Silver 200g — Sara Al-Qahtani",ip:"192.168.x.x"},
+      ]},
+    {id:"USR-004",name:"Sara Al-Qahtani",nameAr:"سارة القحطاني",email:"finance@tanaqul.sa",role:"FINANCIAL",perms:ROLE_PERMS.FINANCIAL,twoFA:false,status:"ACTIVE",lastLogin:"2026-02-28 14:30",sessions:0,created:"2026-01-10",
+      log:[
+        {date:"2026-02-28 14:30",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
+        {date:"2026-02-28 15:00",action:"Approved withdrawal",actionAr:"الموافقة على سحب",detail:"WR-005 — SAR 15,000 — Noura Al-Dossari",ip:"10.0.x.x"},
+        {date:"2026-02-28 15:20",action:"Generated financial report",actionAr:"إنشاء تقرير مالي",detail:"Monthly P&L — February 2026",ip:"10.0.x.x"},
+        {date:"2026-02-27 09:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
+      ]},
+    {id:"USR-005",name:"Khalid Al-Mutairi",nameAr:"خالد المطيري",email:"viewer@tanaqul.sa",role:"VIEWER",perms:ROLE_PERMS.VIEWER,twoFA:false,status:"SUSPENDED",lastLogin:"2026-02-15 10:00",sessions:0,created:"2026-02-01",
+      log:[
+        {date:"2026-02-15 10:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Jeddah",ip:"85.100.x.x"},
+        {date:"2026-02-15 10:30",action:"Viewed dashboard",actionAr:"عرض لوحة التحكم",detail:"Read-only access",ip:"85.100.x.x"},
+        {date:"2026-02-14 11:00",action:"Login",actionAr:"تسجيل دخول",detail:"Firefox — Jeddah",ip:"85.100.x.x"},
+        {date:"2026-02-14 11:20",action:"Exported report",actionAr:"تصدير تقرير",detail:"Downloaded monthly overview PDF",ip:"85.100.x.x"},
+        {date:"2026-02-28 00:00",action:"Account suspended",actionAr:"إيقاف الحساب",detail:"Suspended by Super Admin (USR-001)",ip:"—"},
+      ]},
+  ]);
   const [modal, setModal] = useState(null); // null | "add" | user object
   const [activityModal, setActivityModal] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
@@ -5614,10 +5685,9 @@ const UserManagement = () => {
               {(allRolePerms[newUser.role]||[]).length===0&&<span style={{fontSize:13,color:C.textMuted,fontStyle:"italic"}}>{isAr?"اختر الدور أولاً":"Select role first"}</span>}
             </div>
           </div>
-          <Btn variant="gold" onClick={async()=>{
+          <Btn variant="gold" onClick={()=>{
             if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
             const id="USR-"+String(Date.now()).slice(-3);
-            try{await apiFetch("/admin/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,password:"Temp"+String(Date.now()).slice(-6)+"!",role:newUser.role.toLowerCase()})})}catch(e){console.error("Create user failed:",e);}
             setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
             setModal(null);showToast(isAr?"✅ تم إضافة المستخدم — كلمة مرور مؤقتة أُرسلت للبريد":"✅ User added — temporary password sent to email");
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
@@ -5649,7 +5719,7 @@ const UserManagement = () => {
           <div style={{display:"flex",gap:8}}>
             <Btn variant="gold" onClick={()=>{
               setUsers(p=>p.map(x=>x.id===modal.id?{...x,role:editRole,perms:editRole==="CUSTOM"?editPerms:ROLE_PERMS[editRole]}:x));
-              try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"PERMISSIONS_UPDATE",entity_type:"admin_user",entity_id:modal?.id||"",details:"Permissions updated",level:"INFO"})})}catch(e){}setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
+              setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
             }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
             {!modal.twoFA&&<Btn variant="teal" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,twoFA:true}:x));showToast(isAr?"🔒 تم تفعيل المصادقة الثنائية":"🔒 2FA enabled");setModal(null);}}>{isAr?"تفعيل 2FA":"Enable 2FA"}</Btn>}
             {modal.sessions>0&&<Btn variant="danger" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,sessions:0}:x));showToast(isAr?"تم إلغاء جميع الجلسات":"All sessions revoked");}}>{isAr?"إلغاء الجلسات":"Revoke Sessions"}</Btn>}
@@ -5813,11 +5883,11 @@ const AccountProfile = () => {
   const { isAr, t } = useLang();
   const [tab, setTab] = useState("INFO");
   const [profile, setProfile] = useState({
-    name:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"Admin", nameAr:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"مسؤول",
-    email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").phone)||"",
-    phoneVerified:!!(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").phone),
-    recoveryPhone:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").recoveryPhone)||"", recoveryPhoneVerified:!!(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").recoveryPhone),
-    recoveryEmail:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").recoveryEmail)||"",
+    name:"Abdulaziz Al-Rashid", nameAr:"عبدالعزيز الراشد",
+    email:"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
+    phoneVerified:true,
+    recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
+    recoveryEmail:"abdulaziz.recovery@gmail.com",
     role:"Super Admin", roleAr:"مسؤول أعلى",
     joined:"2025-09-01", lastLogin:"2026-03-02 09:14",
     twoFA:true, lang:"ar",
@@ -5826,8 +5896,18 @@ const AccountProfile = () => {
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState({show:false,field:null,code:"",sent:false,verified:false,timer:0});
-  const [sessions] = useState([]);
-  const [activityLog] = useState([]);
+  const [sessions] = useState([
+    {id:"S1",device:"Chrome — Windows 11",ip:"196.203.x.x",location:isAr?"الرياض":"Riyadh",time:"2026-03-02 09:14",current:true},
+    {id:"S2",device:"Safari — iPhone 15",ip:"196.203.x.x",location:isAr?"الرياض":"Riyadh",time:"2026-03-01 22:30",current:false},
+  ]);
+  const [activityLog] = useState([
+    {date:"2026-03-02 09:14",action:isAr?"تسجيل دخول":"Login",detail:"Chrome — Riyadh"},
+    {date:"2026-03-01 16:45",action:isAr?"تغيير الإعدادات":"Settings changed",detail:isAr?"تحديث رسوم العمولة":"Updated commission rates"},
+    {date:"2026-03-01 14:20",action:isAr?"موافقة على سحب":"Withdrawal approved",detail:"WR-003 — SAR 25,000"},
+    {date:"2026-03-01 10:00",action:isAr?"تسجيل دخول":"Login",detail:"Chrome — Riyadh"},
+    {date:"2026-02-28 15:30",action:isAr?"تقديم بلاغ SAR":"SAR filed",detail:"SAR-24819374 — Mohammed Al-Otaibi"},
+    {date:"2026-02-28 09:00",action:isAr?"تسجيل دخول":"Login",detail:"Safari — iPhone"},
+  ]);
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
   const showSaved = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
 
@@ -5844,7 +5924,7 @@ const AccountProfile = () => {
     showToast(isAr?"📱 تم إرسال رمز التحقق":"📱 OTP sent to phone");
   };
   const verifyOtp = () => {
-    if(false){
+    if(phoneOtp.code==="847291"){
       if(phoneOtp.field==="phone") setProfile(p=>({...p,phoneVerified:true}));
       else setProfile(p=>({...p,recoveryPhoneVerified:true}));
       setPhoneOtp(p=>({...p,show:false,verified:true}));
@@ -5920,7 +6000,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async()=>{const admin=JSON.parse(localStorage.getItem("tanaqul_admin")||"{}");admin.name=profile.name;admin.email=profile.email;admin.phone=profile.phone;admin.recoveryPhone=profile.recoveryPhone;admin.recoveryEmail=profile.recoveryEmail;localStorage.setItem("tanaqul_admin",JSON.stringify(admin));try{await apiFetch("/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:profile.name,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})})}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={()=>{showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -5942,7 +6022,7 @@ const AccountProfile = () => {
               :<button onClick={()=>{setPhoneOtp(p=>({...p,timer:60}));showToast(isAr?"📱 تم إعادة الإرسال":"📱 OTP resent");}} style={{color:C.gold,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال الرمز":"Resend Code"}</button>
             }
           </p>
-          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"":"" }</p>
+          <p style={{fontSize:11,color:C.textMuted,background:C.bg,borderRadius:8,padding:"6px 10px",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
           <Btn variant="gold" onClick={verifyOtp} style={{width:"100%"}}>{isAr?"تحقق":"Verify"}</Btn>
         </div>
       </Modal>}
@@ -6049,7 +6129,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       });
     });
     // Search transactions
-    ([]).forEach(tx => {
+    (MOCK.transactions||[]).forEach(tx => {
       if(results.length >= MAX) return;
       const haystack = `${tx.id} ${tx.buyerNationalId} ${tx.sellerNationalId} ${tx.metal} ${tx.type} ${tx.method||""} ${tx.total}`.toLowerCase();
       if(haystack.includes(q)) results.push({
@@ -6122,7 +6202,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
         results.push({type:"rule",icon:"🔍",label:`${rule.id} — ${rule.label}`,sub:isAr?"قاعدة AML/CMA":"AML/CMA Rule",action:()=>{setPage("auditlog");onClose();}});
     });
     // Search messages
-    ([]).forEach(msg => {
+    (MOCK_MESSAGES||[]).forEach(msg => {
       if(results.length >= MAX) return;
       const haystack = `${msg.id} ${msg.to} ${msg.subject} ${msg.body}`.toLowerCase();
       if(haystack.includes(q)) results.push({
@@ -6207,7 +6287,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
     color:"#6B9080"});
 
   // Transactions
-  ([]).forEach(tx => {
+  (MOCK.transactions||[]).forEach(tx => {
     if(tx.buyerNationalId===nid) events.push({date:tx.date, type:"transaction", icon:tx.type==="BUY"?"🟢":"💰",
       title:`${isAr?"شراء":"Buy"} ${tx.metal} — ${tx.amount}`,
       detail:`SAR ${tx.total} · ${tx.method||"—"} · ${tx.status}`,
@@ -6243,7 +6323,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
   });
 
   // Messages sent to this investor
-  ([]).forEach(msg => {
+  (MOCK_MESSAGES||[]).forEach(msg => {
     if(msg.toNid===nid) events.push({date:msg.sentAt||msg.scheduledFor||"", type:"message", icon:"✉️",
       title:`${isAr?"رسالة":"Message"}: ${msg.subject}`,
       detail:`${msg.channel} · ${msg.status}`,
@@ -6382,14 +6462,50 @@ const COMM_TEMPLATES = [
     vars:["investor"], priority:"normal"},
 ];
 
-const MOCK_MESSAGES = [];
-// Removed — messages loaded from API
+const MOCK_MESSAGES = [
+  {id:"MSG-001",to:"Mohammed Al-Otaibi",toAr:"محمد العتيبي",toNid:"1012345678",channel:"sms",subject:"KYC Reminder",subjectAr:"تذكير بالهوية",
+    body:"Dear Mohammed, your KYC verification expires on 2027-11-01. Please renew your identity documents.",
+    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-02 09:30",deliveredAt:"2026-03-02 09:31",readAt:"2026-03-02 10:15",template:"TPL-001"},
+  {id:"MSG-002",to:"Sara Al-Qahtani",toAr:"سارة القحطاني",toNid:"1098765432",channel:"email",subject:"Withdrawal Processed",subjectAr:"تم معالجة السحب",
+    body:"Dear Sara, your withdrawal request of SAR 5,096 has been processed to ANB — ****3310.",
+    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-01 16:00",deliveredAt:"2026-03-01 16:02",readAt:null,template:"TPL-003"},
+  {id:"MSG-003",to:"Ahmed Saad",toAr:"أحمد سعد",toNid:"1078901234",channel:"sms",subject:"Appointment Confirmation",subjectAr:"تأكيد الموعد",
+    body:"Your DEPOSIT appointment for Silver (500g) at Jeddah Vault 1 is confirmed for 2026-03-03 14:00.",
+    status:"sent",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-01 14:00",deliveredAt:null,readAt:null,template:"TPL-002"},
+  {id:"MSG-004",to:"Nora Al-Shehri",toAr:"نورة الشهري",toNid:"1056789012",channel:"sms",subject:"No-Show Warning",subjectAr:"تحذير عدم الحضور",
+    body:"Nora, you have 2 no-shows. 3+ no-shows may result in appointment restrictions.",
+    status:"delivered",priority:"urgent",sentBy:"compliance@tanaqul.sa",sentAt:"2026-02-28 11:00",deliveredAt:"2026-02-28 11:01",readAt:"2026-02-28 12:30",template:"TPL-007"},
+  {id:"MSG-005",to:"Khalid Al-Ghamdi",toAr:"خالد الغامدي",toNid:"1023456789",channel:"push",subject:"Price Alert — Gold",subjectAr:"تنبيه سعر — ذهب",
+    body:"Gold price is now SAR 839/g — up 0.6% from yesterday. Trade now on Tanaqul.",
+    status:"read",priority:"normal",sentBy:"system",sentAt:"2026-03-02 07:00",deliveredAt:"2026-03-02 07:00",readAt:"2026-03-02 07:15",template:"TPL-005"},
+  {id:"MSG-006",to:"Bader Al-Shimmari",toAr:"بدر الشمري",toNid:"1023450987",channel:"email",subject:"Welcome to Tanaqul",subjectAr:"مرحباً بك في تناقل",
+    body:"Welcome to Tanaqul, Bader! Your account is active. Vault key: VK-MB7V4.",
+    status:"delivered",priority:"normal",sentBy:"system",sentAt:"2026-03-01 10:00",deliveredAt:"2026-03-01 10:02",readAt:"2026-03-01 10:30",template:"TPL-006"},
+  {id:"MSG-007",to:"Omar Al-Zahrani",toAr:"عمر الزهراني",toNid:"1089012345",channel:"email",subject:"AML Review Notice",subjectAr:"إشعار مراجعة AML",
+    body:"Dear Omar, your account is under routine AML review as required by SAMA regulations.",
+    status:"sent",priority:"normal",sentBy:"compliance@tanaqul.sa",sentAt:"2026-03-02 08:00",deliveredAt:null,readAt:null,template:"TPL-008"},
+  {id:"MSG-008",to:"Fatima Hassan",toAr:"فاطمة حسن",toNid:"1090123456",channel:"sms",subject:"Account Suspended",subjectAr:"تعليق الحساب",
+    body:"Dear Fatima, your Tanaqul account has been temporarily suspended pending review.",
+    status:"failed",priority:"urgent",sentBy:"admin@tanaqul.sa",sentAt:"2026-02-27 09:00",deliveredAt:null,readAt:null,template:"TPL-004",failReason:"Invalid phone number"},
+  // Broadcasts
+  {id:"MSG-B01",to:"All Active Investors (8)",toAr:"جميع المستثمرين النشطين (8)",toNid:"BROADCAST",channel:"push",subject:"Market Hours Update",subjectAr:"تحديث ساعات السوق",
+    body:"Trading hours extended to 4 PM starting March 5. More time to trade gold, silver & platinum on Tanaqul.",
+    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-02-26 12:00",deliveredAt:"2026-02-26 12:05",readAt:null,template:null,isBroadcast:true,recipientCount:8},
+  // Scheduled
+  {id:"MSG-S01",to:"Layla Al-Dossari",toAr:"ليلى الدوسري",toNid:"1067890123",channel:"email",subject:"Portfolio Review",subjectAr:"مراجعة المحفظة",
+    body:"Dear Layla, your quarterly portfolio review is available. Log in to view your holdings summary.",
+    status:"scheduled",priority:"normal",sentBy:"admin@tanaqul.sa",scheduledFor:"2026-03-05 09:00",template:null},
+  // Draft
+  {id:"MSG-D01",to:"Reem Al-Mutairi",toAr:"ريم المطيري",toNid:"1034567890",channel:"sms",subject:"Promotion",subjectAr:"عرض ترويجي",
+    body:"Dear Reem, enjoy 0% commission on your next 3 trades...",
+    status:"draft",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:null,template:null},
+];
 
 const CommCenter = () => {
   const { t, isAr } = useLang();
   const { investors } = useAppData();
   const [tab, setTab] = useState("inbox");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(MOCK_MESSAGES);
   const [templates] = useState(COMM_TEMPLATES);
   const [filter, setFilter] = useState("ALL");
   const [channelFilter, setChannelFilter] = useState("ALL");
@@ -6442,7 +6558,7 @@ const CommCenter = () => {
     setTab("compose");
   };
 
-  const sendMessage = async () => {
+  const sendMessage = () => {
     if(!compose) return;
     if(!compose.to.trim()||!compose.body.trim()){showToast(isAr?"⚠️ أكمل المستلم والرسالة":"⚠️ Fill recipient and message");return;}
     const now = new Date().toISOString().slice(0,16).replace("T"," ");
@@ -6455,13 +6571,12 @@ const CommCenter = () => {
       sentAt:compose.scheduledFor?null:now, scheduledFor:compose.scheduledFor||null,
       deliveredAt:null, readAt:null, template:compose.template,
     };
-    try{await apiFetch("/notifications/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({template:compose.template||"custom",phone:compose.toNid||"",email:compose.to,lang:isAr?"ar":"en",params:{subject:compose.subject,body:compose.body,channel:compose.channel}})})}catch(e){console.error("Send notification failed:",e);}
     setMessages(p=>[msg,...p]);
     showToast(compose.scheduledFor?(isAr?"✅ تم جدولة الرسالة":"✅ Message scheduled"):(isAr?"✅ تم إرسال الرسالة":"✅ Message sent"));
     setCompose(null); setTab("inbox");
   };
 
-  const saveDraft = async () => {
+  const saveDraft = () => {
     if(!compose) return;
     const msg = {
       id:"MSG-D"+String(Date.now()).slice(-5),
@@ -6472,12 +6587,11 @@ const CommCenter = () => {
       sentAt:null, template:compose.template,
     };
     setMessages(p=>[msg,...p]);
-    try{await apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DRAFT_SAVED",entity_type:"communication",entity_id:msg.id,details:compose.subject||"",level:"INFO"})})}catch(e){}
     showToast(isAr?"✅ تم حفظ المسودة":"✅ Draft saved");
     setCompose(null); setTab("drafts");
   };
 
-  const sendBroadcast = async (group) => {
+  const sendBroadcast = (group) => {
     if(!broadcastModal) return;
     const grp = recipientGroups.find(g=>g.id===broadcastModal.groupId);
     const now = new Date().toISOString().slice(0,16).replace("T"," ");
@@ -6808,247 +6922,48 @@ const CommCenter = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PAGE 18 — STORAGE FEES
-// ═══════════════════════════════════════════════════════════════════════════════
-const StorageFees = () => {
-  const { t, isAr } = useLang();
-  const { investors, setInvestors, walletMovements, setWalletMovements, addAudit } = useAppData();
-  const { gold: gp, silver: sp, plat: pp } = useLivePrices();
-  const { C } = useTheme();
-
-  // Fee config state
-  const [feeEnabled, setFeeEnabled] = useState(true);
-  const [graceDays, setGraceDays] = useState(30);
-  const [goldRate, setGoldRate] = useState(2.00);
-  const [silverRate, setSilverRate] = useState(0.50);
-  const [platRate, setPlatRate] = useState(1.00);
-  const [alertThreshold, setAlertThreshold] = useState(75);
-  const [tab, setTab] = useState("billing");
-  const [toast, setToast] = useState("");
-  const [exemptList, setExemptList] = useState(new Set());
-  const [waivedList, setWaivedList] = useState(new Set());
-  const [feeHistory, setFeeHistory] = useState([]);
-  const [configSaving, setConfigSaving] = useState(false);
-
-  const showSfToast = (msg) => { setToast(msg); setTimeout(()=>setToast(""),3000); };
-
-  // Calculate fees for each investor
-  const now = new Date();
-  const feeData = investors.filter(inv => inv.status !== "BANNED" && (inv.gold > 0 || inv.silver > 0 || inv.platinum > 0)).map(inv => {
-    const joined = new Date(inv.joined);
-    const daysHeld = Math.floor((now - joined) / 86400000);
-    const qualifying = daysHeld >= graceDays;
-
-    const goldFee = qualifying ? inv.gold * goldRate : 0;
-    const silverFee = qualifying ? inv.silver * silverRate : 0;
-    const platFee = qualifying ? inv.platinum * platRate : 0;
-    const totalFee = Math.round((goldFee + silverFee + platFee) * 100) / 100;
-
-    const goldCap = inv.gold * (gp?.priceSAR || 839);
-    const silverCap = inv.silver * (sp?.priceSAR || 10.42);
-    const platCap = inv.platinum * (pp?.priceSAR || 138.5);
-    const vaultCap = Math.round(goldCap + silverCap + platCap);
-
-    const feeCapPct = vaultCap > 0 ? Math.round((totalFee / vaultCap) * 10000) / 100 : 0;
-
-    // Wallet balance for this investor
-    const walBal = walletMovements
-      .filter(w => w.nationalId === inv.nationalId)
-      .reduce((a, w) => {
-        const amt = typeof w.amount === "number" ? w.amount : parseFloat(String(w.amount).replace(/,/g, "")) || 0;
-        return a + (w.type === "CREDIT" ? amt : -amt);
-      }, 0);
-
-    let status = "PENDING";
-    if (exemptList.has(inv.id)) status = "EXEMPT";
-    else if (waivedList.has(inv.id)) status = "WAIVED";
-    else if (!qualifying) status = "—";
-    else if (walBal >= totalFee) status = "PAID";
-    else status = "OVERDUE";
-
-    const canForceSell = inv.status === "SUSPENDED" && feeCapPct >= alertThreshold;
-
-    return {
-      ...inv, daysHeld, qualifying, goldFee, silverFee, platFee, totalFee,
-      vaultCap, feeCapPct, walBal, status, canForceSell
-    };
-  });
-
-  const totalBilled = feeData.filter(f => f.qualifying).reduce((a, f) => a + f.totalFee, 0);
-  const totalCollected = feeData.filter(f => f.status === "PAID").reduce((a, f) => a + f.totalFee, 0);
-  const totalOutstanding = feeData.filter(f => f.status === "OVERDUE").reduce((a, f) => a + f.totalFee, 0);
-  const atRiskCount = feeData.filter(f => f.feeCapPct >= alertThreshold).length;
-
-  // Run billing — auto-deduct from wallets
-  const runBilling = async () => {
-    let deducted = 0;
-    const newMoves = [];
-    feeData.filter(f => f.qualifying && f.status !== "EXEMPT" && f.status !== "WAIVED").forEach(f => {
-      const entry = {
-        id: "WM-SF-" + String(Date.now()).slice(-6) + String(Math.random()).slice(2, 5),
-        investor: f.nameEn, nationalId: f.nationalId, vaultKey: f.vaultKey,
-        type: "DEBIT", amount: f.totalFee,
-        reason: "Vault Storage Fee — " + now.toLocaleString("en-SA", { month: "long", year: "numeric" }),
-        date: new Date().toISOString().slice(0, 16).replace("T", " "),
-      };
-      newMoves.push(entry);
-      deducted += f.totalFee;
-    });
-    if (newMoves.length > 0) {
-      setWalletMovements(prev => [...newMoves, ...prev]);
-      setFeeHistory(prev => [{ month: now.toLocaleString("en-SA", { month: "long", year: "numeric" }), total: deducted, count: newMoves.length, date: new Date().toISOString().slice(0, 10) }, ...prev]);
-      addAudit("STORAGE_FEE_BILLING", "System", deducted.toLocaleString("en-SA") + " SAR deducted from " + newMoves.length + " investors");
-      try { await apiFetch("/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "STORAGE_FEE_BILLING", entity_type: "storage_fees", entity_id: "monthly", details: deducted + " SAR from " + newMoves.length + " investors", level: "INFO" }) }); } catch (e) {}
-    }
-    showSfToast(isAr ? "\u2705 \u062a\u0645 \u062e\u0635\u0645 " + deducted.toLocaleString("en-SA") + " \u0631\u064a\u0627\u0644" : "\u2705 Deducted SAR " + deducted.toLocaleString("en-SA") + " from " + newMoves.length + " investors");
-  };
-
-  // Force sell
-  const forceSell = (inv) => {
-    const fee = inv.totalFee;
-    // Create sell wallet credit
-    const entry = {
-      id: "WM-FS-" + String(Date.now()).slice(-6),
-      investor: inv.nameEn, nationalId: inv.nationalId, vaultKey: inv.vaultKey,
-      type: "CREDIT", amount: fee,
-      reason: "Force Sell — Storage Fee Recovery",
-      date: new Date().toISOString().slice(0, 16).replace("T", " "),
-    };
-    const debit = {
-      id: "WM-SFD-" + String(Date.now()).slice(-6),
-      investor: inv.nameEn, nationalId: inv.nationalId, vaultKey: inv.vaultKey,
-      type: "DEBIT", amount: fee,
-      reason: "Vault Storage Fee — Force Sell Deduction",
-      date: new Date().toISOString().slice(0, 16).replace("T", " "),
-    };
-    setWalletMovements(prev => [debit, entry, ...prev]);
-
-    // Reduce holdings proportionally
-    const ratio = Math.min(fee / Math.max(inv.vaultCap, 1), 1);
-    setInvestors(prev => prev.map(i => i.id === inv.id ? {
-      ...i,
-      gold: Math.round(i.gold * (1 - ratio)),
-      silver: Math.round(i.silver * (1 - ratio)),
-      platinum: Math.round(i.platinum * (1 - ratio)),
-      holdingsValue: String(Math.round(parseFloat(String(i.holdingsValue).replace(/,/g, "")) * (1 - ratio))),
-    } : i));
-
-    addAudit("FORCE_SELL", inv.id + " — " + inv.nameEn, "Liquidated " + Math.round(ratio * 100) + "% of holdings to cover SAR " + fee + " storage fees");
-    showSfToast(isAr ? "\u2705 \u062a\u0645 \u0627\u0644\u0628\u064a\u0639 \u0627\u0644\u0625\u062c\u0628\u0627\u0631\u064a" : "\u2705 Force sell executed — SAR " + fee + " recovered");
-  };
-
-  // Save config
-  const saveConfig = async () => {
-    setConfigSaving(true);
-    try {
-      await apiFetch("/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "STORAGE_FEE_CONFIG", entity_type: "storage_fees", entity_id: "config", details: JSON.stringify({ goldRate, silverRate, platRate, graceDays, alertThreshold, feeEnabled }), level: "INFO" }) });
-    } catch (e) {}
-    setConfigSaving(false);
-    showSfToast(isAr ? "\u2705 \u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a" : "\u2705 Config saved");
-  };
-
-  const StatusBadge = ({ s }) => {
-    const colors = { PAID: "#4A7A68:#EFF5F2", PENDING: "#C4956A:#FDF4EC", OVERDUE: "#C85C3E:#FBEAE5", EXEMPT: "#6B9080:#EFF5F2", WAIVED: "#8B6540:#FDF4EC", FORCE_SOLD: "#8B3520:#FBEAE5", "—": "#999:#F5F5F5" };
-    const [fg, bg] = (colors[s] || "#999:#F5F5F5").split(":");
-    return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: fg, background: bg }}>{t(s)}</span>;
-  };
-
-  const fmtS = v => typeof v === "number" ? v.toLocaleString("en-SA", { maximumFractionDigits: 0 }) : v;
-
-  return (
-    <div>
-      {toast && <div style={{ position: "fixed", top: 20, right: 20, background: C.navy, color: C.white, padding: "12px 20px", borderRadius: 12, fontSize: 15, fontWeight: 600, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>{toast}</div>}
-
-      <SectionHeader title={t("Storage Fees")} sub={t("Vault storage fee management")}
-        action={<div style={{ display: "flex", gap: 8 }}>
-          <Btn variant="outline" onClick={() => downloadCSV("tanaqul_storage_fees_" + new Date().toISOString().slice(0, 10), ["ID", "Name", "National ID", "Gold(g)", "Silver(g)", "Plat(g)", "Days", "Fee(SAR)", "Vault Cap", "Fee/Cap%", "Wallet", "Status"], feeData.map(f => [f.id, f.nameEn, f.nationalId, f.gold, f.silver, f.platinum, f.daysHeld, f.totalFee, f.vaultCap, f.feeCapPct + "%", Math.round(f.walBal), f.status]))}><span style={{ display: "flex", alignItems: "center", gap: 4 }}>{Icons.download(14, C.navy)} {isAr ? "\u062a\u0635\u062f\u064a\u0631" : "Export"}</span></Btn>
-          <Btn variant="gold" onClick={runBilling}>{t("Run Billing Now")}</Btn>
-        </div>}
-      />
-
-      {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 22 }}>
-        <StatCard icon={Icons.commission(22, C.gold)} title={t("Billed This Month")} value={<SARAmount amount={fmtS(Math.round(totalBilled))} />} gold />
-        <StatCard icon={Icons.check(22, C.greenSolid)} title={t("Collected")} value={<SARAmount amount={fmtS(Math.round(totalCollected))} />} />
-        <StatCard icon={Icons.pending(22, "#C85C3E")} title={t("Outstanding")} value={<span style={{ color: totalOutstanding > 0 ? "#C85C3E" : undefined }}>-<SARAmount amount={fmtS(Math.round(totalOutstanding))} /></span>} />
-        <StatCard icon={Icons.blacklist(22, "#8B3520")} title={t("At Risk (>75%)")} value={atRiskCount} />
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-        {[["billing", isAr ? "\u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631" : "Billing"], ["config", isAr ? "\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a" : "Fee Config"], ["history", isAr ? "\u0627\u0644\u0633\u062c\u0644" : "History"]].map(([k, v]) => (
-          <button key={k} onClick={() => setTab(k)} style={{ padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", border: `1px solid ${tab === k ? C.teal : C.border}`, background: tab === k ? C.tealLight : C.white, color: tab === k ? C.teal : C.textMuted }}>{v}</button>
-        ))}
-      </div>
-
-      {/* TAB: Billing */}
-      {tab === "billing" && <div>
-        <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>{t("Billing runs on 1st of each month")} — {isAr ? "فترة سماح" : "Grace"}: {graceDays} {isAr ? "يوم" : "days"} | Au: {goldRate} SAR/g | Ag: {silverRate} SAR/g | Pt: {platRate} SAR/g</p>
-        <TTable cols={[
-          { key: "id", label: "ID" },
-          { key: "nameEn", label: "Name" },
-          { key: "gold", label: "Gold(g)" },
-          { key: "silver", label: "Silver(g)" },
-          { key: "platinum", label: "Pt(g)" },
-          { key: "daysHeld", label: "Days Held" },
-          { key: "totalFee", label: "Fee This Month", render: v => <SARAmount amount={v > 0 ? v.toFixed(2) : "0"} /> },
-          { key: "walBal", label: "Wallet", render: v => <span style={{ color: v < 0 ? "#C85C3E" : C.text, fontWeight: v < 0 ? 700 : 400 }}>{v < 0 ? "-" : ""}<SARAmount amount={fmtS(Math.abs(Math.round(v)))} /></span> },
-          { key: "vaultCap", label: "Vault Cap", render: v => <SARAmount amount={fmtS(v)} /> },
-          { key: "feeCapPct", label: "Fee/Cap %", render: (v, row) => <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700, color: v >= 75 ? "#C85C3E" : v >= 50 ? "#D4943A" : C.greenSolid, background: v >= 75 ? "#FBEAE5" : v >= 50 ? "#FDF4EC" : "#EFF5F2" }}>{v}%</span> },
-          { key: "status", label: "Status", render: v => <StatusBadge s={v} /> },
-          { key: "id", label: "Actions", render: (_, row) => (
-            <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
-              {row.canForceSell && <Btn small variant="danger" onClick={() => forceSell(row)}>{t("Force Sell")}</Btn>}
-              {row.status !== "EXEMPT" && <Btn small variant="outline" onClick={() => { setExemptList(prev => new Set([...prev, row.id])); showSfToast("\u2705 " + row.nameEn + (isAr ? " \u0645\u0639\u0641\u0649" : " exempted")); }}>{t("Exempt")}</Btn>}
-              {row.qualifying && row.status !== "WAIVED" && row.status !== "EXEMPT" && <Btn small variant="ghost" onClick={() => { setWaivedList(prev => new Set([...prev, row.id])); showSfToast("\u2705 " + (isAr ? "\u062a\u0645 \u0627\u0644\u062a\u0646\u0627\u0632\u0644" : "Waived for " + row.nameEn)); }}>{t("Waive")}</Btn>}
-            </div>
-          )},
-        ]} rows={feeData} />
-      </div>}
-
-      {/* TAB: Config */}
-      {tab === "config" && <div style={{ maxWidth: 600 }}>
-        <div style={{ background: C.white, borderRadius: 14, padding: 24, border: `1px solid ${C.border}`, boxShadow: C.cardShadow }}>
-          <Toggle label={t("Enable Storage Fees")} value={feeEnabled} onChange={setFeeEnabled} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 20 }}>
-            <Inp label={t("Grace Period (days)")} value={graceDays} onChange={v => setGraceDays(parseInt(v) || 30)} type="number" />
-            <Inp label={t("Alert Threshold %")} value={alertThreshold} onChange={v => setAlertThreshold(parseInt(v) || 75)} type="number" />
-            <Inp label={t("Gold Rate (SAR/g/month)")} value={goldRate} onChange={v => setGoldRate(parseFloat(v) || 0)} type="number" />
-            <Inp label={t("Silver Rate (SAR/g/month)")} value={silverRate} onChange={v => setSilverRate(parseFloat(v) || 0)} type="number" />
-            <Inp label={t("Platinum Rate (SAR/g/month)")} value={platRate} onChange={v => setPlatRate(parseFloat(v) || 0)} type="number" />
-          </div>
-          <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
-            <Btn variant="teal" onClick={saveConfig}>{configSaving ? "..." : t("Save Config")}</Btn>
-          </div>
-        </div>
-      </div>}
-
-      {/* TAB: History */}
-      {tab === "history" && <div>
-        {feeHistory.length === 0 && <div style={{ background: C.white, borderRadius: 14, padding: 40, textAlign: "center", color: C.textMuted, border: `1px solid ${C.border}` }}>{isAr ? "لا توجد سجلات فوترة بعد" : "No billing records yet. Run billing to generate history."}</div>}
-        {feeHistory.length > 0 && <TTable cols={[
-          { key: "month", label: isAr ? "الشهر" : "Month" },
-          { key: "total", label: isAr ? "الإجمالي" : "Total", render: v => <SARAmount amount={fmtS(Math.round(v))} /> },
-          { key: "count", label: isAr ? "المستثمرين" : "Investors" },
-          { key: "date", label: isAr ? "التاريخ" : "Date" },
-        ]} rows={feeHistory} />}
-      </div>}
-    </div>
-  );
-};
-
-
 // PAGE 17 — TREASURY & RECONCILIATION
 // Golden Rules:
 //   1. Pool Bank = Investor Wallets + Platform Revenue + MM Cash
 //   2. Tokenized grams = Physical bars per metal (gold, silver, platinum)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function treasurySeedDaily() { return []; }
-function treasurySeedWeekly() { return []; }
-function treasurySeedDiscrep() { return []; }
+function treasurySeedDaily() {
+  const rows = [];
+  for (let i = 14; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split("T")[0];
+    const cOk = Math.random()>0.08, gOk = Math.random()>0.05, sOk = Math.random()>0.05, pOk = Math.random()>0.05;
+    rows.push({ id:"RD-"+Math.random().toString(36).slice(2,8), date:ds,
+      cash:{status:cOk?"balanced":"discrepancy", expected:3250000+Math.floor(Math.random()*50000), actual:cOk?3250000+Math.floor(Math.random()*50000):3248800, diff:cOk?0:-1200},
+      vault:{ gold:{tok:48500,phys:gOk?48500:48499,ok:gOk}, silver:{tok:1250000,phys:sOk?1250000:1249998,ok:sOk}, platinum:{tok:8200,phys:pOk?8200:8199,ok:pOk} },
+      overall:cOk&&gOk&&sOk&&pOk?"balanced":"discrepancy",
+      time:`00:0${Math.floor(Math.random()*5)}:${String(Math.floor(Math.random()*60)).padStart(2,"0")}`, by:"system-nightly",
+    });
+  }
+  return rows;
+}
+function treasurySeedWeekly() {
+  const rows = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i*7);
+    const ok = Math.random()>0.2;
+    const rev = 15000+Math.floor(Math.random()*8000), mmP = 2000+Math.floor(Math.random()*3000);
+    rows.push({ id:"RW-"+Math.random().toString(36).slice(2,8), weekEnding:d.toISOString().split("T")[0],
+      daysOk:ok?7:4+Math.floor(Math.random()*3), eligible:ok, swept:ok,
+      total:ok?rev+mmP:0, revenue:ok?rev:0, mmProfit:ok?mmP:0,
+      manual:!ok&&Math.random()>0.5, notes:ok?"Auto-sweep completed":"Manual review required",
+    });
+  }
+  return rows;
+}
+function treasurySeedDiscrep() {
+  return [
+    {id:"DC-a1",date:"2026-02-24",type:"vault",metal:"gold",tok:48500,phys:48499,diff:-1,status:"resolved",resolution:"Physical bar re-weighed — rounding corrected",by:"admin@tanaqul.com",at:"2026-02-24T09:15:00"},
+    {id:"DC-b2",date:"2026-02-19",type:"cash",metal:null,expected:3185000,actual:3183800,diff:-1200,status:"resolved",resolution:"Pending bank transfer arrived late",by:"finance@tanaqul.com",at:"2026-02-20T11:30:00"},
+    {id:"DC-c3",date:"2026-02-15",type:"vault",metal:"silver",tok:1250000,phys:1249998,diff:-2,status:"open",resolution:null,by:null,at:null},
+  ];
+}
 
 const TreasuryReconciliation = () => {
   const { t, isAr } = useLang();
@@ -7063,13 +6978,13 @@ const TreasuryReconciliation = () => {
   const [toast, setToast] = useState(null);
 
   // Platform accounts derived from real data
-  const mm = mmAccount || {cash:0,gold:{g:0,avg:0},silver:{g:0,avg:0},platinum:{g:0,avg:0},trades:[],pnl:{realized:0,unrealized:0,fees:0}};
+  const mm = mmAccount || {cash:500000,gold:{g:1200,avg:68.5},silver:{g:25000,avg:0.85},platinum:{g:400,avg:32.0},trades:[],pnl:{realized:12450,unrealized:3200,fees:890}};
   const frozen = reconState?.frozen || false;
 
   // ── Platform balances (derived from investors + revenue + MM) ──
-  const investorTotal = (investors||[]).reduce((s,inv)=>s+parseFloat(inv.walletSAR||inv.wallet||0),0);
-  const [poolTotal, setPoolTotal] = useState(0);
-  const platformRevenue = 0;
+  const investorTotal = (investors||[]).reduce((s,inv)=>s+parseFloat(inv.walletSAR||inv.wallet||0),0) || 2500000;
+  const [poolTotal, setPoolTotal] = useState(3250000);
+  const platformRevenue = 215000;
   const poolExpected = investorTotal + platformRevenue + mm.cash;
   const poolValid = Math.abs(poolExpected - poolTotal) < 0.01;
 
@@ -7080,12 +6995,12 @@ const TreasuryReconciliation = () => {
   const platBars = barsData.filter(b=>(b.metal||"").toLowerCase()==="platinum");
   const sumWeight = (arr) => arr.reduce((s,b)=>s+parseFloat(b.weight||b.grams||0),0);
   const vaultData = {
-    gold:   {tok: sumWeight(goldBars), phys: sumWeight(goldBars), bars: goldBars.length, ok:true},
-    silver: {tok: sumWeight(silverBars), phys: sumWeight(silverBars), bars: silverBars.length, ok:true},
-    platinum:{tok: sumWeight(platBars), phys: sumWeight(platBars), bars: platBars.length, ok:true},
+    gold:   {tok: goldBars.length>0 ? sumWeight(goldBars) : 48500,   phys: goldBars.length>0 ? sumWeight(goldBars) : 48500,   bars: goldBars.length||49,  ok:true},
+    silver: {tok: silverBars.length>0 ? sumWeight(silverBars) : 1250000, phys: silverBars.length>0 ? sumWeight(silverBars) : 1250000, bars: silverBars.length||125, ok:true},
+    platinum:{tok: platBars.length>0 ? sumWeight(platBars) : 8200,    phys: platBars.length>0 ? sumWeight(platBars) : 8200,    bars: platBars.length||9,   ok:true},
   };
 
-  const takharojBal = 0;
+  const takharojBal = 95000;
   const fmtS = n => "SAR "+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtG = n => Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+" g";
   const fmtN = n => Number(n).toLocaleString("en-US");
@@ -7180,12 +7095,11 @@ const TreasuryReconciliation = () => {
     }
   };
 
-  const resolveDiscrep = async (id) => {
-    try{await apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DISCREPANCY_RESOLVED",entity_type:"treasury",entity_id:id,details:resolveNote,level:"INFO"})})}catch(e){}
+  const resolveDiscrep = (id) => {
     setDiscrep(prev=>prev.map(d=>d.id===id?{...d,status:"resolved",resolution:resolveNote,by:"admin@tanaqul.sa",at:new Date().toISOString()}:d));
     addAudit("DISCREPANCY_RESOLVED","Treasury",`Resolved ${id}: ${resolveNote}`);
     setResolveId(null); setResolveNote("");
-    showToast(isAr?"تم حل التعارض":"Discrepancy resolved","success");
+    showToast("Discrepancy resolved","success");
   };
 
   const metalColors = {gold:C.gold,silver:C.silverText||"#94A3B8",platinum:C.blueSolid||"#5B7FA5"};
@@ -7213,7 +7127,7 @@ const TreasuryReconciliation = () => {
   return (
     <div style={{direction:isAr?"rtl":"ltr"}}>
       {/* Toast */}
-      {toast&&<div style={{position:"fixed",top:14,right:22,zIndex:99999,background:toast.type==="success"?"linear-gradient(135deg,#4A7A68,#6B9080)":toast.type==="error"?"linear-gradient(135deg,#8B3520,#C85C3E)":"linear-gradient(135deg,#8B6540,#C4956A)",borderRadius:12,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",maxWidth:440,animation:"slideIn 0.3s ease-out"}}>
+      {toast&&<div style={{position:"fixed",top:14,right:22,zIndex:99999,background:toast.type==="success"?"linear-gradient(135deg,#4A7A68,#6B9080)":toast.type==="error"?"linear-gradient(135deg,#8B3520,#C85C3E)":"linear-gradient(135deg,#8B6540,#C4956A)",borderRadius:12,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",maxWidth:440,animation:"slideIn 0.3s ease-out",zIndex:99999}}>
         <span style={{fontSize:13,fontWeight:700,color:"#FFF"}}>{toast.msg}</span>
         <button onClick={()=>setToast(null)} style={{background:"none",border:"none",color:"#FFF",cursor:"pointer",fontSize:16,opacity:0.7}}>×</button>
       </div>}
@@ -7268,7 +7182,7 @@ const TreasuryReconciliation = () => {
             <div style={{marginTop:14,display:"flex",gap:8}}>
               <input type="number" placeholder={isAr?"رصيد البنك اليدوي":"Manual bank balance (SAR)"} value={bankInput} onChange={e=>setBankInput(e.target.value)}
                 style={{flex:1,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.text,fontSize:13,outline:"none"}} />
-              <Btn small variant="outline" onClick={()=>{const v=parseFloat(bankInput);if(isNaN(v)||v<=0)return;setPoolTotal(v);setBankInput("");try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"POOL_BANK_UPDATE",entity_type:"treasury",entity_id:"pool",details:"Updated to SAR "+v,level:"INFO"})})}catch(e){}showToast(isAr?"تم تحديث رصيد البنك":"Pool Bank updated","success");}}>{isAr?"تحديث":"Update"}</Btn>
+              <Btn small variant="outline" onClick={()=>{const v=parseFloat(bankInput);if(isNaN(v)||v<=0)return;setPoolTotal(v);setBankInput("");showToast("Pool Bank updated","success");}}>{isAr?"تحديث":"Update"}</Btn>
             </div>
           </div>
 
@@ -7360,7 +7274,7 @@ const TreasuryReconciliation = () => {
       {tab==="history"&&<div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <div><p style={{fontSize:13,color:C.textMuted,margin:0}}>{isAr?"الجدول الليلي: تجميد ← تسوية نقدية ← تسوية خزنة ← رفع التجميد":"Midnight: freeze → cash recon → vault recon (tokenized=physical) → unfreeze"}</p></div>
-          <Btn small variant="outline" onClick={()=>{downloadCSV("tanaqul_treasury_daily_"+new Date().toISOString().slice(0,10),["Date","Time","Cash","Gold","Silver","Platinum","Overall","Run By"],daily.map(d=>[d.date,d.time,d.cash?.status||"",d.vault?.gold?.ok?"matched":"mismatch",d.vault?.silver?.ok?"matched":"mismatch",d.vault?.platinum?.ok?"matched":"mismatch",d.overall,d.by]));}}>{Icons.download(14,C.textMuted)} {isAr?"تصدير":"Export"}</Btn>
+          <Btn small variant="outline">{Icons.download(14,C.textMuted)} Export</Btn>
         </div>
         <TTable cols={[
           {label:isAr?"التاريخ":"Date",key:"date",render:v=><span style={{fontFamily:"'DM Mono',monospace",fontWeight:600}}>{v}</span>},
@@ -7672,9 +7586,21 @@ const NotificationBell = ({notifications, unread, readSet, markRead, markAllRead
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT ENGINE — Generate CSV/PDF-ready data exports from any page
 // ═══════════════════════════════════════════════════════════════════════════════
+const generateCSV = (headers, rows) => {
+  const esc = v => `"${String(v||"").replace(/"/g,'""')}"`;
+  const lines = [headers.map(esc).join(",")];
+  rows.forEach(r => lines.push(r.map(esc).join(",")));
+  return lines.join("\n");
+};
 
-
-
+const downloadCSV = (filename, headers, rows) => {
+  const csv = generateCSV(headers, rows);
+  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename+".csv"; a.click();
+  URL.revokeObjectURL(url);
+};
 
 const ExportMenu = ({title, onCSV, onPDF, isAr}) => {
   const [open, setOpen] = useState(false);
@@ -8216,7 +8142,7 @@ const NotificationSettings = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"TEMPLATE_UPDATE",entity_type:"template",entity_id:editTpl.id,details:"Template updated",level:"INFO"})})}catch(e){}setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
         </div>
       </Modal>}
@@ -8292,7 +8218,7 @@ const Settings = ({ onLangChange }) => {
   const [nafathKey,setNafathKey]=useState(""); const [nafathWebhook,setNafathWebhook]=useState("https://api.tanaqul.sa/nafath/webhook");
   const [nafathMode,setNafathMode]=useState("production");
   // Security
-  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("");
+  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x");
 
 
   return (
@@ -8317,7 +8243,7 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label="Fee %" value={visaFee} onChange={setVisaFee} /></G>
         <G title="SADAD — Fixed Fee"><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
       </div>}
-      {tab==="COMMISSION"&&<CommissionTab
+      {tab==="COMMISSION"&&<CommissionErrorBoundary><CommissionTab
         commBuyer={commBuyer} setCommBuyer={setCommBuyer}
         commSeller={commSeller} setCommSeller={setCommSeller}
         splitBuying={splitBuying} setSplitBuying={setSplitBuying}
@@ -8329,7 +8255,7 @@ const Settings = ({ onLangChange }) => {
         takharojWallet={takharojWallet} setTakharojWallet={setTakharojWallet}
         blocksInPeriod={blocksInPeriod} setBlocksInPeriod={setBlocksInPeriod}
         showSaved={showSaved}
-      />}
+      /></CommissionErrorBoundary>}
       {tab==="BLOCKCHAIN"&&<div>
         <G title={isAr?"الشبكة":"Network"}><Inp label={isAr?"اسم الشبكة":"Network Name"} value={netName} onChange={setNetName} /><Sel label={isAr?"البروتوكول":"Protocol"} value={protocol} onChange={setProtocol} options={[{value:"besu",label:"Hyperledger Besu"},{value:"fabric",label:"Hyperledger Fabric"}]} /><Inp label={isAr?"عنوان العقد":"Contract Address"} value={contract} onChange={setContract} /></G>
         <G title={isAr?"محفز الكتلة":"Block Trigger"}><Inp label="Max Size (MB)" value={maxMB} onChange={setMaxMB} /><Inp label="Max Time (hours)" value={maxHrs} onChange={setMaxHrs} /></G>
@@ -8423,7 +8349,7 @@ const Settings = ({ onLangChange }) => {
           {/* MLRO Title */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="MLRO Title (English)" value={reportingConfig.mlroTitle} onChange={v=>setReportingConfig(p=>({...p,mlroTitle:v}))} placeholder={isAr?"مسؤول الإبلاغ عن غسل الأموال":"Money Laundering Reporting Officer"} />
+              <Inp label="MLRO Title (English)" value={reportingConfig.mlroTitle} onChange={v=>setReportingConfig(p=>({...p,mlroTitle:v}))} placeholder="Money Laundering Reporting Officer" />
             </div>
             <div style={{flex:1}}>
               <Inp label="المسمى الوظيفي (عربي)" value={reportingConfig.mlroTitleAr} onChange={v=>setReportingConfig(p=>({...p,mlroTitleAr:v}))} placeholder="مسؤول الإبلاغ عن غسل الأموال" />
@@ -8432,7 +8358,7 @@ const Settings = ({ onLangChange }) => {
           {/* Company Name */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="Company Name (English)" value={reportingConfig.companyName} onChange={v=>setReportingConfig(p=>({...p,companyName:v}))} placeholder={isAr?"شركة تنقُّل لتداول المعادن الثمينة":"Tanaqul Precious Metals Trading Co."} />
+              <Inp label="Company Name (English)" value={reportingConfig.companyName} onChange={v=>setReportingConfig(p=>({...p,companyName:v}))} placeholder="Tanaqul Precious Metals Trading Co." />
             </div>
             <div style={{flex:1}}>
               <Inp label="اسم الشركة (عربي)" value={reportingConfig.companyNameAr} onChange={v=>setReportingConfig(p=>({...p,companyNameAr:v}))} placeholder="شركة تناقل لتجارة المعادن الثمينة" />
@@ -8441,7 +8367,7 @@ const Settings = ({ onLangChange }) => {
           {/* License */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="License Number (English)" value={reportingConfig.companyLicense} onChange={v=>setReportingConfig(p=>({...p,companyLicense:v}))} placeholder={isAr?"ترخيص ساما رقم 12345":"SAMA License No. 12345"} />
+              <Inp label="License Number (English)" value={reportingConfig.companyLicense} onChange={v=>setReportingConfig(p=>({...p,companyLicense:v}))} placeholder="SAMA License No. 12345" />
             </div>
             <div style={{flex:1}}>
               <Inp label="رقم الترخيص (عربي)" value={reportingConfig.companyLicenseAr} onChange={v=>setReportingConfig(p=>({...p,companyLicenseAr:v}))} placeholder="ترخيص ساما رقم ١٢٣٤٥" />
@@ -8450,7 +8376,7 @@ const Settings = ({ onLangChange }) => {
           {/* Company Address */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="Company Address (English)" value={reportingConfig.companyAddress} onChange={v=>setReportingConfig(p=>({...p,companyAddress:v}))} placeholder={isAr?"طريق الملك فهد، الرياض 12345":"King Fahd Road, Riyadh 12345"} />
+              <Inp label="Company Address (English)" value={reportingConfig.companyAddress} onChange={v=>setReportingConfig(p=>({...p,companyAddress:v}))} placeholder="King Fahd Road, Riyadh 12345" />
             </div>
             <div style={{flex:1}}>
               <Inp label="عنوان الشركة (عربي)" value={reportingConfig.companyAddressAr} onChange={v=>setReportingConfig(p=>({...p,companyAddressAr:v}))} placeholder="طريق الملك فهد، الرياض ١٢٣٤٥" />
@@ -8467,7 +8393,7 @@ const Settings = ({ onLangChange }) => {
             </div>
           ))}
           {showNewVault&&<div style={{display:"flex",gap:8,marginTop:10}}>
-            <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder={isAr?"اسم الخزنة...":"Vault name..."} style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
+            <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder="Vault name..." style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
             <Btn small variant="teal" onClick={()=>{if(newVault.trim()){setVaultLocs(p=>[...p,newVault]);setNewVault("");setShowNewVault(false);}}}>Add</Btn>
             <Btn small variant="ghost" onClick={()=>setShowNewVault(false)}>{t("Cancel")}</Btn>
           </div>}
@@ -8510,13 +8436,13 @@ const Settings = ({ onLangChange }) => {
       </G>}
       {tab==="SECURITY"&&<div>
         <G title={isAr?"أمان المسؤول":"Admin Security"}>
-          <Toggle label={t("Two-Factor Authentication (2FA) 🔒")} sub={t("Required for all admin logins — cannot be disabled")} value={true} onChange={()=>{}} />
+          <Toggle label="Two-Factor Authentication (2FA) 🔒" sub="Required for all admin logins — cannot be disabled" value={true} onChange={()=>{}} />
           <Inp label="Session Timeout (minutes)" value={session} onChange={setSession} />
           <Inp label={isAr?"القائمة البيضاء لعناوين IP":"IP Whitelist"} value={ipWhitelist} onChange={setIpWhitelist} />
         </G>
         <PriceFeedSettings />
       </div>}
-      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}try{apiFetch("/settings/bulk",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({commission_buyer:splitBuying,commission_seller:splitSelling,commission_creator:splitCreator,commission_validators:splitValidators})})}catch(e){}showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
+      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
       <div id="split-err" style={{display:"none",background:C.redBg,border:"1px solid #C85C3E44",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:14,color:"#C85C3E",fontWeight:600}}></div>
     </div>
   );
@@ -8539,7 +8465,6 @@ const PAGES = [
   {id:"settings",     icon:"settings",     label:"Settings"},
   {id:"health",       icon:"health",       label:"System Health"},
   {id:"treasury",     icon:"treasury",     label:"Treasury & Recon"},
-  {id:"storagefees",  icon:"treasury",     label:"Storage Fees"},
   {id:"profile",      icon:"profile",      label:"Account Profile"},
 ];
 
@@ -8833,7 +8758,7 @@ function LoginPage({ onLogin }) {
                     {recoveryTimer>0?<>{isAr?"إعادة الإرسال بعد":"Resend in"} <b>{recoveryTimer}s</b></>:
                     <button onClick={()=>setRecoveryTimer(60)} style={{color:"#C4956A",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال":"Resend"}</button>}
                   </p>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"":"" }</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"6px 10px",textAlign:"center",marginBottom:14}}>{isAr?"⚠️ نموذج تجريبي: الرمز هو 847291":"⚠️ Demo: use code 847291"}</p>
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginBottom:8,textAlign:"center"}}>{error}</p>}
                   <button onClick={()=>{
                     if(recoveryOtp==="847291"){onLogin();}
@@ -9037,7 +8962,7 @@ const parseSARGlobal = v => { if(typeof v === "number") return v; return parseFl
 const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals, bars, blacklist, transactions, appointments}) => {
   const alerts = [];
   const now = new Date();
-  const allTxns = transactions || [];
+  const allTxns = transactions || MOCK.transactions || [];
 
   investors.forEach(inv => {
     const nid = inv.nationalId;
@@ -9058,7 +8983,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     const wdReqs = withdrawals.filter(w=>w.nationalId===nid||w.investor===inv.nameEn);
     const totalWithdrawn = wdReqs.filter(w=>w.status==="PROCESSED"||w.status==="APPROVED").reduce((a,w)=>a+parseSARGlobal(w.amount),0);
     const holdings = parseSARGlobal(inv.holdingsValue);
-    const noShows = (appointments||[]).filter(a=>a.nationalId===nid&&a.status==="NO_SHOW").length;
+    const noShows = (appointments||MOCK.appointments||[]).filter(a=>a.nationalId===nid&&a.status==="NO_SHOW").length;
     const daysSinceJoin = inv.joined ? (now - new Date(inv.joined))/(86400000) : 999;
 
     const push = (rule,level,title,detail,category) => alerts.push({rule,level,nid,name:inv.nameEn,title,detail,category,automatedAt:now.toISOString(),key:rule+":"+nid});
@@ -9124,7 +9049,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
 const runCMAManipulation = ({investors, orders, matches, blacklist, transactions}) => {
   const alerts = [];
   const now = new Date();
-  const allTxns = transactions || [];
+  const allTxns = transactions || MOCK.transactions || [];
   const push = (rule,level,nid,name,title,detail,article,category) =>
     alerts.push({rule,level,nid,name,title,detail,article,category,automatedAt:now.toISOString(),key:rule+":"+nid});
 
@@ -9445,10 +9370,8 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("tanaqul_token"));
-  const [page,     setPage]     = useState(() => window.location.hash.slice(1) || "dashboard");
+  const [page,     setPage]     = useState("dashboard");
   const [pageHint, setPageHint] = useState(null); // {tab:"WITHDRAWAL REQUESTS"} etc.
-  useEffect(() => { window.location.hash = page; }, [page]);
-  useEffect(() => { const h = () => setPage(window.location.hash.slice(1) || "dashboard"); window.addEventListener("hashchange", h); return () => window.removeEventListener("hashchange", h); }, []);
   const [open,     setOpen]     = useState(true);
   const [lang,     setLang]     = useState(() => localStorage.getItem("tanaqul_lang") || "en");
   const [dark,     setDark]     = useState(() => localStorage.getItem("tanaqul_dark") === "true");
@@ -9714,8 +9637,8 @@ export default function App() {
 
   // ═══ MARKET MAKER ACCOUNT STATE ═══
   const [mmAccount, setMMAccount] = useState({
-    cash: 0, gold:{g:0,avg:0}, silver:{g:0,avg:0}, platinum:{g:0,avg:0},
-    trades:[], pnl:{realized:0,unrealized:0,fees:0},
+    cash: 500000, gold:{g:1200,avg:68.5}, silver:{g:25000,avg:0.85}, platinum:{g:400,avg:32.0},
+    trades:[], pnl:{realized:12450,unrealized:3200,fees:890},
   });
   // ═══ TREASURY / RECONCILIATION STATE ═══
   const [reconState, setReconState] = useState({frozen:false,lastRecon:null,dayStatus:"pending"});
@@ -9735,7 +9658,6 @@ export default function App() {
   const notifData = useNotifications({amlAlerts, cmaAlerts, amlDismissed, withdrawals: appWithdrawals, appointments: appAppointments, investors: appInvestors});
 
   const addAudit = (action, entity, details) => {
-    try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:arguments[0]||"",entity_type:"admin",entity_id:arguments[1]||"",details:arguments[2]||"",level:"INFO"})})}catch(e){}
     const entry = {
       id: "AUD-"+String(Date.now()).slice(-6),
       timestamp: new Date().toISOString().slice(0,16).replace("T"," "),
@@ -9755,7 +9677,7 @@ export default function App() {
     if(!loggedIn) return;
     // Build combined transactions list: MOCK + match-generated
     const allTransactions = [
-      
+      ...(MOCK.transactions||[]),
       ...appMatches.map(m=>({
         id:m.id, buyerNationalId:m.buyerNid||"", sellerNationalId:m.sellerNid||"",
         buyerName:m.filledFor, sellerName:m.filledFor,
@@ -9827,8 +9749,7 @@ export default function App() {
     appointments:<Appointments/>, financials:<Financials/>, reports:<Reports/>,
     blacklist:<Blacklist/>, blocks:<Blocks/>, settings:<Settings onLangChange={switchLang}/>, auditlog:<AuditLog/>,
     commcenter:<CommCenter/>, usermgmt:<UserManagement/>, profile:<AccountProfile/>, health:<SystemHealth/>,
-    treasury:<TreasuryReconciliation/>,
-    storagefees:<StorageFees/>
+    treasury:<TreasuryReconciliation/>
   }[page] || <Dashboard/>);
 
   return (
