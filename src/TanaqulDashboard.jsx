@@ -176,7 +176,44 @@ const AR = {
   "Pending Withdrawals":"طلبات السحب","Wallet Balances":"أرصدة المحافظ","Volume Today":"حجم اليوم","Gold in Vault":"الذهب في الخزينة",
   "Silver in Vault":"الفضة في الخزينة","Platinum in Vault":"البلاتين في الخزينة","In Circulation":"في التداول",
   "Assets under management":"الأصول المُدارة","Gold · SAR/g":"الذهب · ريال/غ","Silver · SAR/g":"الفضة · ريال/غ",
-  "Platinum · SAR/g":"البلاتين · ريال/غ","Sealed":"مختوم","No records found":"لا توجد سجلات","NO_SHOW":"لم يحضر",
+  "Platinum · SAR/g":"البلاتين · ريال/غ","Sealed":"مختوم","No records found":"لا توجد سجلات",
+  "ID":"م","Holdings":"الحيازات","Barcode":"الباركود","Manufacturer":"الشركة المصنّعة",
+  "Vault":"الخزنة","Depositor":"المودِع","Date In":"تاريخ الإيداع","Date Out":"تاريخ السحب",
+  "Qty":"الكمية","Fee":"الرسوم","Method":"الطريقة","Bank":"البنك","Processed":"تمت المعالجة",
+  "Hash":"الهاش","TXs":"المعاملات","TX Hash":"هاش المعاملة",
+  "Gold(g)":"ذهب(غ)","Silver(g)":"فضة(غ)","Pt(g)":"بلاتين(غ)",
+  "Dismiss":"تجاهل","Discrepancy resolved":"تم حل التعارض",
+  "Enter reason...":"أدخل السبب...","Type custom message...":"اكتب رسالة مخصصة...",
+  "Scan or enter barcode...":"امسح أو أدخل الباركود...",
+  "Enter reason for rejection...":"أدخل سبب الرفض...",
+  "Describe the reason for ban...":"اكتب سبب الحظر...",
+  "Search alerts...":"بحث في التنبيهات...","Review Now":"مراجعة الآن",
+  "Confirm Ban":"تأكيد الحظر","Full Name (optional)":"الاسم الكامل (اختياري)",
+  "SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED":"اختر المزوّد — يمكنك التبديل في أي وقت",
+  "BUYER COMMISSION (%)":"عمولة المشتري (%)","SELLER COMMISSION (%)":"عمولة البائع (%)",
+  "LIVE EXAMPLE — 10,000 SAR TRADE":"مثال حي — صفقة 10,000 ريال",
+  "BLOCKS PER PERIOD (ESTIMATE)":"عدد البلوكات لكل فترة (تقديري)",
+  "MIN BLOCK PARTICIPATION TO QUALIFY":"الحد الأدنى للمشاركة في البلوكات للتأهل",
+  "What happens to forfeited earnings:":"ماذا يحدث للأرباح المصادرة:",
+  "Two-Factor Authentication (2FA) 🔒":"المصادقة الثنائية (2FA) 🔒",
+  "Required for all admin logins — cannot be disabled":"مطلوبة لجميع تسجيلات الدخول — لا يمكن تعطيلها",
+  "Mohammed Al-...":"محمد ال...","Any additional notes...":"أي ملاحظات إضافية...",
+  "Vault name...":"اسم الخزنة...","Account review notice":"إشعار مراجعة الحساب",
+  "Please complete your KYC verification.":"يرجى إكمال التحقق من هويتك.",
+  "Your appointment is confirmed.":"تم تأكيد موعدك.","Action required on your account.":"إجراء مطلوب على حسابك.",
+  "Your account has been reviewed.":"تمت مراجعة حسابك.",
+  "MLRO Title (English)":"منصب مسؤول الإبلاغ (إنجليزي)",
+  "Company Name (English)":"اسم الشركة (إنجليزي)",
+  "License Number (English)":"رقم الترخيص (إنجليزي)",
+  "Company Address (English)":"عنوان الشركة (إنجليزي)",
+  "Money Laundering Reporting Officer":"مسؤول الإبلاغ عن غسل الأموال",
+  "Tanaqul Precious Metals Trading Co.":"شركة تنقُّل لتداول المعادن الثمينة",
+  "SAMA License No. 12345":"ترخيص ساما رقم 12345",
+  "King Fahd Road, Riyadh 12345":"طريق الملك فهد، الرياض 12345",
+  "Banned by National ID — blocked from login and registration until admin unbans":"محظور بالهوية الوطنية — ممنوع من الدخول والتسجيل حتى رفع الحظر",
+  "BAR BARCODE (to be withdrawn)":"باركود السبيكة (للسحب)",
+  "Pool Bank updated":"تم تحديث رصيد البنك",
+  "Alert dismissed":"تم تجاهل التنبيه","NO_SHOW":"لم يحضر",
   // Header
   "Dashboard Overview":"نظرة عامة",
   // Vault
@@ -1430,7 +1467,7 @@ const Investors = () => {
           ))}
         </div>
         <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>
-          {sel.status!=="BANNED"&&<Btn variant="danger" onClick={()=>setAction("ban")}>Ban</Btn>}
+          {sel.status!=="BANNED"&&<Btn variant="danger" onClick={()=>setAction("ban")}>{isAr?"حظر":"Ban"}</Btn>}
           {sel.status==="BANNED"&&<Btn variant="teal" onClick={()=>setAction("unban")}>{t("Unban")}</Btn>}
           {sel.status==="ACTIVE"&&<Btn variant="ghost" onClick={()=>setAction("suspend")}>{t("Suspend")}</Btn>}
           {sel.status==="SUSPENDED"&&<Btn variant="teal" onClick={()=>setAction("activate")}>{t("Activate")}</Btn>}
@@ -1455,7 +1492,7 @@ const Investors = () => {
         {(action==="suspend"||action==="ban")&&(
           <div style={{marginBottom:14}}>
             <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>REASON (required)</label>
-            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Enter reason..."
+            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder={isAr?"أدخل السبب...":"Enter reason..."}
               style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:70,boxSizing:"border-box",fontFamily:"inherit"}}/>
           </div>
         )}
@@ -1473,14 +1510,14 @@ const Investors = () => {
         <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>Send SMS + push notification to investor.</p>
         <Sel label={isAr?"القالب":"Template"} value="" onChange={v=>setNotifyMsg(v)} options={[
           {value:"",label:"— Select template or write custom —"},
-          {value:"Your account has been reviewed.",label:"Account review notice"},
-          {value:"Please complete your KYC verification.",label:"KYC reminder"},
-          {value:"Your appointment is confirmed.",label:"Appointment confirmed"},
-          {value:"Action required on your account.",label:"Action required"},
+          {value:"Your account has been reviewed.",label:isAr?"إشعار مراجعة الحساب":"Account review notice"},
+          {value:"Please complete your KYC verification.",label:isAr?"تذكير التحقق من الهوية":"KYC reminder"},
+          {value:"Your appointment is confirmed.",label:isAr?"تأكيد الموعد":"Appointment confirmed"},
+          {value:"Action required on your account.",label:isAr?"إجراء مطلوب":"Action required"},
         ]} />
         <div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"الرسالة":"MESSAGE"}</label>
-          <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} placeholder="Type custom message..."
+          <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} placeholder={isAr?"اكتب رسالة مخصصة...":"Type custom message..."}
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}>
@@ -1994,7 +2031,7 @@ const Appointments = () => {
           {sel.type==="DEPOSIT"&&<>
             <div>
               <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الباركود":"BARCODE"}</label>
-              <input placeholder="Scan or enter barcode..." value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+              <input placeholder={isAr?"امسح أو أدخل الباركود...":"Scan or enter barcode..."} value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
             </div>
             <div>
               <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الشركة المصنعة":"MANUFACTURER"}</label>
@@ -2011,8 +2048,8 @@ const Appointments = () => {
           </>}
           {sel.type==="WITHDRAWAL"&&<>
             <div>
-              <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>BAR BARCODE (to be withdrawn)</label>
-              <input placeholder="Scan or enter barcode..." value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+              <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"باركود السبيكة (للسحب)":"BAR BARCODE (to be withdrawn)"}</label>
+              <input placeholder={isAr?"امسح أو أدخل الباركود...":"Scan or enter barcode..."} value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
             </div>
           </>}
           <div>
@@ -2021,7 +2058,7 @@ const Appointments = () => {
           </div>
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>NOTES (optional)</label>
-            <input placeholder="Any additional notes..." value={startData.notes} onChange={e=>setStartData(d=>({...d,notes:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+            <input placeholder={isAr?"أي ملاحظات إضافية...":"Any additional notes..."} value={startData.notes} onChange={e=>setStartData(d=>({...d,notes:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
           </div>
         </div>
         <div style={{marginTop:16,display:"flex",gap:8}}>
@@ -2244,7 +2281,7 @@ const Financials = () => {
         </div>
         {wModal.type==="reject"&&<div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"سبب الرفض":"REJECTION REASON"}</label>
-          <textarea value={wReason} onChange={e=>setWReason(e.target.value)} placeholder="Enter reason for rejection..."
+          <textarea value={wReason} onChange={e=>setWReason(e.target.value)} placeholder={isAr?"أدخل سبب الرفض...":"Enter reason for rejection..."}
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:70,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>}
         <div style={{display:"flex",gap:8}}>
@@ -2549,7 +2586,7 @@ const Blacklist = () => {
   return (
     <div>
       {blToast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{blToast}</div>}
-      <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub="Banned by National ID — blocked from login and registration until admin unbans"
+      <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub={t("Banned by National ID — blocked from login and registration until admin unbans")}
         action={<Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Ban User</span></Btn>} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.blacklist(22,"#C85C3E")} title={isAr?"إجمالي المحظورين":"Total Banned"} value={blacklist.length} />
@@ -2574,10 +2611,10 @@ const Blacklist = () => {
           {Icons.warning(16,"#C85C3E")}<p style={{fontSize:14,color:"#C85C3E",fontWeight:500}}>Ban is tied to National ID. Cannot login or re-register until manually unbanned.</p>
         </div>
         <Inp label="National ID *" value={form.nationalId} onChange={v=>setForm({...form,nationalId:v})} placeholder="1090123456" />
-        <Inp label="Full Name (optional)" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="Mohammed Al-..." />
+        <Inp label="Full Name (optional)" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder={isAr?"محمد ال...":"Mohammed Al-..."} />
         <div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>REASON *</label>
-          <textarea value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} placeholder="Describe the reason for ban..."
+          <textarea value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} placeholder={isAr?"اكتب سبب الحظر...":"Describe the reason for ban..."}
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}><Btn variant="danger" onClick={addBan}>{isAr?"تأكيد الحظر":"Confirm Ban"}</Btn><Btn variant="outline" onClick={()=>setShowAdd(false)}>{t("Cancel")}</Btn></div>
@@ -3248,7 +3285,7 @@ const AuditLog = () => {
           <p style={{fontSize:16,fontWeight:800,color:"#FFF"}}>{critCount + cmaCritCount} CRITICAL Alert{(critCount+cmaCritCount)>1?"s":""} — {critCount>0?`${critCount} AML`:""}{critCount>0&&cmaCritCount>0?" + ":""}{cmaCritCount>0?`${cmaCritCount} Market Manipulation`:""}</p>
           <p style={{fontSize:13,color:"#E8C5BA"}}>{cmaCritCount>0?"CMA Market Conduct Regulations require immediate investigation of manipulation alerts. ":""}SAMA regulations require escalation within 24 hours.</p>
         </div>
-        <button onClick={()=>setTab(cmaCritCount>0?"cma":"aml")} style={{padding:"8px 16px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}>Review Now →</button>
+        <button onClick={()=>setTab(cmaCritCount>0?"cma":"aml")} style={{padding:"8px 16px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}>{t("Review Now")} →</button>
       </div>}
 
       {/* TAB BAR */}
@@ -3303,7 +3340,7 @@ const AuditLog = () => {
             border:`1px solid ${C.border}`,background:showDismissed?"#F5F0E8":C.white,color:C.textMuted}}>
             {showDismissed?"Hide":"Show"} Dismissed ({amlDismissed.size})
           </button>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search alerts..." style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:200,outline:"none"}}/>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder={isAr?"بحث في التنبيهات...":"Search alerts..."} style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:200,outline:"none"}}/>
         </div>
 
         {filteredAlerts.length===0?(
@@ -3333,7 +3370,7 @@ const AuditLog = () => {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                   <Btn small variant="outline" onClick={()=>setAmlModal(a)}>{isAr?"التفاصيل":"Details"}</Btn>
-                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Alert dismissed");}}>Dismiss</Btn>}
+                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم تجاهل التنبيه":"Alert dismissed");}}>{isAr?"تجاهل":"Dismiss"}</Btn>}
                   {amlDismissed.has(a.key)&&<span style={{fontSize:11,color:C.textMuted,textAlign:"center",fontWeight:600}}>✓ Dismissed</span>}
                 </div>
               </div>
@@ -3399,7 +3436,7 @@ const AuditLog = () => {
                     <div style={{display:"flex",gap:4}}>
                       <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                       <Btn small variant="outline" style={{borderColor:C.purpleSolid,color:C.purpleSolid}} onClick={()=>{const n=generateCMANotif(a);setCmaNotifModal(n);}}>{isAr?"إخطار الهيئة":"Notify CMA"}</Btn>
-                      {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Dismissed");}}>Dismiss</Btn>}
+                      {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم التجاهل":"Dismissed");}}>{isAr?"تجاهل":"Dismiss"}</Btn>}
                     </div>
                   </div>
                   <p style={{fontSize:13,color:C.text,lineHeight:"1.5"}}>{a.detail}</p>
@@ -3436,7 +3473,7 @@ const AuditLog = () => {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                   <Btn small variant="outline" style={{borderColor:C.purpleSolid,color:C.purpleSolid}} onClick={()=>{const n=generateCMANotif(a);setCmaNotifModal(n);}}>{isAr?"إخطار الهيئة":"Notify CMA"}</Btn>
-                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Dismissed");}}>Dismiss</Btn>}
+                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم التجاهل":"Dismissed");}}>{isAr?"تجاهل":"Dismiss"}</Btn>}
                 </div>
               </div>
             ))}
@@ -4072,7 +4109,7 @@ const PriceFeedSettings = () => {
 
       {/* Provider Selector */}
       <div style={{marginBottom:18}}>
-        <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:10,letterSpacing:"0.05em"}}>SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED</label>
+        <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:10,letterSpacing:"0.05em"}}>{t("SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED")}</label>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {Object.values(PROVIDERS).map(p => {
             const ti   = TIER_INFO[p.tier];
@@ -4384,7 +4421,7 @@ const CommissionTab = ({
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>BUYER COMMISSION (%)</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("BUYER COMMISSION (%)")}</label>
             <select value={commBuyer} onChange={e=>setCommBuyer(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {commOpts.map(o=><option key={o.value} value={o.value}>{o.label} per trade</option>)}
@@ -4392,7 +4429,7 @@ const CommissionTab = ({
             <p style={{fontSize:12,color:C.textMuted,marginTop:4}}>{isAr?"تُضاف على قيمة الصفقة":"Charged on top of trade amount"}</p>
           </div>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>SELLER COMMISSION (%)</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("SELLER COMMISSION (%)")}</label>
             <select value={commSeller} onChange={e=>setCommSeller(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {commOpts.map(o=><option key={o.value} value={o.value}>{o.label} per trade</option>)}
@@ -4403,7 +4440,7 @@ const CommissionTab = ({
 
         {/* Live Trade Example */}
         <div style={{background:C.navyDark,borderRadius:12,padding:"14px 18px",marginBottom:4}}>
-          <p style={{fontSize:12,fontWeight:700,color:"#A89880",letterSpacing:"0.08em",marginBottom:12}}>LIVE EXAMPLE — 10,000 SAR TRADE</p>
+          <p style={{fontSize:12,fontWeight:700,color:"#A89880",letterSpacing:"0.08em",marginBottom:12}}>{t("LIVE EXAMPLE — 10,000 SAR TRADE")}</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             {/* Buyer */}
             <div style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"12px 14px",border:"1px solid rgba(255,255,255,0.08)"}}>
@@ -4491,14 +4528,14 @@ const CommissionTab = ({
           options={[{value:"daily",label:"Daily"},{value:"weekly",label:"Weekly"},{value:"perblock",label:"Per Block (instant)"}]} />
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:4}}>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>BLOCKS PER PERIOD (ESTIMATE)</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("BLOCKS PER PERIOD (ESTIMATE)")}</label>
             <select value={blocksInPeriod} onChange={e=>setBlocksInPeriod(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {["100","250","500","1000","2000","5000"].map(v=><option key={v} value={v}>{v} blocks</option>)}
             </select>
           </div>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>MIN BLOCK PARTICIPATION TO QUALIFY</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{t("MIN BLOCK PARTICIPATION TO QUALIFY")}</label>
             <select value={minValidator} onChange={e=>setMinValidator(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {["5","10","15","20","25","30","40","50"].map(v=><option key={v} value={v}>{v}%</option>)}
@@ -4566,7 +4603,7 @@ const CommissionTab = ({
           </div>
         </div>
         <div style={{background:"#FAF8F5",borderRadius:10,padding:"12px 16px",border:`1px solid ${C.border}`}}>
-          <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>What happens to forfeited earnings:</p>
+          <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{t("What happens to forfeited earnings:")}</p>
           {[
             ["1","Block closes → participation recorded on-chain"],
             ["2","Period ends → system checks each validator's block count"],
@@ -6885,7 +6922,7 @@ const TreasuryReconciliation = () => {
     setDiscrep(prev=>prev.map(d=>d.id===id?{...d,status:"resolved",resolution:resolveNote,by:"admin@tanaqul.sa",at:new Date().toISOString()}:d));
     addAudit("DISCREPANCY_RESOLVED","Treasury",`Resolved ${id}: ${resolveNote}`);
     setResolveId(null); setResolveNote("");
-    showToast("Discrepancy resolved","success");
+    showToast(isAr?"تم حل التعارض":"Discrepancy resolved","success");
   };
 
   const metalColors = {gold:C.gold,silver:C.silverText||"#94A3B8",platinum:C.blueSolid||"#5B7FA5"};
@@ -6968,7 +7005,7 @@ const TreasuryReconciliation = () => {
             <div style={{marginTop:14,display:"flex",gap:8}}>
               <input type="number" placeholder={isAr?"رصيد البنك اليدوي":"Manual bank balance (SAR)"} value={bankInput} onChange={e=>setBankInput(e.target.value)}
                 style={{flex:1,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.text,fontSize:13,outline:"none"}} />
-              <Btn small variant="outline" onClick={()=>{const v=parseFloat(bankInput);if(isNaN(v)||v<=0)return;setPoolTotal(v);setBankInput("");try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"POOL_BANK_UPDATE",entity_type:"treasury",entity_id:"pool",details:"Updated to SAR "+v,level:"INFO"})})}catch(e){}showToast("Pool Bank updated","success");}}>{isAr?"تحديث":"Update"}</Btn>
+              <Btn small variant="outline" onClick={()=>{const v=parseFloat(bankInput);if(isNaN(v)||v<=0)return;setPoolTotal(v);setBankInput("");try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"POOL_BANK_UPDATE",entity_type:"treasury",entity_id:"pool",details:"Updated to SAR "+v,level:"INFO"})})}catch(e){}showToast(isAr?"تم تحديث رصيد البنك":"Pool Bank updated","success");}}>{isAr?"تحديث":"Update"}</Btn>
             </div>
           </div>
 
@@ -8135,7 +8172,7 @@ const Settings = ({ onLangChange }) => {
           {/* MLRO Title */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="MLRO Title (English)" value={reportingConfig.mlroTitle} onChange={v=>setReportingConfig(p=>({...p,mlroTitle:v}))} placeholder="Money Laundering Reporting Officer" />
+              <Inp label="MLRO Title (English)" value={reportingConfig.mlroTitle} onChange={v=>setReportingConfig(p=>({...p,mlroTitle:v}))} placeholder={isAr?"مسؤول الإبلاغ عن غسل الأموال":"Money Laundering Reporting Officer"} />
             </div>
             <div style={{flex:1}}>
               <Inp label="المسمى الوظيفي (عربي)" value={reportingConfig.mlroTitleAr} onChange={v=>setReportingConfig(p=>({...p,mlroTitleAr:v}))} placeholder="مسؤول الإبلاغ عن غسل الأموال" />
@@ -8144,7 +8181,7 @@ const Settings = ({ onLangChange }) => {
           {/* Company Name */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="Company Name (English)" value={reportingConfig.companyName} onChange={v=>setReportingConfig(p=>({...p,companyName:v}))} placeholder="Tanaqul Precious Metals Trading Co." />
+              <Inp label="Company Name (English)" value={reportingConfig.companyName} onChange={v=>setReportingConfig(p=>({...p,companyName:v}))} placeholder={isAr?"شركة تنقُّل لتداول المعادن الثمينة":"Tanaqul Precious Metals Trading Co."} />
             </div>
             <div style={{flex:1}}>
               <Inp label="اسم الشركة (عربي)" value={reportingConfig.companyNameAr} onChange={v=>setReportingConfig(p=>({...p,companyNameAr:v}))} placeholder="شركة تناقل لتجارة المعادن الثمينة" />
@@ -8153,7 +8190,7 @@ const Settings = ({ onLangChange }) => {
           {/* License */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="License Number (English)" value={reportingConfig.companyLicense} onChange={v=>setReportingConfig(p=>({...p,companyLicense:v}))} placeholder="SAMA License No. 12345" />
+              <Inp label="License Number (English)" value={reportingConfig.companyLicense} onChange={v=>setReportingConfig(p=>({...p,companyLicense:v}))} placeholder={isAr?"ترخيص ساما رقم 12345":"SAMA License No. 12345"} />
             </div>
             <div style={{flex:1}}>
               <Inp label="رقم الترخيص (عربي)" value={reportingConfig.companyLicenseAr} onChange={v=>setReportingConfig(p=>({...p,companyLicenseAr:v}))} placeholder="ترخيص ساما رقم ١٢٣٤٥" />
@@ -8162,7 +8199,7 @@ const Settings = ({ onLangChange }) => {
           {/* Company Address */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="Company Address (English)" value={reportingConfig.companyAddress} onChange={v=>setReportingConfig(p=>({...p,companyAddress:v}))} placeholder="King Fahd Road, Riyadh 12345" />
+              <Inp label="Company Address (English)" value={reportingConfig.companyAddress} onChange={v=>setReportingConfig(p=>({...p,companyAddress:v}))} placeholder={isAr?"طريق الملك فهد، الرياض 12345":"King Fahd Road, Riyadh 12345"} />
             </div>
             <div style={{flex:1}}>
               <Inp label="عنوان الشركة (عربي)" value={reportingConfig.companyAddressAr} onChange={v=>setReportingConfig(p=>({...p,companyAddressAr:v}))} placeholder="طريق الملك فهد، الرياض ١٢٣٤٥" />
@@ -8179,7 +8216,7 @@ const Settings = ({ onLangChange }) => {
             </div>
           ))}
           {showNewVault&&<div style={{display:"flex",gap:8,marginTop:10}}>
-            <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder="Vault name..." style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
+            <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder={isAr?"اسم الخزنة...":"Vault name..."} style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
             <Btn small variant="teal" onClick={()=>{if(newVault.trim()){setVaultLocs(p=>[...p,newVault]);setNewVault("");setShowNewVault(false);}}}>Add</Btn>
             <Btn small variant="ghost" onClick={()=>setShowNewVault(false)}>{t("Cancel")}</Btn>
           </div>}
@@ -8222,7 +8259,7 @@ const Settings = ({ onLangChange }) => {
       </G>}
       {tab==="SECURITY"&&<div>
         <G title={isAr?"أمان المسؤول":"Admin Security"}>
-          <Toggle label="Two-Factor Authentication (2FA) 🔒" sub="Required for all admin logins — cannot be disabled" value={true} onChange={()=>{}} />
+          <Toggle label={t("Two-Factor Authentication (2FA) 🔒")} sub={t("Required for all admin logins — cannot be disabled")} value={true} onChange={()=>{}} />
           <Inp label="Session Timeout (minutes)" value={session} onChange={setSession} />
           <Inp label={isAr?"القائمة البيضاء لعناوين IP":"IP Whitelist"} value={ipWhitelist} onChange={setIpWhitelist} />
         </G>
