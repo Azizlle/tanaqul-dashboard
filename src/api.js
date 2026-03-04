@@ -497,7 +497,16 @@ const treasury = {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  EXPORT
 // ═══════════════════════════════════════════════════════════════════════════════
-
+const storageFees = {
+  async getConfig() { return request("/storage-fees/config"); },
+  async saveConfig(d) { return request("/storage-fees/config", { method: "PUT", body: d }); },
+  async getHistory(p={}) { return request("/storage-fees/history", { params: p }); },
+  async runBilling(d) { return request("/storage-fees/run-billing", { method: "POST", body: d }); },
+  async setExempt(id,d) { return request("/storage-fees/exempt/"+id, { method: "POST", body: d }); },
+  async getExempt(id) { return request("/storage-fees/exempt/"+id); },
+  async waiveMonth(id,d) { return request("/storage-fees/waive/"+id, { method: "POST", body: d }); },
+  async forceSell(id,d) { return request("/storage-fees/force-sell/"+id, { method: "POST", body: d }); },
+};
 const api = {
   auth,
   dashboard,
@@ -514,6 +523,7 @@ const api = {
   blocks,
   aml,
   treasury,
+  storageFees,
   // Utilities
   setBaseUrl(url) {
     // Override base URL if needed
