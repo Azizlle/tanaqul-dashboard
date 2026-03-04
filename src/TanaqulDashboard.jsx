@@ -6733,42 +6733,9 @@ const CommCenter = () => {
 //   2. Tokenized grams = Physical bars per metal (gold, silver, platinum)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function treasurySeedDaily() {
-  const rows = [];
-  for (let i = 14; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const ds = d.toISOString().split("T")[0];
-    const cOk = Math.random()>0.08, gOk = Math.random()>0.05, sOk = Math.random()>0.05, pOk = Math.random()>0.05;
-    rows.push({ id:"RD-"+Math.random().toString(36).slice(2,8), date:ds,
-      cash:{status:cOk?"balanced":"discrepancy", expected:3250000+Math.floor(Math.random()*50000), actual:cOk?3250000+Math.floor(Math.random()*50000):3248800, diff:cOk?0:-1200},
-      vault:{ gold:{tok:48500,phys:gOk?48500:48499,ok:gOk}, silver:{tok:1250000,phys:sOk?1250000:1249998,ok:sOk}, platinum:{tok:8200,phys:pOk?8200:8199,ok:pOk} },
-      overall:cOk&&gOk&&sOk&&pOk?"balanced":"discrepancy",
-      time:`00:0${Math.floor(Math.random()*5)}:${String(Math.floor(Math.random()*60)).padStart(2,"0")}`, by:"system-nightly",
-    });
-  }
-  return rows;
-}
-function treasurySeedWeekly() {
-  const rows = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate()-i*7);
-    const ok = Math.random()>0.2;
-    const rev = 15000+Math.floor(Math.random()*8000), mmP = 2000+Math.floor(Math.random()*3000);
-    rows.push({ id:"RW-"+Math.random().toString(36).slice(2,8), weekEnding:d.toISOString().split("T")[0],
-      daysOk:ok?7:4+Math.floor(Math.random()*3), eligible:ok, swept:ok,
-      total:ok?rev+mmP:0, revenue:ok?rev:0, mmProfit:ok?mmP:0,
-      manual:!ok&&Math.random()>0.5, notes:ok?"Auto-sweep completed":"Manual review required",
-    });
-  }
-  return rows;
-}
-function treasurySeedDiscrep() {
-  return [
-    {id:"DC-a1",date:"2026-02-24",type:"vault",metal:"gold",tok:48500,phys:48499,diff:-1,status:"resolved",resolution:"Physical bar re-weighed — rounding corrected",by:"admin@tanaqul.com",at:"2026-02-24T09:15:00"},
-    {id:"DC-b2",date:"2026-02-19",type:"cash",metal:null,expected:3185000,actual:3183800,diff:-1200,status:"resolved",resolution:"Pending bank transfer arrived late",by:"finance@tanaqul.com",at:"2026-02-20T11:30:00"},
-    {id:"DC-c3",date:"2026-02-15",type:"vault",metal:"silver",tok:1250000,phys:1249998,diff:-2,status:"open",resolution:null,by:null,at:null},
-  ];
-}
+function treasurySeedDaily() { return []; }
+function treasurySeedWeekly() { return []; }
+function treasurySeedDiscrep() { return []; }
 
 const TreasuryReconciliation = () => {
   const { t, isAr } = useLang();
@@ -6783,13 +6750,13 @@ const TreasuryReconciliation = () => {
   const [toast, setToast] = useState(null);
 
   // Platform accounts derived from real data
-  const mm = mmAccount || {cash:500000,gold:{g:1200,avg:68.5},silver:{g:25000,avg:0.85},platinum:{g:400,avg:32.0},trades:[],pnl:{realized:12450,unrealized:3200,fees:890}};
+  const mm = mmAccount || {cash:0,gold:{g:0,avg:0},silver:{g:0,avg:0},platinum:{g:0,avg:0},trades:[],pnl:{realized:0,unrealized:0,fees:0}};
   const frozen = reconState?.frozen || false;
 
   // ── Platform balances (derived from investors + revenue + MM) ──
-  const investorTotal = (investors||[]).reduce((s,inv)=>s+parseFloat(inv.walletSAR||inv.wallet||0),0) || 2500000;
-  const [poolTotal, setPoolTotal] = useState(3250000);
-  const platformRevenue = 215000;
+  const investorTotal = (investors||[]).reduce((s,inv)=>s+parseFloat(inv.walletSAR||inv.wallet||0),0);
+  const [poolTotal, setPoolTotal] = useState(0);
+  const platformRevenue = 0;
   const poolExpected = investorTotal + platformRevenue + mm.cash;
   const poolValid = Math.abs(poolExpected - poolTotal) < 0.01;
 
@@ -6800,12 +6767,12 @@ const TreasuryReconciliation = () => {
   const platBars = barsData.filter(b=>(b.metal||"").toLowerCase()==="platinum");
   const sumWeight = (arr) => arr.reduce((s,b)=>s+parseFloat(b.weight||b.grams||0),0);
   const vaultData = {
-    gold:   {tok: goldBars.length>0 ? sumWeight(goldBars) : 48500,   phys: goldBars.length>0 ? sumWeight(goldBars) : 48500,   bars: goldBars.length||49,  ok:true},
-    silver: {tok: silverBars.length>0 ? sumWeight(silverBars) : 1250000, phys: silverBars.length>0 ? sumWeight(silverBars) : 1250000, bars: silverBars.length||125, ok:true},
-    platinum:{tok: platBars.length>0 ? sumWeight(platBars) : 8200,    phys: platBars.length>0 ? sumWeight(platBars) : 8200,    bars: platBars.length||9,   ok:true},
+    gold:   {tok: sumWeight(goldBars), phys: sumWeight(goldBars), bars: goldBars.length, ok:true},
+    silver: {tok: sumWeight(silverBars), phys: sumWeight(silverBars), bars: silverBars.length, ok:true},
+    platinum:{tok: sumWeight(platBars), phys: sumWeight(platBars), bars: platBars.length, ok:true},
   };
 
-  const takharojBal = 95000;
+  const takharojBal = 0;
   const fmtS = n => "SAR "+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtG = n => Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+" g";
   const fmtN = n => Number(n).toLocaleString("en-US");
