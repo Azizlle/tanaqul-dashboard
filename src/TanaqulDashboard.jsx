@@ -1394,7 +1394,7 @@ const Investors = () => {
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{toast}</div>}
       <SectionHeader title={isAr?"المستثمرون":"Investors"} sub={investors.length+" total — Suspended: can login, no actions | Banned: blocked by National ID"}
         action={<ExportMenu isAr={isAr}
-          onCSV={()=>downloadCSV("investors_"+new Date().toISOString().slice(0,10),
+          onCSV={()=>downloadCSV("tanaqul_investors_"+new Date().toISOString().slice(0,10),
             ["ID","Name","National ID","Wallet","Holdings (SAR)","Gold (g)","Silver (g)","Platinum (g)","Status","Joined","KYC Expiry"],
             investors.map(inv=>[inv.id,inv.nameEn,inv.nationalId,inv.wallet,inv.holdingsValue,inv.gold,inv.silver,inv.platinum,inv.status,inv.joined,inv.kycExpiry||"—"])
           )}
@@ -1553,7 +1553,7 @@ const TransactionLog = () => {
     const headers = ["Txn ID","Buyer","Buyer NID","Seller","Seller NID","Type","Metal","Amount","Commission","Admin Fee","Total","Payment","Status","Date"];
     const csvRows = [headers.join(","), ...rows.map(r=>[r.id,r.buyerName||"",r.buyerNationalId||"",r.sellerName||"",r.sellerNationalId||"",r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.total,r.method,r.status,r.date].map(v=>`"${sanitize(v)}"`).join(","))];
     const blob = new Blob([csvRows.join("\n")],{type:"text/csv"});
-    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="transactions.csv"; a.click();
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="tanaqul_vault_transactions.csv"; a.click();
     URL.revokeObjectURL(a.href); // SEC-MEM-01: prevent blob URL leak
   };
 
@@ -1609,7 +1609,7 @@ const TransactionLog = () => {
         title={t("Transaction Log")}
         sub={isAr?"سجل كامل بجميع معاملات المنصة":"Complete record of all platform trades"}
         action={<ExportMenu isAr={isAr}
-          onCSV={()=>downloadCSV("transactions_"+new Date().toISOString().slice(0,10),
+          onCSV={()=>downloadCSV("tanaqul_transactions_"+new Date().toISOString().slice(0,10),
             ["ID","Investor","Type","Metal","Amount","Commission","Admin Fee","Method","Total","Status","Date"],
             rows.map(r=>[r.id,r.investor,r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.method,r.total,r.status,r.date])
           )}
@@ -1882,7 +1882,8 @@ const Appointments = () => {
   return (
     <div>
       {apptToast&&<div style={{position:"fixed",top:24,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#2D2418",color:"#FFF",padding:"12px 24px",borderRadius:12,fontSize:14,fontWeight:600,boxShadow:"0 8px 32px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",gap:8}}><span>⚠️</span>{apptToast}</div>}
-      <SectionHeader title={isAr?"المواعيد":"Appointments"} sub="Vault deposit & withdrawal scheduling" />
+      <SectionHeader title={isAr?"المواعيد":"Appointments"} sub={isAr?"جدولة إيداع وسحب الخزنة":"Vault deposit & withdrawal scheduling"}
+        action={<Btn variant="outline" onClick={()=>downloadCSV("appointments_"+new Date().toISOString().slice(0,10),["ID","Investor","National ID","Phone","Type","Metal","Qty","Vault","Scheduled","Fee (SAR)","Payment","Status"],appointments.map(a=>[a.id,a.investor,a.nationalId||"",a.investorPhone,a.type,a.metal,a.qty,a.vault,a.date,a.fee,a.paymentMethod,a.status]))}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(14,C.navy)} {isAr?"تصدير":"Export"}</span></Btn>} />
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.calendar(22,C.teal)} title={t("Booked")} value={appointments.filter(a=>a.status==="BOOKED").length} />
@@ -2478,9 +2479,14 @@ const Reports = () => {
 
   
 // ═══ CSV Export Utilities (moved above ReportCard for scope) ═══
-const generateCSV = (headers, rows) => {
+const generateCSV = (headers, rows, meta) => {
   const esc = v => `"${String(v||"").replace(/"/g,'""')}"`;
-  const lines = [headers.map(esc).join(",")];
+  const lines = [];
+  lines.push(esc("Tanaqul Precious Metals — Export"));
+  lines.push(esc("Generated: "+new Date().toLocaleString("en-SA")));
+  if(meta){Object.entries(meta).forEach(([k,v])=>lines.push(esc(k)+","+esc(v)));}
+  lines.push("");
+  lines.push(headers.map(esc).join(","));
   rows.forEach(r => lines.push(r.map(esc).join(",")));
   return lines.join("\n");
 };
@@ -2528,8 +2534,8 @@ const ReportCard = ({ r }) => (
         </div>
       </div>
       <div style={{padding:"12px 24px",display:"flex",gap:8,borderTop:`1px solid ${C.border}`}}>
-        <Btn small variant="outline" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),[r.sub,"Value","Share"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.navy)} PDF</span></Btn>
-        <Btn small variant="teal" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),[r.sub,"Value","Share"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.white)} Excel</span></Btn>
+        <Btn small variant="outline" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);rows.unshift(["— Total —",typeof r.value==="string"?r.value:"See dashboard",r.change]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),["Category","Value","Share %"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.navy)} PDF</span></Btn>
+        <Btn small variant="teal" onClick={()=>{const rows=r.breakdown.map(b=>[b.label,b.val,b.pct+"%"]);rows.unshift(["— Total —",typeof r.value==="string"?r.value:"See dashboard",r.change]);downloadCSV("report_"+r.title.replace(/\s/g,"_"),["Category","Value","Share %"],rows);}}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(13,C.white)} Excel</span></Btn>
       </div>
     </div>
   );
@@ -2603,7 +2609,7 @@ const Blacklist = () => {
     <div>
       {blToast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{blToast}</div>}
       <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub={t("Banned by National ID — blocked from login and registration until admin unbans")}
-        action={<Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Ban User</span></Btn>} />
+        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>downloadCSV("blacklist_"+new Date().toISOString().slice(0,10),["Record ID","Name","National ID","Vault Key","Reason","Banned By","Date"],blacklist.map(b=>[b.id,b.name,b.nationalId,b.vaultKey,b.reason,b.bannedBy,b.date]))}><span style={{display:"flex",alignItems:"center",gap:4}}>{Icons.download(14,C.navy)} {isAr?"تصدير":"Export"}</span></Btn><Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"حظر مستخدم":"Ban User"}</span></Btn></div>} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.blacklist(22,"#C85C3E")} title={isAr?"إجمالي المحظورين":"Total Banned"} value={blacklist.length} />
         <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المحظورون هذا الشهر":"Banned This Month"} value={blacklist.filter(b=>b.date?.startsWith("2026-03")).length} />
@@ -2701,7 +2707,7 @@ const ValidatorsTab = () => {
                 setValidators(p=>p.map(v=>v.id===row.id?{...v,status:"INACTIVE"}:v));showBlkToast(isAr?"✅ تم تعطيل المدقق":"✅ Validator deactivated");}}>{isAr?"تعطيل":"Deactivate"}</Btn>
               :<Btn small variant="teal"   onClick={()=>{setValidators(p=>p.map(v=>v.id===row.id?{...v,status:"ACTIVE"} :v));showBlkToast(isAr?"✅ تم تفعيل المدقق":"✅ Validator activated");}}>{isAr?"تفعيل":"Activate"}</Btn>
             }
-            <Btn small variant="outline" onClick={()=>{downloadCSV("validator_"+row.id,["ID","Name","Status","Blocks","Weight","Earned","Joined"],[[row.id,row.name,row.status,row.blocksValidated,row.weight,row.commissionEarned,row.joined]]);showBlkToast(isAr?"✅ تم تصدير":"✅ Exported");}}>{isAr?"سجل":"History"}</Btn>
+            <Btn small variant="outline" onClick={()=>{downloadCSV("validators_all",["ID","Name","Status","Blocks Validated","Weight","Commission Earned","Joined"],validators.map(v=>[v.id,v.name,v.status,v.blocksValidated,v.weight,v.commissionEarned,v.joined]));showBlkToast(isAr?"✅ تم تصدير":"✅ Exported");}}>{isAr?"سجل":"History"}</Btn>
           </div>
         )},
       ]} rows={validators} />
@@ -7113,7 +7119,7 @@ const TreasuryReconciliation = () => {
       {tab==="history"&&<div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <div><p style={{fontSize:13,color:C.textMuted,margin:0}}>{isAr?"الجدول الليلي: تجميد ← تسوية نقدية ← تسوية خزنة ← رفع التجميد":"Midnight: freeze → cash recon → vault recon (tokenized=physical) → unfreeze"}</p></div>
-          <Btn small variant="outline" onClick={()=>{downloadCSV("treasury_daily_"+new Date().toISOString().slice(0,10),["Date","Time","Cash","Gold","Silver","Platinum","Overall","Run By"],daily.map(d=>[d.date,d.time,d.cash?.status||"",d.vault?.gold?.ok?"matched":"mismatch",d.vault?.silver?.ok?"matched":"mismatch",d.vault?.platinum?.ok?"matched":"mismatch",d.overall,d.by]));}}>{Icons.download(14,C.textMuted)} {isAr?"تصدير":"Export"}</Btn>
+          <Btn small variant="outline" onClick={()=>{downloadCSV("tanaqul_treasury_daily_"+new Date().toISOString().slice(0,10),["Date","Time","Cash","Gold","Silver","Platinum","Overall","Run By"],daily.map(d=>[d.date,d.time,d.cash?.status||"",d.vault?.gold?.ok?"matched":"mismatch",d.vault?.silver?.ok?"matched":"mismatch",d.vault?.platinum?.ok?"matched":"mismatch",d.overall,d.by]));}}>{Icons.download(14,C.textMuted)} {isAr?"تصدير":"Export"}</Btn>
         </div>
         <TTable cols={[
           {label:isAr?"التاريخ":"Date",key:"date",render:v=><span style={{fontFamily:"'DM Mono',monospace",fontWeight:600}}>{v}</span>},
