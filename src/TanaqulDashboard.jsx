@@ -1327,8 +1327,9 @@ const Investors = () => {
 
   const doAction = (inv, act) => { setSel(inv); setAction(act); setReason(""); setNotifyMsg(""); };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE"}[action];
+    try{await apiFetch("/investors/"+sel.uuid+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:newStatus,reason:reason||"Admin action"})})}catch(e){console.error("Investor update failed:",e);}
     setInvestors(prev => prev.map(i => i.id===sel.id ? {...i, status:newStatus} : i));
 
     // Auto-cancel appointments for suspended/banned investors
@@ -2138,8 +2139,9 @@ const Financials = () => {
 
   const doWithdrawal = (row, type) => { setWModal({type,row}); setWReason(""); };
 
-  const confirmWithdrawal = () => {
+  const confirmWithdrawal = async () => {
     const {type,row} = wModal;
+    try{await apiFetch("/withdrawals/"+(row.uuid||row.id)+"/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:type,reason:wReason||""})})}catch(e){console.error("Withdrawal action failed:",e);}
     // IBAN required and format validated before approval
     if(type==="approve" && (!row.iban || row.iban==="—")) {
       showFinToast("⚠️ IBAN is required before approving a withdrawal");
@@ -2530,7 +2532,8 @@ const Blacklist = () => {
     setShowAdd(false); setForm({nationalId:"",name:"",reason:""});
   };
 
-  const unban = (id) => {
+  const unban = async (id) => {
+    try{const entry=blacklist.find(b=>b.id===id);if(entry&&entry.uuid){await apiFetch("/blacklist/"+entry.uuid+"/unban",{method:"POST"})}}catch(e){console.error("Unban failed:",e);}
     setBlacklist(prev=>prev.filter(b=>b.id!==id));
     showBlToast("✅ User unbanned — account restored");
   };
@@ -3918,7 +3921,7 @@ const AuditLog = () => {
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {reportingConfig?.sarEnabled&&<Btn variant="danger" onClick={()=>setSendConfirm({type:"SAR",data:sarModal})}>{Icons.send(14,"#FFF")} {isAr?"إرسال إلى ساما الآن":"Send to SAMA Now"}</Btn>}
-            <Btn variant="gold" onClick={()=>{showToast("✅ "+sarModal.reportId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setSarModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
+            <Btn variant="gold" onClick={async()=>{try{await apiFetch("/aml/report?alert_id="+encodeURIComponent(sarModal.reportId)+"&notes="+encodeURIComponent(sarModal.notes||""),{method:"POST"})}catch(e){}showToast("✅ "+sarModal.reportId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setSarModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
             <Btn variant="outline" onClick={()=>setSarModal(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
           </div>
         </div>
@@ -3954,7 +3957,7 @@ const AuditLog = () => {
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {reportingConfig?.cmaEnabled&&<Btn variant="danger" onClick={()=>setSendConfirm({type:"CMA",data:cmaNotifModal})}>{Icons.send(14,"#FFF")} {isAr?"إرسال إلى الهيئة الآن":"Send to CMA Now"}</Btn>}
-            <Btn variant="gold" onClick={()=>{showToast("✅ "+cmaNotifModal.notifId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setCmaNotifModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
+            <Btn variant="gold" onClick={async()=>{try{await apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"CMA_NOTIFICATION",entity_type:"cma",entity_id:cmaNotifModal.notifId,details:cmaNotifModal.notes||"",level:"WARNING"})})}catch(e){}showToast("✅ "+cmaNotifModal.notifId+(isAr?" تم الحفظ في قائمة الامتثال":" saved to compliance queue"));setCmaNotifModal(null);}}>{isAr?"حفظ في قائمة الامتثال":"Save to Queue"}</Btn>
             <Btn variant="outline" onClick={()=>setCmaNotifModal(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
           </div>
         </div>
@@ -4712,10 +4715,11 @@ const OrderBook = () => {
   const filledList    = orders.filter(o=>o.status==="FILLED");
   const cancelledList = orders.filter(o=>o.status==="CANCELLED");
 
-  const cancelOrder = (id) => {
+  const cancelOrder = async (id) => {
     const order = orders.find(o=>o.id===id);
     if(!order) return;
     if(order.status==="FILLED"||order.status==="CANCELLED") return;
+    try{await apiFetch("/orders/"+(order.uuid||id)+"/cancel",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason:"Admin cancelled"})})}catch(e){console.error("Cancel order failed:",e);}
     // Compute actual execution value from match records (not order.price which may differ from exec price)
     const orderMatches = matches.filter(m=>m.buyOrder===id||m.sellOrder===id);
     const actualExecSAR = orderMatches.reduce((a,m)=>a+m.totalSAR, 0);
@@ -5532,9 +5536,10 @@ const UserManagement = () => {
               {(allRolePerms[newUser.role]||[]).length===0&&<span style={{fontSize:13,color:C.textMuted,fontStyle:"italic"}}>{isAr?"اختر الدور أولاً":"Select role first"}</span>}
             </div>
           </div>
-          <Btn variant="gold" onClick={()=>{
+          <Btn variant="gold" onClick={async()=>{
             if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
             const id="USR-"+String(Date.now()).slice(-3);
+            try{await apiFetch("/admin/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,password:"Temp"+String(Date.now()).slice(-6)+"!",role:newUser.role.toLowerCase()})})}catch(e){console.error("Create user failed:",e);}
             setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
             setModal(null);showToast(isAr?"✅ تم إضافة المستخدم — كلمة مرور مؤقتة أُرسلت للبريد":"✅ User added — temporary password sent to email");
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
@@ -5566,7 +5571,7 @@ const UserManagement = () => {
           <div style={{display:"flex",gap:8}}>
             <Btn variant="gold" onClick={()=>{
               setUsers(p=>p.map(x=>x.id===modal.id?{...x,role:editRole,perms:editRole==="CUSTOM"?editPerms:ROLE_PERMS[editRole]}:x));
-              setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
+              try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"PERMISSIONS_UPDATE",entity_type:"admin_user",entity_id:modal?.id||"",details:"Permissions updated",level:"INFO"})})}catch(e){}setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
             }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
             {!modal.twoFA&&<Btn variant="teal" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,twoFA:true}:x));showToast(isAr?"🔒 تم تفعيل المصادقة الثنائية":"🔒 2FA enabled");setModal(null);}}>{isAr?"تفعيل 2FA":"Enable 2FA"}</Btn>}
             {modal.sessions>0&&<Btn variant="danger" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,sessions:0}:x));showToast(isAr?"تم إلغاء جميع الجلسات":"All sessions revoked");}}>{isAr?"إلغاء الجلسات":"Revoke Sessions"}</Btn>}
@@ -5837,7 +5842,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={()=>{showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async()=>{const admin=JSON.parse(localStorage.getItem("tanaqul_admin")||"{}");admin.name=profile.name;admin.email=profile.email;admin.phone=profile.phone;localStorage.setItem("tanaqul_admin",JSON.stringify(admin));try{await apiFetch("/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:profile.name,phone:profile.phone})})}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -6359,7 +6364,7 @@ const CommCenter = () => {
     setTab("compose");
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if(!compose) return;
     if(!compose.to.trim()||!compose.body.trim()){showToast(isAr?"⚠️ أكمل المستلم والرسالة":"⚠️ Fill recipient and message");return;}
     const now = new Date().toISOString().slice(0,16).replace("T"," ");
@@ -6372,6 +6377,7 @@ const CommCenter = () => {
       sentAt:compose.scheduledFor?null:now, scheduledFor:compose.scheduledFor||null,
       deliveredAt:null, readAt:null, template:compose.template,
     };
+    try{await apiFetch("/notifications/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({template:compose.template||"custom",phone:compose.toNid||"",email:compose.to,lang:isAr?"ar":"en",params:{subject:compose.subject,body:compose.body,channel:compose.channel}})})}catch(e){console.error("Send notification failed:",e);}
     setMessages(p=>[msg,...p]);
     showToast(compose.scheduledFor?(isAr?"✅ تم جدولة الرسالة":"✅ Message scheduled"):(isAr?"✅ تم إرسال الرسالة":"✅ Message sent"));
     setCompose(null); setTab("inbox");
@@ -6950,7 +6956,7 @@ const TreasuryReconciliation = () => {
             <div style={{marginTop:14,display:"flex",gap:8}}>
               <input type="number" placeholder={isAr?"رصيد البنك اليدوي":"Manual bank balance (SAR)"} value={bankInput} onChange={e=>setBankInput(e.target.value)}
                 style={{flex:1,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.text,fontSize:13,outline:"none"}} />
-              <Btn small variant="outline" onClick={()=>{const v=parseFloat(bankInput);if(isNaN(v)||v<=0)return;setPoolTotal(v);setBankInput("");showToast("Pool Bank updated","success");}}>{isAr?"تحديث":"Update"}</Btn>
+              <Btn small variant="outline" onClick={()=>{const v=parseFloat(bankInput);if(isNaN(v)||v<=0)return;setPoolTotal(v);setBankInput("");try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"POOL_BANK_UPDATE",entity_type:"treasury",entity_id:"pool",details:"Updated to SAR "+v,level:"INFO"})})}catch(e){}showToast("Pool Bank updated","success");}}>{isAr?"تحديث":"Update"}</Btn>
             </div>
           </div>
 
@@ -7910,7 +7916,7 @@ const NotificationSettings = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"TEMPLATE_UPDATE",entity_type:"template",entity_id:editTpl.id,details:"Template updated",level:"INFO"})})}catch(e){}setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
         </div>
       </Modal>}
@@ -8210,7 +8216,7 @@ const Settings = ({ onLangChange }) => {
         </G>
         <PriceFeedSettings />
       </div>}
-      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
+      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}try{apiFetch("/settings/bulk",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({commission_buyer:splitBuying,commission_seller:splitSelling,commission_creator:splitCreator,commission_validators:splitValidators})})}catch(e){}showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
       <div id="split-err" style={{display:"none",background:C.redBg,border:"1px solid #C85C3E44",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:14,color:"#C85C3E",fontWeight:600}}></div>
     </div>
   );
@@ -9428,6 +9434,7 @@ export default function App() {
   const notifData = useNotifications({amlAlerts, cmaAlerts, amlDismissed, withdrawals: appWithdrawals, appointments: appAppointments, investors: appInvestors});
 
   const addAudit = (action, entity, details) => {
+    try{apiFetch("/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:arguments[0]||"",entity_type:"admin",entity_id:arguments[1]||"",details:arguments[2]||"",level:"INFO"})})}catch(e){}
     const entry = {
       id: "AUD-"+String(Date.now()).slice(-6),
       timestamp: new Date().toISOString().slice(0,16).replace("T"," "),
