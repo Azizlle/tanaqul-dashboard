@@ -4104,7 +4104,7 @@ const AuditLog = () => {
 
 // ─── Price Feed Settings Component (used inside Settings → Security tab) ──────
 const PriceFeedSettings = () => {
-  const { isAr } = useLang();
+  const { isAr, t } = useLang();
   const { status, lastFetch, provider: activeProvider } = useLivePrices();
   const [provider, setProvider] = useState(localStorage.getItem("price_provider") || "metals.dev");
   const [key,      setKey]      = useState(localStorage.getItem("price_api_key")  || "");
