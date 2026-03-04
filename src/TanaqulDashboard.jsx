@@ -9408,7 +9408,7 @@ export default function App() {
   // ═══ MARKET MAKER ACCOUNT STATE ═══
   const [mmAccount, setMMAccount] = useState({
     cash: 0, gold:{g:0,avg:0}, silver:{g:0,avg:0}, platinum:{g:0,avg:0,avg:32.0},
-    trades:[], pnl:{realized:12450,unrealized:3200,fees:890},
+    trades:[], pnl:{realized:0,unrealized:0,fees:0},
   });
   // ═══ TREASURY / RECONCILIATION STATE ═══
   const [reconState, setReconState] = useState({frozen:false,lastRecon:null,dayStatus:"pending"});
