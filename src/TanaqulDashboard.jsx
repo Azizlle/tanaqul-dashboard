@@ -1156,15 +1156,7 @@ const PriceTicker = () => {
 
 
 // ─── Shared initial order book data (used by Dashboard widget + OrderBook) ───
-const INITIAL_OB_ORDERS = [
-  {id:"ORD-001",investor:"Mohammed Al-Otaibi",investorAr:"محمد العتيبي",  nationalId:"1012345678", side:"BUY", metal:"Gold",    qty:50, filled:0,  price:842.00,payment:"MADA",    expiry:"GTC",expiryDate:"",          status:"OPEN",    placed:"2026-03-01 08:10"},
-  {id:"ORD-002",investor:"Sara Al-Qahtani",   investorAr:"سارة القحطاني", nationalId:"1098765432", side:"SELL",metal:"Gold",    qty:30, filled:20, price:840.50,payment:"SADAD",   expiry:"GTC",expiryDate:"",          status:"PARTIAL", placed:"2026-03-01 08:05"},
-  {id:"ORD-003",investor:"Khalid Al-Ghamdi",  investorAr:"خالد الغامدي",  nationalId:"1023456789", side:"BUY", metal:"Gold",    qty:20, filled:20, price:841.00,payment:"Visa",    expiry:"GTD",expiryDate:"2026-03-05",status:"FILLED",  placed:"2026-03-01 07:55"},
-  {id:"ORD-004",investor:"Nora Al-Shehri",    investorAr:"نورة الشهري",   nationalId:"1056789012", side:"SELL",metal:"Silver",  qty:500,filled:300,price:10.45, payment:"Apple Pay",expiry:"GTC",expiryDate:"",          status:"PARTIAL", placed:"2026-03-01 07:50"},
-  {id:"ORD-008",investor:"Omar Al-Zahrani",   investorAr:"عمر الزهراني",  nationalId:"1067890123", side:"BUY", metal:"Platinum",qty:40, filled:0,  price:139.00,payment:"STC Pay", expiry:"GTC",expiryDate:"",          status:"OPEN",    placed:"2026-03-01 06:30"},
-  {id:"ORD-009",investor:"Reem Al-Mutairi",   investorAr:"ريم المطيري",   nationalId:"1089012345", side:"SELL",metal:"Platinum",qty:25, filled:0,  price:138.50,payment:"SADAD",   expiry:"GTD",expiryDate:"2026-04-10",status:"OPEN",    placed:"2026-03-01 06:00"},
-  {id:"SYN-001",investor:"[Stabilizer]",      investorAr:"[موازن]",        nationalId:"SYSTEM",     side:"BUY", metal:"Gold",    qty:15, filled:0,  price:840.00,payment:"Wallet",  expiry:"GTC",expiryDate:"",          status:"OPEN",synthetic:true,placed:"2026-03-01 08:00"},
-];
+const INITIAL_OB_ORDERS = [];
 
 // ─── Mini Order Book Widget (Dashboard) ──────────────────────────────────────
 const MiniOrderBook = ({ orders, isAr }) => {
@@ -1873,7 +1865,7 @@ const Appointments = () => {
   const showApptToast=(msg)=>{setApptToast(msg);setTimeout(()=>setApptToast(""),4000);};
   // ⚠️ SECURITY: In production, OTP must be generated server-side and delivered via SMS/push.
   // This mock value exists only for prototype demonstration. Remove before deployment.
-  const MOCK_OTP = null; // Removed - use real OTP
+  const MOCK_OTP = null; // Disabled
 
   const closeAll = (interrupted=false) => { if(interrupted&&sel&&startStep>1){setInProgress(p=>new Set([...p,sel.id]));} setSel(null); setModal(null); setStartStep(1); setOtpVal(""); setOtpError(""); setOtpSecs(300); setOtpExpired(false); setReschedDate(""); setReschedTime(""); };
 
@@ -2474,9 +2466,9 @@ const Reports = () => {
       { title:"New Investors by Period", sub:"This month", value:"18 new", prev:"14", change:"+28.6%", up:true, chart:[1,3,2,4,2,3,3], color:C.teal,
         breakdown:[{label:"This Month",val:"18",pct:100}] },
       { title:"Top by Holdings Value", sub:"Highest portfolio", value:<SARAmount amount="1,248,000"/>, prev:<SARAmount amount="1,100,000"/>, change:"+13.5%", up:true, chart:[900,950,1000,1050,1100,1180,1248], color:C.gold,
-        breakdown:[{label:"INV-001",val:"1,248,000",pct:56},{label:"INV-005",val:"560,000",pct:25},{label:"Others",val:"420,350",pct:19}] },
+        breakdown:[{label:"—",val:"0",pct:0}] },
       { title:"Top by Trading Volume", sub:"Most active", value:<SARAmount amount="419,455"/>, prev:<SARAmount amount="380,000"/>, change:"+10.4%", up:true, chart:[300,330,360,380,395,410,419], color:"#8B5CF6",
-        breakdown:[{label:"INV-003",val:"419,455",pct:51},{label:"INV-001",val:"83,900",pct:10},{label:"Others",val:"322,000",pct:39}] },
+        breakdown:[{label:"—",val:"0",pct:0}] },
     ],
     appointments: [
       { title:"Total by Period", sub:"This month", value:"7 appointments", prev:"5", change:"+40%", up:true, chart:[0,1,1,2,1,1,1], color:C.teal,
@@ -5882,18 +5874,8 @@ const AccountProfile = () => {
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState({show:false,field:null,code:"",sent:false,verified:false,timer:0});
-  const [sessions] = useState([
-    {id:"S1",device:"Chrome — Windows 11",ip:"196.203.x.x",location:isAr?"الرياض":"Riyadh",time:"2026-03-02 09:14",current:true},
-    {id:"S2",device:"Safari — iPhone 15",ip:"196.203.x.x",location:isAr?"الرياض":"Riyadh",time:"2026-03-01 22:30",current:false},
-  ]);
-  const [activityLog] = useState([
-    {date:"2026-03-02 09:14",action:isAr?"تسجيل دخول":"Login",detail:"Chrome — Riyadh"},
-    {date:"2026-03-01 16:45",action:isAr?"تغيير الإعدادات":"Settings changed",detail:isAr?"تحديث رسوم العمولة":"Updated commission rates"},
-    {date:"2026-03-01 14:20",action:isAr?"موافقة على سحب":"Withdrawal approved",detail:"WR-003 — SAR 25,000"},
-    {date:"2026-03-01 10:00",action:isAr?"تسجيل دخول":"Login",detail:"Chrome — Riyadh"},
-    {date:"2026-02-28 15:30",action:isAr?"تقديم بلاغ SAR":"SAR filed",detail:"SAR-24819374 — Mohammed Al-Otaibi"},
-    {date:"2026-02-28 09:00",action:isAr?"تسجيل دخول":"Login",detail:"Safari — iPhone"},
-  ]);
+  const [sessions] = useState([]);
+  const [activityLog] = useState([]);
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
   const showSaved = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
 
