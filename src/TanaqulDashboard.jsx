@@ -190,8 +190,6 @@ const AR = {
   "Search alerts...":"بحث في التنبيهات...","Review Now":"مراجعة الآن",
   "Confirm Ban":"تأكيد الحظر","Full Name (optional)":"الاسم الكامل (اختياري)",
   "SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED":"اختر المزوّد — يمكنك التبديل في أي وقت",
-  "BUYER COMMISSION (%)":"عمولة المشتري (%)","SELLER COMMISSION (%)":"عمولة البائع (%)",
-  "LIVE EXAMPLE — 10,000 SAR TRADE":"مثال حي — صفقة 10,000 ريال",
   "BLOCKS PER PERIOD (ESTIMATE)":"عدد البلوكات لكل فترة (تقديري)",
   "MIN BLOCK PARTICIPATION TO QUALIFY":"الحد الأدنى للمشاركة في البلوكات للتأهل",
   "What happens to forfeited earnings:":"ماذا يحدث للأرباح المصادرة:",
@@ -6967,7 +6965,7 @@ const TreasuryReconciliation = () => {
   return (
     <div style={{direction:isAr?"rtl":"ltr"}}>
       {/* Toast */}
-      {toast&&<div style={{position:"fixed",top:14,right:22,zIndex:99999,background:toast.type==="success"?"linear-gradient(135deg,#4A7A68,#6B9080)":toast.type==="error"?"linear-gradient(135deg,#8B3520,#C85C3E)":"linear-gradient(135deg,#8B6540,#C4956A)",borderRadius:12,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",maxWidth:440,animation:"slideIn 0.3s ease-out",zIndex:99999}}>
+      {toast&&<div style={{position:"fixed",top:14,right:22,zIndex:99999,background:toast.type==="success"?"linear-gradient(135deg,#4A7A68,#6B9080)":toast.type==="error"?"linear-gradient(135deg,#8B3520,#C85C3E)":"linear-gradient(135deg,#8B6540,#C4956A)",borderRadius:12,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",maxWidth:440,animation:"slideIn 0.3s ease-out"}}>
         <span style={{fontSize:13,fontWeight:700,color:"#FFF"}}>{toast.msg}</span>
         <button onClick={()=>setToast(null)} style={{background:"none",border:"none",color:"#FFF",cursor:"pointer",fontSize:16,opacity:0.7}}>×</button>
       </div>}
@@ -9467,7 +9465,7 @@ export default function App() {
 
   // ═══ MARKET MAKER ACCOUNT STATE ═══
   const [mmAccount, setMMAccount] = useState({
-    cash: 0, gold:{g:0,avg:0}, silver:{g:0,avg:0}, platinum:{g:0,avg:0,avg:32.0},
+    cash: 0, gold:{g:0,avg:0}, silver:{g:0,avg:0}, platinum:{g:0,avg:0},
     trades:[], pnl:{realized:0,unrealized:0,fees:0},
   });
   // ═══ TREASURY / RECONCILIATION STATE ═══
