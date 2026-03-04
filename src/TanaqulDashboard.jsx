@@ -1920,8 +1920,7 @@ const Appointments = () => {
             <p style={{fontSize:13,color:"#8B6540",marginTop:2}}>Investor receives: <b>{sel.fee - cfee} SAR</b> back to their wallet.</p>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-            <Btn variant="danger" onClick={()=>{
-              try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/cancel",{method:"PATCH"})}catch(e){}
+            <Btn variant="danger" onClick={async()=>{
               try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/cancel",{method:"PATCH"})}catch(e){}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Create wallet refund movement (fee minus cancellation charge from Settings)
@@ -1959,8 +1958,7 @@ const Appointments = () => {
             <p style={{fontSize:13,color:"#8B3520",marginTop:4}}>⚠️ Investors with 2+ no-shows are flagged and require a security deposit for future bookings.</p>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-            <Btn variant="danger" onClick={()=>{
-              try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/no-show",{method:"PATCH"})}catch(e){}
+            <Btn variant="danger" onClick={async()=>{
               try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/no-show",{method:"PATCH"})}catch(e){}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
               setInvestors(prev=>prev.map(inv=>{
@@ -1992,10 +1990,9 @@ const Appointments = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="teal" onClick={()=>{
+          <Btn variant="teal" onClick={async()=>{
             if(!reschedDate||!reschedTime){showApptToast(isAr?"يرجى اختيار التاريخ والوقت":"Please select a date and time");return;}
             const newDate = reschedDate+" "+reschedTime;
-            try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/reschedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({new_date:newDate})})}catch(e){}
             try{await apiFetch("/appointments/"+(sel.uuid||sel.id)+"/reschedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({new_date:newDate})})}catch(e){}
             setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"RESCHEDULED",date:newDate}:a));
             addAudit("RESCHEDULE", sel.id, sel.investor+" → "+newDate);
@@ -2592,7 +2589,6 @@ const Blacklist = () => {
       date:new Date().toISOString().slice(0,10),
     };
     try{await apiFetch("/blacklist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})})}catch(e){console.error("Ban failed:",e);}
-    try{await apiFetch("/blacklist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})})}catch(e){console.error("Ban failed:",e);}
     setBlacklist(prev=>[newEntry,...prev]);
     addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
     showBlToast("✅ User banned by National ID");
@@ -2736,7 +2732,6 @@ const ValidatorsTab = () => {
             <Btn variant="teal" onClick={async()=>{
               if(!vName||!vAddr){showBlkToast(isAr?"⚠️ الاسم والعنوان مطلوبان":"⚠️ Name and address required");return;}
               const newV={id:"VAL-"+(validators.length+1).toString().padStart(3,"0"),name:vName,address:vAddr,status:"ACTIVE",blocksValidated:0,weight:"0%",commissionEarned:"0",joined:new Date().toISOString().slice(0,10)};
-              try{await apiFetch("/validators",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:vEnd||null})})}catch(e){console.error("Add validator failed:",e);}
               try{await apiFetch("/validators",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:vEnd||null})})}catch(e){console.error("Add validator failed:",e);}
               setValidators(p=>[...p,newV]);
               showBlkToast(isAr?"✅ تم إضافة المدقق":"✅ Validator added");
