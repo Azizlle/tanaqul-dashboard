@@ -4695,11 +4695,7 @@ const OrderBook = () => {
 
   // orders and matches now from AppDataContext (persist across navigation)
   const [matchLog, setMatchLog] = useState([]); // live match events shown as toasts
-  const [synLog,   setSynLog]   = useState([
-    {id:"SYN-001",metal:"Gold",  side:"BUY", qty:15, price:840.00,reason:"Spread 2.4% > 2.0%",date:"2026-03-01 08:00",status:"OPEN"},
-    {id:"SYN-002",metal:"Silver",side:"SELL",qty:200,price:10.46, reason:"Spread 2.1% > 2.0%",date:"2026-02-28 14:22",status:"FILLED"},
-    {id:"SYN-003",metal:"Gold",  side:"SELL",qty:10, price:843.50,reason:"Spread 2.7% > 2.0%",date:"2026-02-28 11:05",status:"CANCELLED"},
-  ]);
+  const [synLog,   setSynLog]   = useState([]);
   const [matchToast, setMatchToast] = useState("");
   const showMatchToast = (msg) => { setMatchToast(msg); setTimeout(()=>setMatchToast(""),4000); };
 
