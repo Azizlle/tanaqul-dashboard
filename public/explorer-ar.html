@@ -494,53 +494,15 @@ async function loadStats() {
 
 // — Block Progress
 async function loadProgress() {
-  // Try trigger/status first (needs auth), fallback to chain/stats
-  let d = await api("/public/explorer/network");
+  const d = await api("/public/explorer/progress");
   if(!d) return;
 
-  // Get trigger settings from chain stats
-  const stats = await api("/public/explorer/network");
-  // We use the /blocks endpoint to compute progress
-  const pending = d.total_transactions || 0;
-  const lastBlock = d.latest_block;
+  const pendingCount = d.pending_transactions || 0;
+  const pendingSizeMB = d.pending_size_mb || 0;
+  const maxSizeMB = d.trigger_settings?.size_mb || 1;
+  const maxHours = d.trigger_settings?.hours || 24;
+  const hoursSinceLast = d.hours_since_last_block;
 
-  // Default trigger settings (we'll read from settings if available)
-  let maxSizeMB = 1, maxHours = 24;
-
-  // Try to get trigger settings (public endpoint)
-  try {
-    const trigResp = await fetch(API+"/blocks/settings/trigger");
-    if(trigResp.ok) {
-      const trig = await trigResp.json();
-      maxSizeMB = trig.size_mb || 1;
-      maxHours = trig.hours || 24;
-    }
-  } catch(_){}
-
-  // Try to get pending match count
-  let pendingCount = 0, pendingSizeMB = 0;
-  try {
-    const trigStatus = await fetch(API+"/blocks/trigger/status");
-    if(trigStatus.ok) {
-      const ts = await trigStatus.json();
-      pendingCount = ts.pending_transactions || 0;
-      pendingSizeMB = ts.pending_size_mb || 0;
-      maxSizeMB = ts.trigger_settings?.size_mb || maxSizeMB;
-      maxHours = ts.trigger_settings?.hours || maxHours;
-    }
-  } catch(_){
-    // Estimate from block data
-    pendingSizeMB = 0;
-    pendingCount = 0;
-  }
-
-  // Time since last block
-  let hoursSinceLast = null;
-  if(lastBlock && lastBlock.created_at) {
-    hoursSinceLast = parseFloat(hoursAgo(lastBlock.created_at));
-  }
-
-  // Update UI
   document.getElementById("prog-size").textContent = pendingSizeMB.toFixed(2);
   document.getElementById("prog-max-size").textContent = maxSizeMB;
   document.getElementById("prog-max-time").textContent = maxHours;
@@ -552,21 +514,17 @@ async function loadProgress() {
     document.getElementById("prog-time").textContent = "لا توجد كتل بعد";
   }
 
-  // Progress bars
   const sizePct = Math.min(100, (pendingSizeMB / maxSizeMB) * 100);
   const timePct = hoursSinceLast !== null ? Math.min(100, (hoursSinceLast / maxHours) * 100) : 0;
 
   document.getElementById("prog-size-bar").style.width = sizePct + "%";
   document.getElementById("prog-time-bar").style.width = timePct + "%";
 
-  // Color bars gold when >80%
   if(sizePct > 80) document.getElementById("prog-size-bar").style.background = "linear-gradient(90deg, var(--red), var(--gold))";
   if(timePct > 80) document.getElementById("prog-time-bar").style.background = "linear-gradient(90deg, var(--red), var(--gold))";
 
-  // Trigger status
   const trigEl = document.getElementById("prog-trigger");
-  const shouldTrigger = sizePct >= 100 || timePct >= 100;
-  if(shouldTrigger && pendingCount > 0) {
+  if(d.should_trigger) {
     trigEl.textContent = "جاهز للإنشاء";
     trigEl.className = "progress-trigger-label trigger-soon";
   } else if(pendingCount > 0) {

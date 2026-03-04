@@ -454,28 +454,14 @@ async function loadStats() {
 
 // — Block Progress
 async function loadProgress() {
-  const d = await api("/public/explorer/network");
+  const d = await api("/public/explorer/progress");
   if(!d) return;
 
-  const lastBlock = d.latest_block;
-  let maxSizeMB = 1, maxHours = 24;
-  let pendingCount = 0, pendingSizeMB = 0;
-
-  try {
-    const trigStatus = await fetch(API+"/blocks/trigger/status");
-    if(trigStatus.ok) {
-      const ts = await trigStatus.json();
-      pendingCount = ts.pending_transactions || 0;
-      pendingSizeMB = ts.pending_size_mb || 0;
-      maxSizeMB = ts.trigger_settings?.size_mb || maxSizeMB;
-      maxHours = ts.trigger_settings?.hours || maxHours;
-    }
-  } catch(_){}
-
-  let hoursSinceLast = null;
-  if(lastBlock && lastBlock.created_at) {
-    hoursSinceLast = parseFloat(hoursAgo(lastBlock.created_at));
-  }
+  const pendingCount = d.pending_transactions || 0;
+  const pendingSizeMB = d.pending_size_mb || 0;
+  const maxSizeMB = d.trigger_settings?.size_mb || 1;
+  const maxHours = d.trigger_settings?.hours || 24;
+  const hoursSinceLast = d.hours_since_last_block;
 
   document.getElementById("prog-size").textContent = pendingSizeMB.toFixed(2);
   document.getElementById("prog-max-size").textContent = maxSizeMB;
@@ -493,8 +479,7 @@ async function loadProgress() {
   if(timePct > 80) document.getElementById("prog-time-bar").style.background = "linear-gradient(90deg, var(--red), var(--gold))";
 
   const trigEl = document.getElementById("prog-trigger");
-  const shouldTrigger = sizePct >= 100 || timePct >= 100;
-  if(shouldTrigger && pendingCount > 0) {
+  if(d.should_trigger) {
     trigEl.textContent = "Ready to Create";
     trigEl.className = "progress-trigger-label trigger-soon";
   } else if(pendingCount > 0) {
