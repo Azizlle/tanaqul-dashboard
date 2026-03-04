@@ -1297,8 +1297,8 @@ const Dashboard = () => {
         <StatCard icon={Icons.bar(22,C.orange)} title={isAr?"الذهب في الخزنة":"Gold in Vault"} value={fmtK(goldGrams)+"g"} sub={<SARAmount amount={fmtK(goldGrams*(gp?.priceSAR||839))}/>} gold />
         <StatCard icon={Icons.bar(22,"#A89880")} title={isAr?"الفضة في الخزنة":"Silver in Vault"} value={fmtK(silverGrams)+"g"} sub={<SARAmount amount={fmtK(silverGrams*(sp?.priceSAR||10.42))}/>} />
         <StatCard icon={Icons.bar(22,C.teal)} title={isAr?"البلاتين في الخزنة":"Platinum in Vault"} value={fmtK(platGrams)+"g"} sub={<SARAmount amount={fmtK(platGrams*(pp?.priceSAR||138.5))}/>} />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value={s.tokensMinted.toLocaleString()} />
-        <StatCard icon={Icons.token(22,C.navy)} title={isAr?"المتداولة":"In Circulation"} value={s.tokensCirculating.toLocaleString()} />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value={(s.tokensMinted||0).toLocaleString()} />
+        <StatCard icon={Icons.token(22,C.navy)} title={isAr?"المتداولة":"In Circulation"} value={(s.tokensCirculating||0).toLocaleString()} />
         <StatCard icon={Icons.fire(22,C.red)} title={isAr?"بانتظار الحرق":"Pending Burn"} value={s.tokensPendingBurn} />
         <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Last Block"} value={"#"+s.blockNumber} sub={s.lastBlock} gold />
       </div>
@@ -1533,7 +1533,7 @@ const TransactionLog = () => {
   const totalComm  = rows.reduce((a,t)=>a+parseFloat(t.commission.replace(/,/g,"")),0);
   const totalCount = rows.length;
 
-  const fmtNum = n => n.toLocaleString("en-SA", {maximumFractionDigits:0});
+  const fmtNum = n => (n||0).toLocaleString("en-SA", {maximumFractionDigits:0});
 
   const TxBadge = ({type}) => (
     <span style={{
