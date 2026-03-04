@@ -5731,8 +5731,8 @@ const AccountProfile = () => {
   const [tab, setTab] = useState("INFO");
   const [profile, setProfile] = useState({
     name:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"Admin", nameAr:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"مسؤول",
-    email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:"",
-    phoneVerified:true,
+    email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").phone)||"",
+    phoneVerified:!!(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").phone),
     recoveryPhone:"", recoveryPhoneVerified:false,
     recoveryEmail:"",
     role:"Super Admin", roleAr:"مسؤول أعلى",
