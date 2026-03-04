@@ -5731,10 +5731,10 @@ const AccountProfile = () => {
   const [tab, setTab] = useState("INFO");
   const [profile, setProfile] = useState({
     name:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"Admin", nameAr:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name)||"مسؤول",
-    email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:"+966 50 XXX XXXX",
+    email:(JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").email)||"", phone:"",
     phoneVerified:true,
-    recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
-    recoveryEmail:"abdulaziz.recovery@gmail.com",
+    recoveryPhone:"", recoveryPhoneVerified:false,
+    recoveryEmail:"",
     role:"Super Admin", roleAr:"مسؤول أعلى",
     joined:"2025-09-01", lastLogin:"2026-03-02 09:14",
     twoFA:true, lang:"ar",
