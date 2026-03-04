@@ -460,110 +460,9 @@ const TanaqulLogo = ({ size=36 }) => (
   </svg>
 );
 
-const MOCK = {
-  prices: [
-    { symbol:"XAU", name:"Gold",     priceSAR:839.00,  change:+0.60 },
-    { symbol:"XAG", name:"Silver",   priceSAR:10.42,   change:-0.22 },
-    { symbol:"XPT", name:"Platinum", priceSAR:138.50,  change:+1.10 },
-  ],
-  stats: {
-    aum:"4,821,600", volumeToday:"182,400", volumeMonth:"3,240,000",
-    commissionToday:"3,648", commissionMonth:"64,800",
-    adminFeesToday:"912", adminFeesMonth:"16,200",
-    pendingWithdrawals:"124,500", totalWalletBalance:"890,200",
-    activeOrders:14, pendingAppointments:7, totalInvestors:312,
-    goldGrams:"4,820", silverGrams:"18,400", platinumGrams:"960",
-    tokensMinted:0, tokensCirculating:0, tokensPendingBurn:0,
-    lastBlock:"—", blockNumber:0,
-  },
-  investors: [
-    { id:"INV-001", nameEn:"Mohammed Al-Otaibi", nameAr:"محمد العتيبي", wallet:"0x1234...abcd", holdingsValue:"1,248,000", gold:820, silver:0,    platinum:0,  status:"ACTIVE",    joined:"2025-11-01", vaultKey:"VK-AX9F2", nationalId:"1012345678", kycExpiry:"2027-11-01", noShowCount:0 },
-    { id:"INV-002", nameEn:"Sara Al-Qahtani",    nameAr:"سارة القحطاني", wallet:"0x5678...efgh", holdingsValue:"245,200",   gold:180, silver:2400, platinum:50, status:"ACTIVE",    joined:"2025-12-15", vaultKey:"VK-BQ7T4", nationalId:"1098765432", kycExpiry:"2027-12-15", noShowCount:0 },
-    { id:"INV-003", nameEn:"Ahmed Saad",          nameAr:"أحمد سعد",      wallet:"0x9abc...ijkl", holdingsValue:"98,750",    gold:60,  silver:800,  platinum:20, status:"ACTIVE",    joined:"2026-01-03", vaultKey:"VK-CR1M8", nationalId:"1078901234", kycExpiry:"2026-04-01", noShowCount:1 },
-    { id:"INV-004", nameEn:"Fatima Hassan",       nameAr:"فاطمة حسن",     wallet:"pending",        holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"SUSPENDED", joined:"2026-01-20", vaultKey:"VK-DS5K3", nationalId:"1090123456" },
-    { id:"INV-007", nameEn:"Tariq Al-Mansour",    nameAr:"طارق المنصور",  wallet:"banned",         holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"BANNED",    joined:"2025-09-10", vaultKey:"VK-GZ9V7", nationalId:"1077654321" },
-    { id:"INV-005", nameEn:"Khalid Al-Ghamdi",   nameAr:"خالد الغامدي",  wallet:"0x2345...mnop", holdingsValue:"560,000",   gold:400, silver:1200, platinum:80, status:"ACTIVE",    joined:"2025-10-08", vaultKey:"VK-ET2P6", nationalId:"1023456789", kycExpiry:"2027-10-08", noShowCount:0 },
-    { id:"INV-006", nameEn:"Nora Al-Shehri",     nameAr:"نورة الشهري",   wallet:"0x3456...qrst", holdingsValue:"76,400",    gold:50,  silver:1000, platinum:0,  status:"ACTIVE",    joined:"2026-02-01", vaultKey:"VK-FU8N1", nationalId:"1056789012", kycExpiry:"2027-02-01", noShowCount:2 },
-    // ═══ NEW MOCK INVESTORS — expanded scenarios ═══
-    { id:"INV-008", nameEn:"Omar Al-Zahrani",    nameAr:"عمر الزهراني",  wallet:"0x4567...uvwx", holdingsValue:"312,800",   gold:200, silver:3200, platinum:40, status:"ACTIVE",    joined:"2025-08-15", vaultKey:"VK-HX3R9", nationalId:"1089012345", kycExpiry:"2026-03-10", noShowCount:0 },
-    { id:"INV-009", nameEn:"Layla Al-Dossari",   nameAr:"ليلى الدوسري",  wallet:"0x5678...yzab", holdingsValue:"890,000",   gold:600, silver:4800, platinum:100, status:"ACTIVE",   joined:"2025-07-01", vaultKey:"VK-JY4S1", nationalId:"1067890123", kycExpiry:"2027-07-01", noShowCount:0 },
-    { id:"INV-010", nameEn:"Fahad Al-Dosari",    nameAr:"فهد الدوسري",   wallet:"0x6789...cdef", holdingsValue:"45,600",    gold:30,  silver:600,  platinum:10, status:"ACTIVE",    joined:"2026-02-20", vaultKey:"VK-KZ5T2", nationalId:"1045678901", kycExpiry:"2028-02-20", noShowCount:1 },
-    { id:"INV-011", nameEn:"Reem Al-Mutairi",    nameAr:"ريم المطيري",   wallet:"0x7890...ghij", holdingsValue:"128,500",   gold:90,  silver:1800, platinum:25, status:"ACTIVE",    joined:"2025-12-01", vaultKey:"VK-LA6U3", nationalId:"1034567890", kycExpiry:"2027-12-01", noShowCount:0 },
-    { id:"INV-012", nameEn:"Bader Al-Shimmari",  nameAr:"بدر الشمري",    wallet:"0x8901...klmn", holdingsValue:"0",         gold:0,   silver:0,    platinum:0,  status:"ACTIVE",    joined:"2026-03-01", vaultKey:"VK-MB7V4", nationalId:"1023450987", kycExpiry:"2028-03-01", noShowCount:0 },
-  ],
-  bars: [
-    { id:"BAR-001", metal:"Gold",     weight:"100g", barcode:"PAMP-G100-001",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-001", deposited:"2025-11-01" },
-    { id:"BAR-002", metal:"Gold",     weight:"50g",  barcode:"PAMP-G050-002",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"FREE",   depositor:"INV-002", deposited:"2025-12-15" },
-    { id:"BAR-003", metal:"Silver",   weight:"100g", barcode:"VALC-S100-003",  manufacturer:"Valcambi SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-002", deposited:"2025-12-16" },
-    { id:"BAR-004", metal:"Gold",     weight:"25g",  barcode:"ARGOR-G025-004", manufacturer:"Argor-Heraeus", vault:"Jeddah", status:"FREE",   depositor:"INV-003", deposited:"2026-01-05" },
-    { id:"BAR-005", metal:"Platinum", weight:"10g",  barcode:"PAMP-P010-005",  manufacturer:"MKS PAMP SA",   vault:"Riyadh", status:"LINKED", depositor:"INV-005", deposited:"2025-10-10" },
-    { id:"BAR-006", metal:"Gold",     weight:"1g",   barcode:"PAMP-G001-006",  manufacturer:"MKS PAMP SA",   vault:"Jeddah", status:"FREE",    depositor:"INV-006", deposited:"2026-02-02" },
-    { id:"BAR-007", metal:"Silver",   weight:"50g",  barcode:"VALC-S050-007",  manufacturer:"Valcambi SA",   vault:"Riyadh", status:"DAMAGED", depositor:"INV-001", deposited:"2025-11-15" },
-    { id:"BAR-008", metal:"Gold",     weight:"100g", barcode:"PAMP-G100-008",  manufacturer:"MKS PAMP SA",   vault:"—",      status:"LEFT",    depositor:"INV-003", deposited:"2025-08-10", leftOn:"2026-01-20" },
-  ],
-  appointments: [
-    { id:"APT-001", investor:"Mohammed Al-Otaibi", investorPhone:"0501234567", nationalId:"1012345678", type:"DEPOSIT",    metal:"Gold",     qty:"100g", vault:"Riyadh Vault 1", date:"2026-03-01 10:00", status:"BOOKED",      fee:150, paymentMethod:"Wallet" },
-    { id:"APT-002", investor:"Sara Al-Qahtani",    investorPhone:"0507654321", nationalId:"1098765432", type:"WITHDRAWAL", metal:"Gold",     qty:"50g",  vault:"Riyadh Vault 1", date:"2026-02-28 11:00", status:"EXPIRED",     fee:100, paymentMethod:"MADA" },
-    { id:"APT-003", investor:"Ahmed Saad",         investorPhone:"0509876543", nationalId:"1078901234", type:"DEPOSIT",    metal:"Silver",   qty:"500g", vault:"Jeddah Vault 1", date:"2026-03-03 14:00", status:"BOOKED",      fee:150, paymentMethod:"Wallet" },
-    { id:"APT-004", investor:"Khalid Al-Ghamdi",   investorPhone:"0501112233", nationalId:"1023456789", type:"WITHDRAWAL", metal:"Platinum", qty:"25g",  vault:"Riyadh Vault 1", date:"2026-02-27 15:00", status:"COMPLETED",   fee:100, paymentMethod:"Visa" },
-    { id:"APT-005", investor:"Nora Al-Shehri",     investorPhone:"0503334455", nationalId:"1056789012", type:"DEPOSIT",    metal:"Gold",     qty:"200g", vault:"Jeddah Vault 1", date:"2026-03-04 09:00", status:"RESCHEDULED", fee:150, paymentMethod:"Wallet" },
-    { id:"APT-006", investor:"Fahad Al-Dosari",    investorPhone:"0506667788", nationalId:"1045678901", type:"DEPOSIT",    metal:"Gold",     qty:"50g",  vault:"Riyadh Vault 1", date:"2026-02-26 10:00", status:"NO_SHOW",     fee:150, paymentMethod:"MADA" },
-    { id:"APT-007", investor:"Lina Al-Harbi",      investorPhone:"0508889900", nationalId:"1034567890", type:"WITHDRAWAL", metal:"Silver",   qty:"250g", vault:"Jeddah Vault 1", date:"2026-02-25 14:00", status:"CANCELED",    fee:100, paymentMethod:"Wallet" },
-  ],
-  transactions: [
-    { id:"TXN-001", investor:"Mohammed Al-Otaibi", investorAr:"محمد العتيبي",   vaultKey:"VK-AX9F2", type:"BUY",  metal:"Gold",     metalAmt:"83,900",  commission:"1,678", adminFee:"420", method:"MADA",    total:"85,998",  status:"COMPLETED",  date:"2026-02-28 09:15", buyerName:"Mohammed Al-Otaibi",  buyerNationalId:"1012345678", sellerName:"Sara Al-Qahtani",    sellerNationalId:"1098765432" },
-    { id:"TXN-002", investor:"Sara Al-Qahtani",    investorAr:"سارة القحطاني", vaultKey:"VK-BQ7T4", type:"SELL", metal:"Silver",   metalAmt:"5,200",   commission:"104",   adminFee:"0",   method:"—",       total:"5,096",   status:"COMPLETED",  date:"2026-02-28 09:10", buyerName:"Khalid Al-Ghamdi",    buyerNationalId:"1023456789", sellerName:"Sara Al-Qahtani",    sellerNationalId:"1098765432" },
-    { id:"TXN-003", investor:"Khalid Al-Ghamdi",   investorAr:"خالد الغامدي",  vaultKey:"VK-ET2P6", type:"BUY",  metal:"Gold",     metalAmt:"419,455", commission:"8,389", adminFee:"0",   method:"SADAD",   total:"427,844", status:"CANCELLED",  date:"2026-02-27 14:20", buyerName:"Khalid Al-Ghamdi", buyerNationalId:"1023456789", sellerName:"Nora Al-Shehri", sellerNationalId:"1056789012" },
-    { id:"TXN-004", investor:"Ahmed Saad",          investorAr:"أحمد سعد",      vaultKey:"VK-CR1M8", type:"BUY",  metal:"Platinum", metalAmt:"6,925",   commission:"139",   adminFee:"75",  method:"Visa",    total:"7,139",   status:"COMPLETED",  date:"2026-02-27 10:00", buyerName:"Ahmed Saad", buyerNationalId:"1078901234", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
-    { id:"TXN-005", investor:"Nora Al-Shehri",     investorAr:"نورة الشهري",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Silver",   metalAmt:"10,420",  commission:"208",   adminFee:"420", method:"MADA",    total:"11,048",  status:"COMPLETED",  date:"2026-02-26 11:05", buyerName:"Nora Al-Shehri",      buyerNationalId:"1056789012", sellerName:"Fahad Al-Dosari",    sellerNationalId:"1034567890" },
-    { id:"TXN-006", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-AX9F2", type:"SELL", metal:"Gold",     metalAmt:"42,000",  commission:"840",   adminFee:"0",   method:"—",       total:"41,160",  status:"COMPLETED",  date:"2026-02-25 14:30", buyerName:"Mohammed Al-Otaibi", buyerNationalId:"1012345678", sellerName:"Fahad Al-Dosari", sellerNationalId:"1045678901" },
-    { id:"TXN-007", investor:"Mohammed Al-Otaibi", investorAr:"محمد العتيبي",   vaultKey:"VK-AX9F2", type:"BUY",  metal:"Silver",   metalAmt:"12,800",  commission:"256",   adminFee:"420", method:"Visa/MC", total:"13,476",  status:"COMPLETED",  date:"2026-02-24 10:05", buyerName:"Mohammed Al-Otaibi", buyerNationalId:"1012345678", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
-    { id:"TXN-008", investor:"Lina Al-Harbi",      investorAr:"لينا الحربي",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Gold",     metalAmt:"95,200",  commission:"1,904", adminFee:"420", method:"MADA",    total:"97,524",  status:"CANCELLED",  date:"2026-02-23 16:45", buyerName:"Lina Al-Harbi",       buyerNationalId:"1067890123", sellerName:"Omar Al-Zahrani",    sellerNationalId:"1045678901" },
-    { id:"TXN-009", investor:"Sara Al-Qahtani",    investorAr:"سارة القحطاني", vaultKey:"VK-BQ7T4", type:"SELL", metal:"Platinum", metalAmt:"8,100",   commission:"162",   adminFee:"0",   method:"—",       total:"7,938",   status:"COMPLETED",  date:"2026-02-22 09:00", buyerName:"Ahmed Saad", buyerNationalId:"1078901234", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
-    { id:"TXN-010", investor:"Ahmed Saad",          investorAr:"أحمد سعد",      vaultKey:"VK-CR1M8", type:"BUY",  metal:"Gold",     metalAmt:"210,000", commission:"4,200", adminFee:"420", method:"SADAD",   total:"214,620", status:"COMPLETED",  date:"2026-02-21 11:20", buyerName:"Ahmed Saad",          buyerNationalId:"1078901234", sellerName:"Bader Al-Shimmari",  sellerNationalId:"1089012345" },
-    { id:"TXN-011", investor:"Khalid Al-Ghamdi",   investorAr:"خالد الغامدي",  vaultKey:"VK-ET2P6", type:"SELL", metal:"Silver",   metalAmt:"3,600",   commission:"72",    adminFee:"0",   method:"—",       total:"3,528",   status:"COMPLETED",  date:"2026-02-20 13:15", buyerName:"Nora Al-Shehri", buyerNationalId:"1056789012", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
-    { id:"TXN-012", investor:"Nora Al-Shehri",     investorAr:"نورة الشهري",   vaultKey:"VK-FU8N1", type:"BUY",  metal:"Platinum", metalAmt:"15,500",  commission:"310",   adminFee:"420", method:"Visa/MC", total:"16,230",  status:"COMPLETED",  date:"2026-02-19 08:50", buyerName:"Nora Al-Shehri", buyerNationalId:"1056789012", sellerName:"Fahad Al-Dosari", sellerNationalId:"1045678901" },
-    // ═══ NEW TRANSACTIONS — trigger more AML/CMA scenarios ═══
-    { id:"TXN-013", investor:"Omar Al-Zahrani",    investorAr:"عمر الزهراني",  vaultKey:"VK-HX3R9", type:"BUY",  metal:"Gold",     metalAmt:"75,000",  commission:"1,500", adminFee:"420", method:"MADA",    total:"76,920",  status:"COMPLETED",  date:"2026-03-01 09:00", buyerName:"Omar Al-Zahrani", buyerNationalId:"1089012345", sellerName:"Layla Al-Dossari", sellerNationalId:"1067890123" },
-    { id:"TXN-014", investor:"Omar Al-Zahrani",    investorAr:"عمر الزهراني",  vaultKey:"VK-HX3R9", type:"SELL", metal:"Gold",     metalAmt:"70,000",  commission:"1,400", adminFee:"0",   method:"—",       total:"68,600",  status:"COMPLETED",  date:"2026-03-01 14:30", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Omar Al-Zahrani", sellerNationalId:"1089012345" },
-    { id:"TXN-015", investor:"Bader Al-Shimmari",  investorAr:"بدر الشمري",    vaultKey:"VK-MB7V4", type:"BUY",  metal:"Gold",     metalAmt:"50,000",  commission:"1,000", adminFee:"420", method:"SADAD",   total:"51,420",  status:"COMPLETED",  date:"2026-03-01 15:00", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Reem Al-Mutairi", sellerNationalId:"1034567890" },
-    { id:"TXN-016", investor:"Bader Al-Shimmari",  investorAr:"بدر الشمري",    vaultKey:"VK-MB7V4", type:"BUY",  metal:"Silver",   metalAmt:"10,000",  commission:"200",   adminFee:"420", method:"MADA",    total:"10,620",  status:"COMPLETED",  date:"2026-03-01 15:30", buyerName:"Bader Al-Shimmari", buyerNationalId:"1023450987", sellerName:"Ahmed Saad", sellerNationalId:"1078901234" },
-    { id:"TXN-017", investor:"Layla Al-Dossari",   investorAr:"ليلى الدوسري",  vaultKey:"VK-JY4S1", type:"BUY",  metal:"Gold",     metalAmt:"250,000", commission:"5,000", adminFee:"420", method:"MADA",    total:"255,420", status:"COMPLETED",  date:"2026-02-28 10:00", buyerName:"Layla Al-Dossari", buyerNationalId:"1067890123", sellerName:"Mohammed Al-Otaibi", sellerNationalId:"1012345678" },
-    { id:"TXN-018", investor:"Reem Al-Mutairi",    investorAr:"ريم المطيري",   vaultKey:"VK-LA6U3", type:"BUY",  metal:"Platinum", metalAmt:"20,000",  commission:"400",   adminFee:"420", method:"Visa/MC", total:"20,820",  status:"COMPLETED",  date:"2026-03-02 08:00", buyerName:"Reem Al-Mutairi", buyerNationalId:"1034567890", sellerName:"Sara Al-Qahtani", sellerNationalId:"1098765432" },
-    // Round-amount structuring pattern (R10 trigger)
-    { id:"TXN-019", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-KZ5T2", type:"BUY",  metal:"Gold",     metalAmt:"10,000",  commission:"200",   adminFee:"420", method:"MADA",    total:"10,620",  status:"COMPLETED",  date:"2026-03-01 11:00", buyerName:"Fahad Al-Dosari", buyerNationalId:"1045678901", sellerName:"Nora Al-Shehri", sellerNationalId:"1056789012" },
-    { id:"TXN-020", investor:"Fahad Al-Dosari",    investorAr:"فهد الدوسري",   vaultKey:"VK-KZ5T2", type:"BUY",  metal:"Gold",     metalAmt:"20,000",  commission:"400",   adminFee:"420", method:"SADAD",   total:"20,820",  status:"COMPLETED",  date:"2026-03-02 09:00", buyerName:"Fahad Al-Dosari", buyerNationalId:"1045678901", sellerName:"Khalid Al-Ghamdi", sellerNationalId:"1023456789" },
-  ],
-  walletMovements: [
-    { id:"WM-001", investor:"Sara Al-Qahtani",  nationalId:"1098765432", vaultKey:"VK-BQ7T4", type:"CREDIT", amount:"5,096",   reason:"Sell Proceeds",     date:"2026-02-28 09:10" },
-    { id:"WM-002", investor:"Khalid Al-Ghamdi", nationalId:"1023456789", vaultKey:"VK-ET2P6", type:"CREDIT", amount:"427,844", reason:"Order Cancellation", date:"2026-02-27 14:25" },
-    { id:"WM-003", investor:"Ahmed Saad",        nationalId:"1078901234", vaultKey:"VK-CR1M8", type:"DEBIT",  amount:"7,139",   reason:"Buy Order",          date:"2026-02-27 10:00" },
-    { id:"WM-004", investor:"Nora Al-Shehri",   nationalId:"1056789012", vaultKey:"VK-FU8N1", type:"DEBIT",  amount:"11,048",  reason:"Buy Order",          date:"2026-02-26 11:05" },
-  ],
-  withdrawalRequests: [
-    { id:"WR-001", investor:"Mohammed Al-Otaibi", nationalId:"1012345678", amount:"50,000",  bank:"SNB — ****4521",   status:"PENDING",   requested:"2026-02-27", processed:"—" },
-    { id:"WR-002", investor:"Khalid Al-Ghamdi",   nationalId:"1023456789", amount:"120,000", bank:"Riyad — ****8832", status:"APPROVED",  requested:"2026-02-25", processed:"2026-02-26" },
-    { id:"WR-003", investor:"Sara Al-Qahtani",    nationalId:"1098765432", amount:"5,096",   bank:"ANB — ****3310",   status:"PROCESSED", requested:"2026-02-24", processed:"2026-02-25" },
-    { id:"WR-004", investor:"Nora Al-Shehri",     nationalId:"1056789012", amount:"25,000",  bank:"AlRajhi — ****7712", status:"REJECTED", requested:"2026-02-23", processed:"2026-02-24", rejectReason:"Insufficient balance" },
-    { id:"WR-005", investor:"Ahmed Saad",          nationalId:"1078901234", amount:"8,400",   bank:"SNB — ****9901",   status:"PENDING",   requested:"2026-03-01", processed:"—" },
-    { id:"WR-006", investor:"Fahad Al-Dosari",    nationalId:"1034567890", amount:"200,000", bank:"Riyad — ****8832", status:"PROCESSED", requested:"2026-02-20", processed:"2026-02-22" },
-  ],
-  blacklist: [
-    { id:"BL-001", name:"Unknown",       nationalId:"1090123456", vaultKey:"—",        reason:"Pre-registration ban — fraud suspicion", bannedBy:"admin@tanaqul.sa", date:"2026-02-10" },
-    { id:"BL-002", name:"Fatima Hassan", nationalId:"1023456789", vaultKey:"VK-DS5K3", reason:"Suspicious trading activity",            bannedBy:"admin@tanaqul.sa", date:"2026-02-20" },
-  ],
-  blocks: [
-    { number:1847, hash:"0x3f9a...c821", txCount:12, commission:"3,648", tanaqulShare:"2,189", creatorShare:"730",   validatorsShare:"729",   validator:"Tanaqul Node 1", timestamp:"2026-02-28 23:59", size:"0.82 MB" },
-    { number:1846, hash:"0x2e8b...d910", txCount:8,  commission:"2,240", tanaqulShare:"1,344", creatorShare:"448",   validatorsShare:"448",   validator:"Tanaqul Node 1", timestamp:"2026-02-27 23:59", size:"0.61 MB" },
-    { number:1845, hash:"0x1d7c...e009", txCount:18, commission:"5,120", tanaqulShare:"3,072", creatorShare:"1,024", validatorsShare:"1,024", validator:"Tanaqul Node 1", timestamp:"2026-02-26 23:59", size:"0.94 MB" },
-  ],
-  validators: [
-    { id:"VAL-001", name:"Tanaqul Node 1", address:"0xAAA1...0001", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"60%", joined:"2025-09-01" },
-    { id:"VAL-002", name:"Tanaqul Node 2", address:"0xBBB2...0002", status:"ACTIVE", blocksValidated:0, lastBlock:0, commissionEarned:"0", weight:"40%", joined:"2025-11-15" },
-    { id:"VAL-003", name:"Partner Node — Elm", address:"0xCCC3...0003", status:"STANDBY", blocksValidated:0, lastBlock:1800, commissionEarned:"0", weight:"0%", joined:"2026-01-10" },
-  ],
-};
+// MOCK data removed — all data comes from live API
 
+// ─── Theme System
 // ─── Theme System — Light & Dark modes ──────────────────────────────────────
 const LIGHT_THEME = {
   navy:"#2D2418", navyDark:"#1E1810", navyLight:"#3D3225",
@@ -5548,51 +5447,29 @@ const UserManagement = () => {
   const allRoles = [...ROLES.filter(r=>r.id!=="CUSTOM"), ...customRoles, ROLES.find(r=>r.id==="CUSTOM")];
   const allRolePerms = {...ROLE_PERMS};
   customRoles.forEach(r=>{ allRolePerms[r.id]=r.perms; });
-  const [users, setUsers] = useState([
-    {id:"USR-001",name:"Abdulaziz Al-Rashid",nameAr:"عبدالعزيز الراشد",email:"admin@tanaqul.sa",role:"SUPER_ADMIN",perms:ROLE_PERMS.SUPER_ADMIN,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-02 09:14",sessions:2,created:"2025-09-01",
-      log:[
-        {date:"2026-03-02 09:14",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (196.203.x.x)",ip:"196.203.x.x"},
-        {date:"2026-03-02 09:20",action:"Changed commission rates",actionAr:"تغيير أسعار العمولة",detail:"Buyer: 1.0% → 1.2%, Seller: 1.0% → 1.1%",ip:"196.203.x.x"},
-        {date:"2026-03-01 16:45",action:"Approved withdrawal",actionAr:"الموافقة على سحب",detail:"WR-003 — SAR 25,000 — Mohammed Al-Otaibi",ip:"196.203.x.x"},
-        {date:"2026-03-01 14:10",action:"Filed SAR report",actionAr:"تقديم بلاغ SAR",detail:"SAR-24819374 — Suspicious volume pattern",ip:"196.203.x.x"},
-        {date:"2026-03-01 10:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (196.203.x.x)",ip:"196.203.x.x"},
-        {date:"2026-02-28 15:30",action:"Suspended user USR-005",actionAr:"إيقاف المستخدم USR-005",detail:"Khalid Al-Mutairi — policy violation",ip:"196.203.x.x"},
-        {date:"2026-02-28 09:00",action:"Login",actionAr:"تسجيل دخول",detail:"Safari — iPhone (196.203.x.x)",ip:"196.203.x.x"},
-        {date:"2026-02-27 11:30",action:"Updated vault settings",actionAr:"تحديث إعدادات الخزينة",detail:"Added Jeddah Vault 2",ip:"196.203.x.x"},
-      ]},
-    {id:"USR-002",name:"Noura Al-Shamsi",nameAr:"نورة الشمسي",email:"compliance@tanaqul.sa",role:"COMPLIANCE",perms:ROLE_PERMS.COMPLIANCE,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-01 16:22",sessions:1,created:"2025-10-15",
-      log:[
-        {date:"2026-03-01 16:22",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh (10.0.x.x)",ip:"10.0.x.x"},
-        {date:"2026-03-01 16:35",action:"Reviewed AML alerts",actionAr:"مراجعة تنبيهات غسل الأموال",detail:"Dismissed 3 LOW alerts, escalated 1 HIGH",ip:"10.0.x.x"},
-        {date:"2026-03-01 17:00",action:"Filed SAR report",actionAr:"تقديم بلاغ SAR",detail:"SAR-24819401 — Velocity-based detection",ip:"10.0.x.x"},
-        {date:"2026-02-28 09:15",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
-        {date:"2026-02-28 10:00",action:"PEP screening completed",actionAr:"اكتمال فحص الشخصيات المعرضة سياسياً",detail:"12 investors screened — 0 PEP matches",ip:"10.0.x.x"},
-        {date:"2026-02-27 14:20",action:"Sent CMA notification",actionAr:"إرسال إخطار الهيئة",detail:"CMA-NOTIF-38291 — Self-trade detected",ip:"10.0.x.x"},
-      ]},
-    {id:"USR-003",name:"Mohammed Al-Harbi",nameAr:"محمد الحربي",email:"vault@tanaqul.sa",role:"VAULT_MGR",perms:ROLE_PERMS.VAULT_MGR,twoFA:true,status:"ACTIVE",lastLogin:"2026-03-02 08:05",sessions:1,created:"2025-11-01",
-      log:[
-        {date:"2026-03-02 08:05",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"192.168.x.x"},
-        {date:"2026-03-02 08:30",action:"Processed appointment",actionAr:"معالجة موعد",detail:"APT-012 — Gold deposit 500g — Fahad Al-Dosari",ip:"192.168.x.x"},
-        {date:"2026-03-02 09:15",action:"Verified bar authenticity",actionAr:"التحقق من أصالة السبيكة",detail:"BAR-AU-047 — LBMA certified — 1000g",ip:"192.168.x.x"},
-        {date:"2026-03-01 08:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"192.168.x.x"},
-        {date:"2026-03-01 10:45",action:"Processed withdrawal",actionAr:"معالجة سحب",detail:"APT-009 — Silver 200g — Sara Al-Qahtani",ip:"192.168.x.x"},
-      ]},
-    {id:"USR-004",name:"Sara Al-Qahtani",nameAr:"سارة القحطاني",email:"finance@tanaqul.sa",role:"FINANCIAL",perms:ROLE_PERMS.FINANCIAL,twoFA:false,status:"ACTIVE",lastLogin:"2026-02-28 14:30",sessions:0,created:"2026-01-10",
-      log:[
-        {date:"2026-02-28 14:30",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
-        {date:"2026-02-28 15:00",action:"Approved withdrawal",actionAr:"الموافقة على سحب",detail:"WR-005 — SAR 15,000 — Noura Al-Dossari",ip:"10.0.x.x"},
-        {date:"2026-02-28 15:20",action:"Generated financial report",actionAr:"إنشاء تقرير مالي",detail:"Monthly P&L — February 2026",ip:"10.0.x.x"},
-        {date:"2026-02-27 09:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Riyadh",ip:"10.0.x.x"},
-      ]},
-    {id:"USR-005",name:"Khalid Al-Mutairi",nameAr:"خالد المطيري",email:"viewer@tanaqul.sa",role:"VIEWER",perms:ROLE_PERMS.VIEWER,twoFA:false,status:"SUSPENDED",lastLogin:"2026-02-15 10:00",sessions:0,created:"2026-02-01",
-      log:[
-        {date:"2026-02-15 10:00",action:"Login",actionAr:"تسجيل دخول",detail:"Chrome — Jeddah",ip:"85.100.x.x"},
-        {date:"2026-02-15 10:30",action:"Viewed dashboard",actionAr:"عرض لوحة التحكم",detail:"Read-only access",ip:"85.100.x.x"},
-        {date:"2026-02-14 11:00",action:"Login",actionAr:"تسجيل دخول",detail:"Firefox — Jeddah",ip:"85.100.x.x"},
-        {date:"2026-02-14 11:20",action:"Exported report",actionAr:"تصدير تقرير",detail:"Downloaded monthly overview PDF",ip:"85.100.x.x"},
-        {date:"2026-02-28 00:00",action:"Account suspended",actionAr:"إيقاف الحساب",detail:"Suspended by Super Admin (USR-001)",ip:"—"},
-      ]},
-  ]);
+  const [users, setUsers] = useState(() => {
+    // Load current admin from localStorage (no hardcoded users)
+    try {
+      const admin = JSON.parse(localStorage.getItem("tanaqul_admin") || "{}");
+      if (admin.name || admin.email) {
+        return [{
+          id: "USR-001",
+          name: admin.name || "Admin",
+          nameAr: admin.name || "مسؤول",
+          email: admin.email || "",
+          role: (admin.role || "SUPER_ADMIN").toUpperCase(),
+          perms: ROLE_PERMS[(admin.role || "SUPER_ADMIN").toUpperCase()] || ROLE_PERMS.SUPER_ADMIN,
+          twoFA: true,
+          status: "ACTIVE",
+          lastLogin: new Date().toISOString().slice(0, 16).replace("T", " "),
+          sessions: 1,
+          created: "—",
+          log: []
+        }];
+      }
+    } catch(e) {}
+    return [];
+  });
   const [modal, setModal] = useState(null); // null | "add" | user object
   const [activityModal, setActivityModal] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
@@ -6444,44 +6321,7 @@ const COMM_TEMPLATES = [
     vars:["investor"], priority:"normal"},
 ];
 
-const MOCK_MESSAGES = [
-  {id:"MSG-001",to:"Mohammed Al-Otaibi",toAr:"محمد العتيبي",toNid:"1012345678",channel:"sms",subject:"KYC Reminder",subjectAr:"تذكير بالهوية",
-    body:"Dear Mohammed, your KYC verification expires on 2027-11-01. Please renew your identity documents.",
-    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-02 09:30",deliveredAt:"2026-03-02 09:31",readAt:"2026-03-02 10:15",template:"TPL-001"},
-  {id:"MSG-002",to:"Sara Al-Qahtani",toAr:"سارة القحطاني",toNid:"1098765432",channel:"email",subject:"Withdrawal Processed",subjectAr:"تم معالجة السحب",
-    body:"Dear Sara, your withdrawal request of SAR 5,096 has been processed to ANB — ****3310.",
-    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-01 16:00",deliveredAt:"2026-03-01 16:02",readAt:null,template:"TPL-003"},
-  {id:"MSG-003",to:"Ahmed Saad",toAr:"أحمد سعد",toNid:"1078901234",channel:"sms",subject:"Appointment Confirmation",subjectAr:"تأكيد الموعد",
-    body:"Your DEPOSIT appointment for Silver (500g) at Jeddah Vault 1 is confirmed for 2026-03-03 14:00.",
-    status:"sent",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-03-01 14:00",deliveredAt:null,readAt:null,template:"TPL-002"},
-  {id:"MSG-004",to:"Nora Al-Shehri",toAr:"نورة الشهري",toNid:"1056789012",channel:"sms",subject:"No-Show Warning",subjectAr:"تحذير عدم الحضور",
-    body:"Nora, you have 2 no-shows. 3+ no-shows may result in appointment restrictions.",
-    status:"delivered",priority:"urgent",sentBy:"compliance@tanaqul.sa",sentAt:"2026-02-28 11:00",deliveredAt:"2026-02-28 11:01",readAt:"2026-02-28 12:30",template:"TPL-007"},
-  {id:"MSG-005",to:"Khalid Al-Ghamdi",toAr:"خالد الغامدي",toNid:"1023456789",channel:"push",subject:"Price Alert — Gold",subjectAr:"تنبيه سعر — ذهب",
-    body:"Gold price is now SAR 839/g — up 0.6% from yesterday. Trade now on Tanaqul.",
-    status:"read",priority:"normal",sentBy:"system",sentAt:"2026-03-02 07:00",deliveredAt:"2026-03-02 07:00",readAt:"2026-03-02 07:15",template:"TPL-005"},
-  {id:"MSG-006",to:"Bader Al-Shimmari",toAr:"بدر الشمري",toNid:"1023450987",channel:"email",subject:"Welcome to Tanaqul",subjectAr:"مرحباً بك في تناقل",
-    body:"Welcome to Tanaqul, Bader! Your account is active. Vault key: VK-MB7V4.",
-    status:"delivered",priority:"normal",sentBy:"system",sentAt:"2026-03-01 10:00",deliveredAt:"2026-03-01 10:02",readAt:"2026-03-01 10:30",template:"TPL-006"},
-  {id:"MSG-007",to:"Omar Al-Zahrani",toAr:"عمر الزهراني",toNid:"1089012345",channel:"email",subject:"AML Review Notice",subjectAr:"إشعار مراجعة AML",
-    body:"Dear Omar, your account is under routine AML review as required by SAMA regulations.",
-    status:"sent",priority:"normal",sentBy:"compliance@tanaqul.sa",sentAt:"2026-03-02 08:00",deliveredAt:null,readAt:null,template:"TPL-008"},
-  {id:"MSG-008",to:"Fatima Hassan",toAr:"فاطمة حسن",toNid:"1090123456",channel:"sms",subject:"Account Suspended",subjectAr:"تعليق الحساب",
-    body:"Dear Fatima, your Tanaqul account has been temporarily suspended pending review.",
-    status:"failed",priority:"urgent",sentBy:"admin@tanaqul.sa",sentAt:"2026-02-27 09:00",deliveredAt:null,readAt:null,template:"TPL-004",failReason:"Invalid phone number"},
-  // Broadcasts
-  {id:"MSG-B01",to:"All Active Investors (8)",toAr:"جميع المستثمرين النشطين (8)",toNid:"BROADCAST",channel:"push",subject:"Market Hours Update",subjectAr:"تحديث ساعات السوق",
-    body:"Trading hours extended to 4 PM starting March 5. More time to trade gold, silver & platinum on Tanaqul.",
-    status:"delivered",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:"2026-02-26 12:00",deliveredAt:"2026-02-26 12:05",readAt:null,template:null,isBroadcast:true,recipientCount:8},
-  // Scheduled
-  {id:"MSG-S01",to:"Layla Al-Dossari",toAr:"ليلى الدوسري",toNid:"1067890123",channel:"email",subject:"Portfolio Review",subjectAr:"مراجعة المحفظة",
-    body:"Dear Layla, your quarterly portfolio review is available. Log in to view your holdings summary.",
-    status:"scheduled",priority:"normal",sentBy:"admin@tanaqul.sa",scheduledFor:"2026-03-05 09:00",template:null},
-  // Draft
-  {id:"MSG-D01",to:"Reem Al-Mutairi",toAr:"ريم المطيري",toNid:"1034567890",channel:"sms",subject:"Promotion",subjectAr:"عرض ترويجي",
-    body:"Dear Reem, enjoy 0% commission on your next 3 trades...",
-    status:"draft",priority:"normal",sentBy:"admin@tanaqul.sa",sentAt:null,template:null},
-];
+const MOCK_MESSAGES = []; // Removed — messages loaded from API
 
 const CommCenter = () => {
   const { t, isAr } = useLang();
