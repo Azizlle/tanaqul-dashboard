@@ -9142,8 +9142,10 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("tanaqul_token"));
-  const [page,     setPage]     = useState("dashboard");
+  const [page,     setPage]     = useState(() => window.location.hash.slice(1) || "dashboard");
   const [pageHint, setPageHint] = useState(null); // {tab:"WITHDRAWAL REQUESTS"} etc.
+  useEffect(() => { window.location.hash = page; }, [page]);
+  useEffect(() => { const h = () => setPage(window.location.hash.slice(1) || "dashboard"); window.addEventListener("hashchange", h); return () => window.removeEventListener("hashchange", h); }, []);
   const [open,     setOpen]     = useState(true);
   const [lang,     setLang]     = useState(() => localStorage.getItem("tanaqul_lang") || "en");
   const [dark,     setDark]     = useState(() => localStorage.getItem("tanaqul_dark") === "true");
