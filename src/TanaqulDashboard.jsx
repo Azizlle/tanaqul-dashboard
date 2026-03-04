@@ -4104,7 +4104,7 @@ const AuditLog = () => {
 
 // ─── Price Feed Settings Component (used inside Settings → Security tab) ──────
 const PriceFeedSettings = () => {
-  const { isAr, t } = useLang();
+  const { isAr } = useLang();
   const { status, lastFetch, provider: activeProvider } = useLivePrices();
   const [provider, setProvider] = useState(localStorage.getItem("price_provider") || "metals.dev");
   const [key,      setKey]      = useState(localStorage.getItem("price_api_key")  || "");
@@ -4435,31 +4435,8 @@ const G = ({title, children}) => {
   );
 };
 
-// ─── Commission Error Boundary ───────────────────────────────────────────────
-class CommissionErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) { console.error("CommissionTab error:", error, info); }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{background:"#FBEAE5",borderRadius:14,padding:24,border:"2px solid #C85C3E33",textAlign:"center"}}>
-          <p style={{fontSize:16,fontWeight:700,color:"#C85C3E",marginBottom:8}}>⚠️ Commission tab encountered an error</p>
-          <p style={{fontSize:13,color:"#8B4A38",marginBottom:16}}>{this.state.error?.message || "Unknown error"}</p>
-          <button onClick={()=>this.setState({hasError:false,error:null})}
-            style={{padding:"8px 18px",borderRadius:8,background:"#C85C3E",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:600}}>
-            Try Again
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 // ─── Commission Tab Component ─────────────────────────────────────────────────
 const CommissionTab = ({
-
   commBuyer, setCommBuyer, commSeller, setCommSeller,
   splitBuying, setSplitBuying, splitSelling, setSplitSelling,
   splitCreator, setSplitCreator, splitValidators, setSplitValidators,
@@ -8243,7 +8220,7 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label="Fee %" value={visaFee} onChange={setVisaFee} /></G>
         <G title="SADAD — Fixed Fee"><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
       </div>}
-      {tab==="COMMISSION"&&<CommissionErrorBoundary><CommissionTab
+      {tab==="COMMISSION"&&<CommissionTab
         commBuyer={commBuyer} setCommBuyer={setCommBuyer}
         commSeller={commSeller} setCommSeller={setCommSeller}
         splitBuying={splitBuying} setSplitBuying={setSplitBuying}
@@ -8255,7 +8232,7 @@ const Settings = ({ onLangChange }) => {
         takharojWallet={takharojWallet} setTakharojWallet={setTakharojWallet}
         blocksInPeriod={blocksInPeriod} setBlocksInPeriod={setBlocksInPeriod}
         showSaved={showSaved}
-      /></CommissionErrorBoundary>}
+      />}
       {tab==="BLOCKCHAIN"&&<div>
         <G title={isAr?"الشبكة":"Network"}><Inp label={isAr?"اسم الشبكة":"Network Name"} value={netName} onChange={setNetName} /><Sel label={isAr?"البروتوكول":"Protocol"} value={protocol} onChange={setProtocol} options={[{value:"besu",label:"Hyperledger Besu"},{value:"fabric",label:"Hyperledger Fabric"}]} /><Inp label={isAr?"عنوان العقد":"Contract Address"} value={contract} onChange={setContract} /></G>
         <G title={isAr?"محفز الكتلة":"Block Trigger"}><Inp label="Max Size (MB)" value={maxMB} onChange={setMaxMB} /><Inp label="Max Time (hours)" value={maxHrs} onChange={setMaxHrs} /></G>
