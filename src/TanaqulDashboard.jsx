@@ -6571,9 +6571,10 @@ const COMM_TEMPLATES = [
 const MOCK_MESSAGES = [];
 const CommCenter = () => {
   const { t, isAr } = useLang();
-  const { investors=[] } = useAppData();
+  const { investors=[], amlAlerts=[], cmaAlerts=[], amlDismissed=new Set(), withdrawals=[], appointments=[] } = useAppData();
   const [tab, setTab] = useState("inbox");
   const [messages, setMessages] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [readSet, setReadSet] = useState(new Set());
   useEffect(()=>{
     const notifs = [];
