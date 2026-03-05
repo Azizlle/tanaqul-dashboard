@@ -5810,9 +5810,10 @@ const UserManagement = () => {
               {(allRolePerms[newUser.role]||[]).length===0&&<span style={{fontSize:13,color:C.textMuted,fontStyle:"italic"}}>{isAr?"اختر الدور أولاً":"Select role first"}</span>}
             </div>
           </div>
-          <Btn variant="gold" onClick={()=>{
+          <Btn variant="gold" onClick={async ()=>{
             if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
             const id="USR-"+String(Date.now()).slice(-3);
+            try{await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role})});}catch(e){}
             setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
             setModal(null);showToast(isAr?"✅ تم إضافة المستخدم — كلمة مرور مؤقتة أُرسلت للبريد":"✅ User added — temporary password sent to email");
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
@@ -5842,8 +5843,9 @@ const UserManagement = () => {
             {editRole!=="CUSTOM"&&<p style={{fontSize:12,color:C.textMuted,marginTop:6,fontStyle:"italic"}}>{isAr?"اختر 'مخصص' لتعديل الصلاحيات يدوياً":"Select 'Custom' role to modify permissions manually"}</p>}
           </div>
           <div style={{display:"flex",gap:8}}>
-            <Btn variant="gold" onClick={()=>{
+            <Btn variant="gold" onClick={async ()=>{
               setUsers(p=>p.map(x=>x.id===modal.id?{...x,role:editRole,perms:editRole==="CUSTOM"?editPerms:ROLE_PERMS[editRole]}:x));
+              try{await apiFetch("/admin/users/"+modal.id+"/role",{method:"POST",body:JSON.stringify({role:editRole})});}catch(e){}
               setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
             }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
             {!modal.twoFA&&<Btn variant="teal" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,twoFA:true}:x));showToast(isAr?"🔒 تم تفعيل المصادقة الثنائية":"🔒 2FA enabled");setModal(null);}}>{isAr?"تفعيل 2FA":"Enable 2FA"}</Btn>}
@@ -6121,7 +6123,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profName,phone:profPhone})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,phone:profile.phone})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
