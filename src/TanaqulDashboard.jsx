@@ -7546,6 +7546,14 @@ const Settings = ({ onLangChange }) => {
     apiFetch("/settings/cancel-fee").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&d.fee!=null) setCancelFee(String(d.fee));
     }).catch(()=>{});
+    // Load all other settings from API
+    apiFetch("/settings/platform").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.name)setPlatform(d);}).catch(()=>{});
+    apiFetch("/settings/blockchain").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.network_name)setNetName(d.network_name);if(d.protocol)setProtocol(d.protocol);if(d.contract)setContract(d.contract);if(d.max_mb)setMaxMB(String(d.max_mb));if(d.max_hrs)setMaxHrs(String(d.max_hrs));if(d.quorum)setQuorum(String(d.quorum));if(d.explorer_public!==undefined)setExplorerOn(d.explorer_public);}}).catch(()=>{});
+    apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.test_fee)setTestFee(String(d.test_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));}}).catch(()=>{});
+    apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
+    apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
+    apiFetch("/settings/reporting").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.sarEmail!==undefined)setReportingConfig(d);}).catch(()=>{});
+    apiFetch("/settings/manufacturers").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d))setManufacturers(d);}).catch(()=>{});
   },[]);
   const [tab,setTab]=useState("PLATFORM");
   const [walletOn,setWalletOn]=useState(false);
@@ -7601,6 +7609,10 @@ const Settings = ({ onLangChange }) => {
   const [fcmKey,setFcmKey]=useState("");
   // Vault
   const [vaultLocs,setVaultLocs]=useState(["Riyadh Vault 1","Jeddah Vault 1"]);
+  const [manufacturers,setManufacturers]=useState(["MKS PAMP SA (Switzerland — LBMA)","Valcambi SA (Switzerland — LBMA)","Argor-Heraeus (Switzerland — LBMA)","Royal Mint (UK — LBMA)","Saudi Aramco Refinery (KSA — GCC)"]);
+  const [newManuf,setNewManuf]=useState("");
+  const [editManufIdx,setEditManufIdx]=useState(null);
+  const [editManufVal,setEditManufVal]=useState("");
   const [newVault,setNewVault]=useState(""); const [showNewVault,setShowNewVault]=useState(false);
   const [advBook,setAdvBook]=useState("1");
   const [expiry,setExpiry]=useState("30");
@@ -7915,11 +7927,23 @@ const Settings = ({ onLangChange }) => {
         </G>
       </div>}
       {tab==="MANUFACTURERS"&&<G title={isAr?"الشركات المصنعة":"Manufacturers"}>
-        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}><Btn small variant="gold"><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Add</span></Btn></div>
-        {["MKS PAMP SA (Switzerland — LBMA)","Valcambi SA (Switzerland — LBMA)","Argor-Heraeus (Switzerland — LBMA)","Royal Mint (UK — LBMA)","Saudi Aramco Refinery (KSA — GCC)"].map(m=>(
-          <div key={m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`}}>
-            <span style={{fontSize:14,color:C.text,display:"flex",alignItems:"center",gap:6}}>{Icons.bar(16,C.textMuted)}{m}</span>
-            <div style={{display:"flex",gap:6}}><Btn small variant="outline">{isAr?"تعديل":"Edit"}</Btn><Btn small variant="danger">{t("Remove")}</Btn></div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10,gap:8}}>
+          <input value={newManuf} onChange={e=>setNewManuf(e.target.value)} placeholder={isAr?"اسم الشركة المصنعة":"Manufacturer name..."} style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none"}} />
+          <Btn small variant="gold" onClick={()=>{if(newManuf.trim()){setManufacturers(p=>[...p,newManuf.trim()]);setNewManuf("");}}}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"إضافة":"Add"}</span></Btn>
+        </div>
+        {manufacturers.map((m,idx)=>(
+          <div key={idx} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`}}>
+            {editManufIdx===idx?<div style={{display:"flex",gap:6,flex:1}}>
+              <input value={editManufVal} onChange={e=>setEditManufVal(e.target.value)} style={{flex:1,padding:"6px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14}} />
+              <Btn small variant="teal" onClick={()=>{setManufacturers(p=>p.map((x,i)=>i===idx?editManufVal:x));setEditManufIdx(null);}}>{isAr?"حفظ":"Save"}</Btn>
+              <Btn small variant="ghost" onClick={()=>setEditManufIdx(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
+            </div>:<>
+              <span style={{fontSize:14,color:C.text,display:"flex",alignItems:"center",gap:6}}>{Icons.bar(16,C.textMuted)}{m}</span>
+              <div style={{display:"flex",gap:6}}>
+                <Btn small variant="outline" onClick={()=>{setEditManufIdx(idx);setEditManufVal(m);}}>{isAr?"تعديل":"Edit"}</Btn>
+                <Btn small variant="danger" onClick={()=>setManufacturers(p=>p.filter((_,i)=>i!==idx))}>{t("Remove")}</Btn>
+              </div>
+            </>}
           </div>
         ))}
       </G>}
@@ -7937,12 +7961,19 @@ const Settings = ({ onLangChange }) => {
         </G>
         <PriceFeedSettings />
       </div>}
-      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={async ()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}try{
-            await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});
-          }catch(e){}
-          try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(buyerRate||2),seller_rate:parseFloat(sellerRate||1)})});}catch(e){}
+      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={async ()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}
+          // Save ALL settings to backend
+          try{await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});}catch(e){}
+          try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(commBuyer||2),seller_rate:parseFloat(commSeller||1)})});}catch(e){}
           try{await apiFetch("/settings/cancel-fee",{method:"PUT",body:JSON.stringify({fee:parseFloat(cancelFee||50)})});}catch(e){}
-          try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(gatewaySettings?.madaFee||1.5),mada_cap:parseFloat(gatewaySettings?.madaCap||15),visa_fee:parseFloat(gatewaySettings?.visaFee||2.5),sadad_fee:parseFloat(gatewaySettings?.sadadFee||0)})});}catch(e){}
+          try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(madaFee||1.5),mada_cap:parseFloat(madaCap||15),visa_fee:parseFloat(visaFee||2.5),sadad_fee:parseFloat(sadadFee||0),wallet_deposit:walletOn})});}catch(e){}
+          try{await apiFetch("/settings/platform",{method:"PUT",body:JSON.stringify(platform)});}catch(e){}
+          try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn})});}catch(e){}
+          try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),test_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100)})});}catch(e){}
+          try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode})});}catch(e){}
+          try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
+          try{await apiFetch("/settings/reporting",{method:"PUT",body:JSON.stringify(reportingConfig)});}catch(e){}
+          try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:manufacturers||[]})});}catch(e){}
           showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
       <div id="split-err" style={{display:"none",background:C.redBg,border:"1px solid #C85C3E44",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:14,color:"#C85C3E",fontWeight:600}}></div>
     </div>
