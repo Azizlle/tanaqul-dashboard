@@ -4,680 +4,490 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tanaqul Block Explorer</title>
-<meta name="description" content="Tanaqul Precious Metals Blockchain — Public Block Explorer">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --navy: #1A2E4A;
-  --navy-deep: #0F1D30;
-  --navy-light: #243F72;
-  --gold: #C4956A;
-  --gold-light: #D4A97A;
-  --gold-dim: #8B6540;
-  --gold-glow: rgba(196,149,106,0.15);
-  --teal: #6B9080;
-  --teal-light: #8AB4A1;
-  --bg: #0B1420;
-  --card: #111E30;
-  --card-border: #1E3250;
-  --text: #E8E0D4;
-  --text-muted: #7A8BA0;
-  --mono: 'DM Mono', monospace;
-  --sans: 'Outfit', sans-serif;
-  --red: #E8826A;
-  --green: #6B9080;
+  --bg: #0a0e1a;
+  --bg2: #111827;
+  --bg3: #1a2035;
+  --card: #151c2e;
+  --card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-light: #2a3655;
+  --gold: #d4a853;
+  --gold-dim: #b8923e;
+  --gold-light: rgba(212,168,83,0.1);
+  --teal: #2dd4bf;
+  --teal-dim: #14b8a6;
+  --teal-light: rgba(45,212,191,0.08);
+  --navy: #0f172a;
+  --text: #e2e8f0;
+  --text-muted: #64748b;
+  --text-dim: #475569;
+  --white: #f8fafc;
+  --red: #ef4444;
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Plus Jakarta Sans', sans-serif;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 400px;
-  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(196,149,106,0.08) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-.header {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(11,20,32,0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--card-border);
-  padding: 0 24px;
-}
-.header-inner {
-  max-width: 1280px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: space-between;
-  height: 64px;
-}
-.logo {
-  display: flex; align-items: center; gap: 12px;
-  text-decoration: none; color: var(--text);
-}
-.logo-icon {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, var(--navy-light), var(--gold-dim));
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800; color: var(--gold);
-  letter-spacing: -1px;
-}
-.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
-.logo-text span { color: var(--gold); }
-.logo-badge {
-  font-size: 10px; font-weight: 600; color: var(--teal);
-  background: rgba(107,144,128,0.15);
-  padding: 3px 8px; border-radius: 20px;
-  letter-spacing: 0.5px; text-transform: uppercase;
-}
-.search-box {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--card); border: 1px solid var(--card-border);
-  border-radius: 10px; padding: 8px 14px;
-  width: 380px; transition: border-color 0.2s;
-}
-.search-box:focus-within { border-color: var(--gold-dim); }
-.search-box input {
-  flex: 1; background: none; border: none; outline: none;
-  font-family: var(--mono); font-size: 13px; color: var(--text);
-}
-.search-box input::placeholder { color: var(--text-muted); }
-.search-btn {
-  background: var(--gold); color: var(--navy-deep); border: none;
-  border-radius: 6px; padding: 5px 12px; font-size: 12px;
-  font-weight: 600; cursor: pointer; font-family: var(--sans);
-  transition: background 0.2s;
-}
-.search-btn:hover { background: var(--gold-light); }
-.nav-links { display: flex; gap: 6px; }
-.nav-links a {
-  color: var(--text-muted); text-decoration: none;
-  font-size: 13px; font-weight: 500; padding: 6px 12px;
-  border-radius: 8px; transition: all 0.2s;
-}
-.nav-links a:hover, .nav-links a.active { color: var(--gold); background: var(--gold-glow); }
-.lang-switch {
-  color: var(--text-muted); text-decoration: none; font-size: 12px;
-  padding: 4px 10px; border: 1px solid var(--card-border); border-radius: 6px;
-  transition: all 0.2s;
-}
-.lang-switch:hover { color: var(--gold); border-color: var(--gold-dim); }
-.main { max-width: 1280px; margin: 0 auto; padding: 28px 24px; position: relative; z-index: 1; }
-.stats-bar {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
-  margin-bottom: 28px;
-}
-.stat-card {
-  background: var(--card); border: 1px solid var(--card-border);
-  border-radius: 14px; padding: 18px 16px;
-  transition: border-color 0.3s, transform 0.2s;
-}
-.stat-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
-.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 8px; }
-.stat-value { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
-.stat-value.gold { color: var(--gold); }
-.stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; }
+a { color:var(--teal); text-decoration:none; }
+a:hover { text-decoration:underline; }
 
-/* Block Progress Card */
-.progress-card {
-  background: linear-gradient(135deg, var(--card) 0%, rgba(196,149,106,0.08) 100%);
-  border: 1px solid var(--gold-dim);
-  border-radius: 16px; padding: 24px;
-  margin-bottom: 28px;
-  position: relative; overflow: hidden;
-}
-.progress-card::after {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: radial-gradient(circle at 70% 50%, rgba(196,149,106,0.05) 0%, transparent 50%);
-  pointer-events: none;
-}
-.progress-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px; position: relative; z-index: 1;
-}
-.progress-title { font-size: 16px; font-weight: 700; color: var(--gold); }
-.progress-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
-.pulse-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px rgba(107,144,128,0.6);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.85); }
-}
-.progress-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-  margin-bottom: 20px; position: relative; z-index: 1;
-}
-.progress-metric { display: flex; flex-direction: column; gap: 8px; }
-.progress-metric-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.progress-metric-value { font-size: 20px; font-weight: 800; }
-.progress-bar-wrap {
-  background: rgba(30,50,80,0.6);
-  border-radius: 8px; height: 10px;
-  overflow: hidden; position: relative; z-index: 1;
-}
-.progress-bar-fill {
-  height: 100%; border-radius: 8px;
-  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-  transition: width 1s ease;
-  position: relative;
-}
-.progress-bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 30px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2));
-  border-radius: 0 8px 8px 0;
-}
-.progress-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 12px; font-size: 12px; color: var(--text-muted);
-  position: relative; z-index: 1;
-}
-.progress-trigger-label {
-  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-}
-.trigger-soon { background: rgba(196,149,106,0.2); color: var(--gold); }
-.trigger-waiting { background: rgba(107,144,128,0.15); color: var(--teal); }
+/* Header */
+.header { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; backdrop-filter:blur(12px); }
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--gold),var(--gold-dim)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:var(--navy); }
+.logo-text { font-size:18px; font-weight:800; color:var(--white); letter-spacing:-0.5px; }
+.logo-sub { font-size:11px; color:var(--gold); font-weight:600; margin-left:8px; }
+.badge-mainnet { background:var(--teal-light); color:var(--teal); font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px; }
+.nav { display:flex; gap:4px; }
+.nav-btn { background:none; border:none; color:var(--text-muted); font-family:var(--sans); font-size:13px; font-weight:600; padding:8px 14px; border-radius:6px; cursor:pointer; transition:all 0.2s; }
+.nav-btn:hover { color:var(--text); background:var(--bg3); }
+.nav-btn.active { color:var(--gold); background:var(--gold-light); }
+.search-box { display:flex; align-items:center; gap:8px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:6px 12px; width:320px; }
+.search-box input { background:none; border:none; color:var(--text); font-family:var(--mono); font-size:12px; outline:none; width:100%; }
+.search-box input::placeholder { color:var(--text-dim); }
+.lang-btn { background:var(--bg3); border:1px solid var(--border); color:var(--text-muted); font-size:12px; font-weight:600; padding:6px 10px; border-radius:6px; cursor:pointer; }
 
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.section-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-.section-title .accent { color: var(--gold); }
-.table-wrap {
-  background: var(--card); border: 1px solid var(--card-border);
-  border-radius: 16px; overflow: hidden;
-}
-table { width: 100%; border-collapse: collapse; }
-thead { background: rgba(196,149,106,0.05); }
-th {
-  font-size: 11px; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.5px;
-  padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--card-border);
-}
-td {
-  padding: 14px 16px; font-size: 13px; border-bottom: 1px solid rgba(30,50,80,0.5);
-  vertical-align: middle;
-}
-tr:last-child td { border-bottom: none; }
-tr:hover { background: rgba(196,149,106,0.03); }
-.mono { font-family: var(--mono); font-size: 12px; }
-.hash { color: var(--teal-light); cursor: pointer; }
-.hash:hover { text-decoration: underline; }
-.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
-.badge-mint { background: rgba(107,144,128,0.15); color: var(--teal-light); }
-.badge-burn { background: rgba(232,130,106,0.12); color: var(--red); }
-.badge-match { background: rgba(196,149,106,0.12); color: var(--gold-light); }
-.badge-pending { background: rgba(122,139,160,0.15); color: var(--text-muted); }
-.badge-confirmed { background: rgba(107,144,128,0.15); color: var(--green); }
-.block-detail {
-  background: var(--card); border: 1px solid var(--card-border);
-  border-radius: 16px; padding: 28px; margin-bottom: 24px;
-  display: none;
-}
-.block-detail.active { display: block; }
-.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.detail-row { display: flex; flex-direction: column; gap: 4px; }
-.detail-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-.detail-value { font-size: 14px; font-weight: 500; }
-.detail-value.mono { font-family: var(--mono); font-size: 13px; color: var(--teal-light); word-break: break-all; }
-.detail-value.lg { font-size: 28px; font-weight: 800; color: var(--gold); }
-.pagination {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 16px; border-top: 1px solid var(--card-border);
-}
-.page-btn {
-  background: transparent; border: 1px solid var(--card-border);
-  color: var(--text-muted); padding: 6px 14px; border-radius: 8px;
-  font-size: 13px; cursor: pointer; font-family: var(--sans);
-  transition: all 0.2s;
-}
-.page-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
-.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.val-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-.val-card {
-  background: var(--card); border: 1px solid var(--card-border);
-  border-radius: 14px; padding: 20px; transition: all 0.3s;
-}
-.val-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
-.val-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.val-stats { display: flex; gap: 16px; }
-.val-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
-.val-stat-value { font-size: 16px; font-weight: 700; }
-.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.status-dot.active { background: var(--green); box-shadow: 0 0 6px rgba(107,144,128,0.5); }
-.status-dot.creator { background: var(--gold); box-shadow: 0 0 6px rgba(196,149,106,0.5); }
-.loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); }
-.spinner {
-  width: 24px; height: 24px; border: 2px solid var(--card-border);
-  border-top-color: var(--gold); border-radius: 50%;
-  animation: spin 0.8s linear infinite; margin-right: 12px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-.empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
-.footer {
-  max-width: 1280px; margin: 40px auto 0; padding: 24px;
-  border-top: 1px solid var(--card-border);
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 12px; color: var(--text-muted);
-}
-@media (max-width: 900px) {
-  .stats-bar { grid-template-columns: repeat(3, 1fr); }
-  .search-box { width: 240px; }
-  .detail-grid { grid-template-columns: 1fr; }
-  .progress-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 600px) {
-  .stats-bar { grid-template-columns: repeat(2, 1fr); }
-  .search-box { display: none; }
-  .nav-links { display: none; }
-  .header-inner { height: 56px; }
+/* Layout */
+.container { max-width:1200px; margin:0 auto; padding:24px; }
+
+/* Stat Cards */
+.stats-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:24px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; transition:all 0.2s; }
+.stat-card:hover { border-color:var(--border-light); background:var(--card-hover); }
+.stat-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+.stat-value { font-size:28px; font-weight:800; color:var(--white); font-family:var(--mono); }
+.stat-value.gold { color:var(--gold); }
+.stat-value.teal { color:var(--teal); }
+.stat-sub { font-size:11px; color:var(--text-dim); margin-top:4px; font-family:var(--mono); }
+
+/* Progress Card */
+.progress-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px; margin-bottom:24px; }
+.progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.progress-title { font-size:14px; font-weight:700; color:var(--white); display:flex; align-items:center; gap:8px; }
+.progress-title::before { content:'⛓'; font-size:16px; }
+.network-badge { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--green); }
+.network-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.progress-row { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:16px; }
+.progress-item label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px; font-weight:600; }
+.progress-item .val { font-size:20px; font-weight:700; color:var(--white); font-family:var(--mono); margin:6px 0; }
+.progress-item .val span { color:var(--text-dim); font-size:14px; font-weight:400; }
+.progress-bar-bg { height:6px; background:var(--bg); border-radius:3px; overflow:hidden; margin-top:4px; }
+.progress-bar { height:100%; border-radius:3px; transition:width 0.8s ease; }
+.progress-bar.size { background:linear-gradient(90deg,var(--teal),var(--blue)); }
+.progress-bar.time { background:linear-gradient(90deg,var(--gold),var(--red)); }
+.progress-footer { display:flex; justify-content:space-between; align-items:center; }
+.progress-footer span { font-size:12px; color:var(--text-dim); }
+.status-badge { font-size:11px; font-weight:700; padding:4px 10px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px; }
+.status-waiting { background:rgba(100,116,139,0.15); color:var(--text-muted); }
+.status-accumulating { background:var(--gold-light); color:var(--gold); }
+.status-ready { background:rgba(34,197,94,0.12); color:var(--green); }
+
+/* Section */
+.section { margin-bottom:24px; }
+.section-title { font-size:16px; font-weight:700; color:var(--white); margin-bottom:14px; }
+.section-title span { color:var(--gold); }
+
+/* Table */
+.table-wrap { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+table { width:100%; border-collapse:collapse; }
+thead th { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; padding:14px 16px; text-align:left; background:var(--bg3); border-bottom:1px solid var(--border); }
+tbody td { font-size:13px; color:var(--text); padding:12px 16px; border-bottom:1px solid var(--border); font-family:var(--mono); }
+tbody tr:hover { background:var(--card-hover); }
+tbody tr:last-child td { border-bottom:none; }
+.hash { color:var(--teal); font-size:11px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; text-transform:uppercase; }
+.badge-active { background:rgba(34,197,94,0.12); color:var(--green); }
+.badge-standby { background:rgba(100,116,139,0.15); color:var(--text-muted); }
+.badge-mint { background:var(--teal-light); color:var(--teal); }
+.badge-burn { background:rgba(239,68,68,0.12); color:var(--red); }
+.badge-trade { background:var(--gold-light); color:var(--gold); }
+
+/* Empty state */
+.empty { text-align:center; padding:48px; color:var(--text-dim); }
+.empty-icon { font-size:40px; margin-bottom:12px; opacity:0.4; }
+.empty-text { font-size:14px; }
+
+/* Validator card */
+.validator-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
+.validator-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; transition:all 0.2s; }
+.validator-card:hover { border-color:var(--gold-dim); }
+.val-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.val-name { font-size:15px; font-weight:700; color:var(--white); }
+.val-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); }
+.val-row:last-child { border-bottom:none; }
+.val-row .k { font-size:12px; color:var(--text-muted); }
+.val-row .v { font-size:12px; color:var(--text); font-family:var(--mono); font-weight:600; }
+
+/* Token stats */
+.token-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.token-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; text-align:center; }
+.token-metal { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.token-active { font-size:32px; font-weight:800; color:var(--gold); font-family:var(--mono); }
+.token-burned { font-size:12px; color:var(--text-dim); margin-top:4px; }
+
+/* Footer */
+.footer { text-align:center; padding:32px; color:var(--text-dim); font-size:11px; border-top:1px solid var(--border); margin-top:40px; }
+
+/* Loading */
+.loading { text-align:center; padding:32px; color:var(--text-dim); }
+.spinner { display:inline-block; width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+@media(max-width:768px) {
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .search-box { width:200px; }
+  .nav { display:none; }
+  .progress-row { grid-template-columns:1fr; }
+  .token-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="header-inner">
-    <a href="#" class="logo" onclick="showTab('blocks')">
+<!-- Header -->
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="logo">
       <div class="logo-icon">T</div>
-      <div class="logo-text">Tanaqul <span>Explorer</span></div>
-      <div class="logo-badge">Mainnet</div>
-    </a>
-    <div class="search-box">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
-      <input type="text" id="searchInput" placeholder="Search by block number, tx hash, or validator..." onkeydown="if(event.key==='Enter')doSearch()">
-      <button class="search-btn" onclick="doSearch()">Search</button>
+      <div>
+        <span class="logo-text">Tanaqul</span>
+        <span class="logo-sub">Explorer</span>
+      </div>
     </div>
-    <nav class="nav-links">
-      <a href="#" class="active" onclick="showTab('blocks')" id="nav-blocks">Blocks</a>
-      <a href="#" onclick="showTab('transactions')" id="nav-transactions">Transactions</a>
-      <a href="#" onclick="showTab('validators')" id="nav-validators">Validators</a>
-      <a href="#" onclick="showTab('tokens')" id="nav-tokens">Tokens</a>
-      <a href="explorer-ar.html" class="lang-switch">عربي</a>
-    </nav>
+    <span class="badge-mainnet">MAINNET</span>
   </div>
-</header>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('overview')">Overview</button>
+    <button class="nav-btn" onclick="showTab('blocks')">Blocks</button>
+    <button class="nav-btn" onclick="showTab('transactions')">Transactions</button>
+    <button class="nav-btn" onclick="showTab('validators')">Validators</button>
+    <button class="nav-btn" onclick="showTab('tokens')">Tokens</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="search-box">
+      <span style="color:var(--text-dim)">🔍</span>
+      <input type="text" id="searchInput" placeholder="Block #, tx hash, 0xTNQ token..." onkeydown="if(event.key==='Enter')doSearch()">
+    </div>
+    <button class="lang-btn" onclick="toggleLang()">عربي</button>
+  </div>
+</div>
 
-<main class="main">
-  <div class="stats-bar" id="statsBar">
-    <div class="stat-card"><div class="stat-label">Total Blocks</div><div class="stat-value" id="s-blocks">—</div></div>
-    <div class="stat-card"><div class="stat-label">Transactions</div><div class="stat-value" id="s-txs">—</div></div>
-    <div class="stat-card"><div class="stat-label">Validators</div><div class="stat-value" id="s-vals">—</div></div>
-    <div class="stat-card"><div class="stat-label">Tokens Active</div><div class="stat-value gold" id="s-tokens">—</div></div>
-    <div class="stat-card"><div class="stat-label">Tokenized (g)</div><div class="stat-value" id="s-grams">—</div></div>
-    <div class="stat-card"><div class="stat-label">Latest Block</div><div class="stat-value gold" id="s-latest">—</div><div class="stat-sub" id="s-latest-sub"></div></div>
+<!-- Content -->
+<div class="container">
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="stat-label">TOTAL BLOCKS</div><div class="stat-value" id="sTotalBlocks">—</div></div>
+    <div class="stat-card"><div class="stat-label">TRANSACTIONS</div><div class="stat-value" id="sTotalTx">—</div></div>
+    <div class="stat-card"><div class="stat-label">VALIDATORS</div><div class="stat-value teal" id="sValidators">—</div></div>
+    <div class="stat-card"><div class="stat-label">TOKENS ACTIVE</div><div class="stat-value" id="sTokensActive">—</div></div>
+    <div class="stat-card"><div class="stat-label">LATEST BLOCK</div><div class="stat-value gold" id="sLatestBlock">—</div><div class="stat-sub" id="sLatestTime"></div></div>
   </div>
 
-  <!-- Block Progress Card -->
+  <!-- Progress -->
   <div class="progress-card" id="progressCard">
     <div class="progress-header">
-      <div class="progress-title">⛓ Current Block Progress</div>
-      <div class="progress-status">
-        <div class="pulse-dot"></div>
-        <span id="prog-status">Network Active</span>
-      </div>
+      <div class="progress-title">Current Block Progress</div>
+      <div class="network-badge"><div class="network-dot"></div> Network Active</div>
     </div>
-    <div class="progress-grid">
-      <div class="progress-metric">
-        <div class="progress-metric-label">Current Size / Threshold</div>
-        <div class="progress-metric-value"><span id="prog-size">0</span> <span style="font-size:13px;color:var(--text-muted)">MB</span> <span style="font-size:13px;color:var(--text-muted)">of</span> <span id="prog-max-size" style="color:var(--gold)">1</span> <span style="font-size:13px;color:var(--text-muted)">MB</span></div>
+    <div class="progress-row">
+      <div class="progress-item">
+        <label>CURRENT SIZE / THRESHOLD</label>
+        <div class="val"><span id="pSize">0</span> MB <span>of <strong>1</strong> MB</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar size" id="pSizeBar" style="width:0%"></div></div>
       </div>
-      <div class="progress-metric">
-        <div class="progress-metric-label">Time Since Last Block / Max</div>
-        <div class="progress-metric-value"><span id="prog-time">—</span> <span style="font-size:13px;color:var(--text-muted)">of</span> <span id="prog-max-time" style="color:var(--gold)">24</span> <span style="font-size:13px;color:var(--text-muted)">hours</span></div>
-      </div>
-    </div>
-    <div style="display:flex;gap:16px;margin-bottom:8px;position:relative;z-index:1">
-      <div style="flex:1">
-        <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Size</div>
-        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-size-bar" style="width:0%"></div></div>
-      </div>
-      <div style="flex:1">
-        <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Time</div>
-        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-time-bar" style="width:0%"></div></div>
+      <div class="progress-item">
+        <label>TIME SINCE LAST BLOCK / MAX</label>
+        <div class="val"><span id="pTime">0</span>h <span>of <strong>24</strong> hours</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar time" id="pTimeBar" style="width:0%"></div></div>
       </div>
     </div>
     <div class="progress-footer">
-      <span><span id="prog-pending">0</span> pending transactions</span>
-      <span class="progress-trigger-label trigger-waiting" id="prog-trigger">Waiting</span>
+      <span><span id="pPending">0</span> pending transactions</span>
+      <span class="status-badge status-waiting" id="pStatus">Waiting</span>
     </div>
   </div>
 
-  <div class="block-detail" id="blockDetail"></div>
-
-  <div id="tab-blocks">
-    <div class="section-header">
-      <div class="section-title">Latest <span class="accent">Blocks</span></div>
+  <!-- Tab content -->
+  <div id="tab-overview">
+    <div class="section">
+      <div class="section-title">Latest <span>Blocks</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>BLOCK</th><th>HASH</th><th>TXNS</th><th>CREATOR</th><th>SIZE</th><th>TIME</th></tr></thead>
+          <tbody id="blocksTableBody"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Block</th><th>Hash</th><th>Txns</th><th>Creator</th><th>Size</th><th>Time</th></tr></thead>
-        <tbody id="blocksTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading blocks...</div></td></tr></tbody>
-      </table>
-      <div class="pagination" id="blocksPagination"></div>
+  </div>
+
+  <div id="tab-blocks" style="display:none">
+    <div class="section">
+      <div class="section-title">All <span>Blocks</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>BLOCK</th><th>HASH</th><th>TXNS</th><th>COMMISSION</th><th>CREATOR</th><th>SIZE</th><th>TIME</th></tr></thead>
+          <tbody id="allBlocksBody"><tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div id="tab-transactions" style="display:none">
-    <div class="section-header">
-      <div class="section-title">Recent <span class="accent">Transactions</span></div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Hash</th><th>Type</th><th>Metal</th><th>Grams</th><th>Status</th><th>Time</th></tr></thead>
-        <tbody id="txTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
-      </table>
+    <div class="section">
+      <div class="section-title">All <span>Transactions</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>TYPE</th><th>METAL</th><th>GRAMS</th><th>COMMISSION</th><th>STATUS</th><th>TIME</th></tr></thead>
+          <tbody id="txTableBody"><tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div id="tab-validators" style="display:none">
-    <div class="section-header">
-      <div class="section-title">Active <span class="accent">Validators</span></div>
+    <div class="section">
+      <div class="section-title">Active <span>Validators</span></div>
+      <div class="validator-grid" id="validatorGrid"><div class="loading"><span class="spinner"></span>Loading...</div></div>
     </div>
-    <div class="val-grid" id="validatorsGrid"><div class="loading"><div class="spinner"></div>Loading...</div></div>
   </div>
 
   <div id="tab-tokens" style="display:none">
-    <div class="section-header">
-      <div class="section-title">Token <span class="accent">Supply</span></div>
+    <div class="section">
+      <div class="section-title">Token <span>Statistics</span></div>
+      <div class="token-grid" id="tokenGrid"><div class="loading"><span class="spinner"></span>Loading...</div></div>
     </div>
-    <div id="tokenSupply"></div>
   </div>
-</main>
 
-<footer class="footer">
-  <div>Tanaqul Blockchain Explorer — Proof of Authority (PoA)</div>
-  <div>Powered by Tanaqul Platform</div>
-</footer>
+  <!-- Search Results -->
+  <div id="tab-search" style="display:none">
+    <div class="section">
+      <div class="section-title">Search <span>Results</span></div>
+      <div id="searchResults"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Tanaqul Blockchain Explorer — Proof of Authority (PoA) · Powered by Tanaqul Platform<br>
+  بسم الله الرحمن الرحيم
+</div>
 
 <script>
-const API = window.TANAQUL_API || "https://tanaqul-production.up.railway.app/api/v1";
-let currentPage = 1;
-let currentTab = "blocks";
+const API = 'https://tanaqul-production.up.railway.app/api/v1/public/explorer';
+let currentTab = 'overview';
 
-const fmt = n => typeof n==="number" ? n.toLocaleString() : n;
-const short = (h,n=10) => h ? (h.length>n*2 ? h.slice(0,n)+"..."+h.slice(-n) : h) : "—";
-const ago = iso => {
-  if(!iso) return "—";
-  const s = Math.floor((Date.now()-new Date(iso).getTime())/1000);
-  if(s<60) return s+"s ago";
-  if(s<3600) return Math.floor(s/60)+"m ago";
-  if(s<86400) return Math.floor(s/3600)+"h ago";
-  return Math.floor(s/86400)+"d ago";
-};
-const hoursAgo = iso => {
-  if(!iso) return null;
-  return ((Date.now()-new Date(iso).getTime())/3600000).toFixed(1);
-};
-const typeBadge = t => {
-  const m = {MINT:"badge-mint",BURN:"badge-burn",MATCH:"badge-match",PENDING:"badge-pending",CONFIRMED:"badge-confirmed"};
-  return `<span class="badge ${m[t]||"badge-pending"}">${t}</span>`;
-};
-
+// ── API Helper ──
 async function api(path) {
   try {
-    const r = await fetch(API+path);
-    if(!r.ok) throw new Error(r.status);
+    const r = await fetch(API + path);
+    if (!r.ok) throw new Error(r.status);
     return await r.json();
-  } catch(e) { console.error("API Error:",path,e); return null; }
-}
-
-// — Stats
-async function loadStats() {
-  const d = await api("/public/explorer/network");
-  if(!d) return;
-  document.getElementById("s-blocks").textContent = fmt(d.total_blocks);
-  document.getElementById("s-txs").textContent = fmt(d.total_transactions);
-  document.getElementById("s-vals").textContent = fmt(d.active_validators);
-  document.getElementById("s-tokens").textContent = fmt(d.active_tokens);
-  document.getElementById("s-grams").textContent = fmt(Math.round(d.total_tokenized_grams))+"g";
-  if(d.latest_block) {
-    document.getElementById("s-latest").textContent = "#"+fmt(d.latest_block.number);
-    document.getElementById("s-latest-sub").textContent = ago(d.latest_block.created_at);
+  } catch(e) {
+    console.warn('API Error: ' + path, e.message);
+    return null;
   }
 }
 
-// — Block Progress
-async function loadProgress() {
-  const d = await api("/public/explorer/progress");
-  if(!d) return;
-
-  const pendingCount = d.pending_transactions || 0;
-  const pendingSizeMB = d.pending_size_mb || 0;
-  const maxSizeMB = d.trigger_settings?.size_mb || 1;
-  const maxHours = d.trigger_settings?.hours || 24;
-  const hoursSinceLast = d.hours_since_last_block;
-
-  document.getElementById("prog-size").textContent = pendingSizeMB.toFixed(2);
-  document.getElementById("prog-max-size").textContent = maxSizeMB;
-  document.getElementById("prog-max-time").textContent = maxHours;
-  document.getElementById("prog-pending").textContent = fmt(pendingCount);
-  document.getElementById("prog-time").textContent = hoursSinceLast !== null ? hoursSinceLast.toFixed(1)+"h" : "No blocks yet";
-
-  const sizePct = Math.min(100, (pendingSizeMB / maxSizeMB) * 100);
-  const timePct = hoursSinceLast !== null ? Math.min(100, (hoursSinceLast / maxHours) * 100) : 0;
-
-  document.getElementById("prog-size-bar").style.width = sizePct + "%";
-  document.getElementById("prog-time-bar").style.width = timePct + "%";
-
-  if(sizePct > 80) document.getElementById("prog-size-bar").style.background = "linear-gradient(90deg, var(--red), var(--gold))";
-  if(timePct > 80) document.getElementById("prog-time-bar").style.background = "linear-gradient(90deg, var(--red), var(--gold))";
-
-  const trigEl = document.getElementById("prog-trigger");
-  if(d.should_trigger) {
-    trigEl.textContent = "Ready to Create";
-    trigEl.className = "progress-trigger-label trigger-soon";
-  } else if(pendingCount > 0) {
-    trigEl.textContent = "Collecting Transactions";
-    trigEl.className = "progress-trigger-label trigger-waiting";
-  } else {
-    trigEl.textContent = "Waiting";
-    trigEl.className = "progress-trigger-label trigger-waiting";
-  }
-}
-
-// — Blocks
-async function loadBlocks(page=1) {
-  currentPage = page;
-  const d = await api(`/public/explorer/blocks?page=${page}&limit=15`);
-  const tb = document.getElementById("blocksTable");
-  if(!d||!d.blocks.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">⛓️</div>No blocks yet</div></td></tr>'; return; }
-  tb.innerHTML = d.blocks.map(b => `
-    <tr style="cursor:pointer" onclick="loadBlockDetail(${b.number})">
-      <td><strong style="color:var(--gold)">#${fmt(b.number)}</strong></td>
-      <td><span class="mono hash">${short(b.hash,8)}</span></td>
-      <td>${b.tx_count}</td>
-      <td>${b.creator||"—"}</td>
-      <td class="mono">${b.size_mb} MB</td>
-      <td style="color:var(--text-muted)">${ago(b.created_at)}</td>
-    </tr>
-  `).join("");
-  const pg = document.getElementById("blocksPagination");
-  let html = `<button class="page-btn" ${page<=1?"disabled":""} onclick="loadBlocks(${page-1})">← Prev</button>`;
-  html += `<span style="font-size:13px;color:var(--text-muted)">Page ${page} of ${d.pages}</span>`;
-  html += `<button class="page-btn" ${page>=d.pages?"disabled":""} onclick="loadBlocks(${page+1})">Next →</button>`;
-  pg.innerHTML = html;
-}
-
-async function loadBlockDetail(num) {
-  const d = await api(`/public/explorer/blocks/${num}`);
-  if(!d) return;
-  const el = document.getElementById("blockDetail");
-  el.className = "block-detail active";
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:28px;font-weight:800;color:var(--gold)">Block #${fmt(d.number)}</span>
-        ${d.quorum_met?'<span class="badge badge-confirmed">Quorum Met</span>':'<span class="badge badge-pending">Pending</span>'}
-      </div>
-      <button onclick="document.getElementById('blockDetail').className='block-detail'" style="background:none;border:1px solid var(--card-border);color:var(--text-muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:var(--sans)">✕ Close</button>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-row"><div class="detail-label">Block Hash</div><div class="detail-value mono">${d.hash}</div></div>
-      <div class="detail-row"><div class="detail-label">Previous Hash</div><div class="detail-value mono">${d.prev_hash}</div></div>
-      <div class="detail-row"><div class="detail-label">Merkle Root</div><div class="detail-value mono">${d.merkle_root}</div></div>
-      <div class="detail-row"><div class="detail-label">Created</div><div class="detail-value">${new Date(d.created_at).toLocaleString()}</div></div>
-      <div class="detail-row"><div class="detail-label">Creator</div><div class="detail-value">${d.creator} <span class="mono" style="color:var(--text-muted)">${d.creator_id||""}</span></div></div>
-      <div class="detail-row"><div class="detail-label">Size</div><div class="detail-value">${d.size_mb} MB (${fmt(d.size_bytes)} bytes)</div></div>
-    </div>
-    <div style="margin-top:16px">
-      <div class="section-title" style="font-size:15px;margin-bottom:12px">${d.transactions.length} Transaction${d.transactions.length!==1?"s":""}</div>
-      ${d.transactions.length?`<div class="table-wrap"><table>
-        <thead><tr><th>Hash</th><th>Type</th><th>Metal</th><th>Grams</th></tr></thead>
-        <tbody>${d.transactions.map(tx=>`
-          <tr>
-            <td><span class="mono hash">${short(tx.tx_hash,8)}</span></td>
-            <td>${typeBadge(tx.tx_type)}</td>
-            <td>${tx.metal||"—"}</td>
-            <td class="mono">${tx.grams||"—"}</td>
-          </tr>
-        `).join("")}</tbody>
-      </table></div>`:'<div class="empty-state">No transactions in this block</div>'}
-    </div>
-  `;
-  el.scrollIntoView({behavior:"smooth",block:"start"});
-}
-
-// — Transactions
-async function loadTransactions() {
-  const d = await api("/public/explorer/transactions/recent?limit=30");
-  const tb = document.getElementById("txTable");
-  if(!d||!d.transactions.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div>No transactions yet</div></td></tr>'; return; }
-  tb.innerHTML = d.transactions.map(tx => `
-    <tr>
-      <td><span class="mono hash" onclick="loadTxDetail('${tx.tx_hash}')">${short(tx.tx_hash,8)}</span></td>
-      <td>${typeBadge(tx.tx_type)}</td>
-      <td>${tx.metal||"—"}</td>
-      <td class="mono">${tx.grams||"—"}</td>
-      <td>${typeBadge(tx.status)}</td>
-      <td style="color:var(--text-muted)">${ago(tx.created_at)}</td>
-    </tr>
-  `).join("");
-}
-
-async function loadTxDetail(hash) {
-  const d = await api(`/public/explorer/tx/${hash}`);
-  if(!d) { alert("Transaction not found"); return; }
-  const el = document.getElementById("blockDetail");
-  el.className = "block-detail active";
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <span style="font-size:20px;font-weight:700">Transaction Detail</span>
-      <button onclick="document.getElementById('blockDetail').className='block-detail'" style="background:none;border:1px solid var(--card-border);color:var(--text-muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:var(--sans)">✕ Close</button>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-row"><div class="detail-label">Hash</div><div class="detail-value mono">${d.tx_hash}</div></div>
-      <div class="detail-row"><div class="detail-label">Type</div><div class="detail-value">${typeBadge(d.tx_type)}</div></div>
-      <div class="detail-row"><div class="detail-label">Metal</div><div class="detail-value">${d.metal||"—"}</div></div>
-      <div class="detail-row"><div class="detail-label">Grams</div><div class="detail-value">${d.grams||"—"}</div></div>
-      <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value">${typeBadge(d.status)}</div></div>
-      ${d.block?`<div class="detail-row"><div class="detail-label">Block</div><div class="detail-value"><span style="color:var(--gold);cursor:pointer" onclick="loadBlockDetail(${d.block.number})">#${d.block.number}</span> <span class="mono" style="color:var(--text-muted)">${short(d.block.hash,8)}</span></div></div>`:""}
-      <div class="detail-row"><div class="detail-label">Created</div><div class="detail-value">${new Date(d.created_at).toLocaleString()}</div></div>
-    </div>
-  `;
-  el.scrollIntoView({behavior:"smooth"});
-}
-
-// — Validators
-async function loadValidators() {
-  const d = await api("/public/explorer/validators");
-  const grid = document.getElementById("validatorsGrid");
-  if(!d||!d.validators.length) { grid.innerHTML = '<div class="empty-state"><div class="icon">🛡️</div>No active validators</div>'; return; }
-  grid.innerHTML = d.validators.map(v => `
-    <div class="val-card">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span class="status-dot ${v.can_create?'creator':'active'}"></span>
-        <span class="val-name">${v.name}</span>
-        ${v.can_create?'<span class="badge badge-mint" style="font-size:10px">Creator</span>':""}
-      </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">
-        Joined ${v.joined_at?new Date(v.joined_at).toLocaleDateString():"—"}
-      </div>
-      <div class="val-stats">
-        <div><div class="val-stat-label">Blocks</div><div class="val-stat-value">${fmt(v.blocks_validated)}</div></div>
-        <div><div class="val-stat-label">Weight</div><div class="val-stat-value">${v.weight}%</div></div>
-      </div>
-    </div>
-  `).join("");
-}
-
-// — Token Supply
-async function loadTokenSupply() {
-  const d = await api("/public/explorer/tokens/supply");
-  const el = document.getElementById("tokenSupply");
-  if(!d) { el.innerHTML = '<div class="empty-state"><div class="icon">🪙</div>No token data</div>'; return; }
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:24px">
-      <div class="stat-card">
-        <div class="stat-label">Circulating Tokens</div>
-        <div class="stat-value gold">${fmt(d.circulating.count)}</div>
-        <div class="stat-sub">${fmt(d.circulating.grams)}g total</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Burned Tokens</div>
-        <div class="stat-value">${fmt(d.burned.count)}</div>
-        <div class="stat-sub">${fmt(d.burned.grams)}g burned</div>
-      </div>
-    </div>
-    <div class="section-title" style="font-size:15px;margin-bottom:14px">Supply by <span class="accent">Metal</span></div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-      ${["Gold","Silver","Platinum"].map(m => {
-        const data = d.by_metal[m]||{count:0,grams:0};
-        const colors = {Gold:"#C4956A",Silver:"#A8B4C0",Platinum:"#8B9DAF"};
-        return `<div class="stat-card" style="border-left:3px solid ${colors[m]}">
-          <div class="stat-label">${m}</div>
-          <div class="stat-value" style="color:${colors[m]}">${fmt(data.count)}</div>
-          <div class="stat-sub">${fmt(data.grams)}g</div>
-        </div>`;
-      }).join("")}
-    </div>
-  `;
-}
-
-// — Navigation
+// ── Tab Navigation ──
 function showTab(tab) {
   currentTab = tab;
-  ["blocks","transactions","validators","tokens"].forEach(t => {
-    document.getElementById("tab-"+t).style.display = t===tab?"block":"none";
-    const nav = document.getElementById("nav-"+t);
-    if(nav) nav.className = t===tab?"active":"";
-  });
-  document.getElementById("blockDetail").className = "block-detail";
-  if(tab==="blocks") loadBlocks(1);
-  if(tab==="transactions") loadTransactions();
-  if(tab==="validators") loadValidators();
-  if(tab==="tokens") loadTokenSupply();
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('tab-' + tab).style.display = '';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  if (tab === 'blocks') loadAllBlocks();
+  if (tab === 'transactions') loadTransactions();
+  if (tab === 'validators') loadValidators();
+  if (tab === 'tokens') loadTokens();
 }
 
-// — Search
+// ── Load Network Stats ──
+async function loadStats() {
+  const d = await api('/network');
+  if (!d) return;
+  document.getElementById('sTotalBlocks').textContent = d.total_blocks || 0;
+  document.getElementById('sTotalTx').textContent = d.total_transactions || 0;
+  document.getElementById('sValidators').textContent = d.active_validators || 0;
+  document.getElementById('sTokensActive').textContent = d.tokens_active || 0;
+  document.getElementById('sLatestBlock').textContent = d.latest_block ? '#' + d.latest_block : '#0';
+  if (d.latest_block_time) {
+    const t = new Date(d.latest_block_time);
+    document.getElementById('sLatestTime').textContent = t.toLocaleString();
+  }
+}
+
+// ── Load Progress ──
+async function loadProgress() {
+  const d = await api('/progress');
+  if (!d) return;
+  document.getElementById('pSize').textContent = d.current_size_mb || 0;
+  document.getElementById('pTime').textContent = d.hours_since_last_block || 0;
+  document.getElementById('pPending').textContent = d.pending_transactions || 0;
+
+  const sizePct = Math.min(100, (d.current_size_mb / d.max_size_mb) * 100);
+  const timePct = Math.min(100, (d.hours_since_last_block / d.max_hours) * 100);
+  document.getElementById('pSizeBar').style.width = sizePct + '%';
+  document.getElementById('pTimeBar').style.width = timePct + '%';
+
+  const statusEl = document.getElementById('pStatus');
+  statusEl.textContent = (d.status || 'waiting').charAt(0).toUpperCase() + (d.status || 'waiting').slice(1);
+  statusEl.className = 'status-badge status-' + (d.status || 'waiting');
+}
+
+// ── Load Blocks (overview) ──
+async function loadBlocks() {
+  const d = await api('/blocks?page=1&limit=10');
+  const tbody = document.getElementById('blocksTableBody');
+  if (!d || !d.items || d.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">⛓</div><div class="empty-text">No blocks yet</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = d.items.map(b => `<tr>
+    <td style="font-weight:700;color:var(--gold)">#${b.number}</td>
+    <td class="hash" title="${b.hash}">${b.hash.slice(0,18)}...</td>
+    <td>${b.tx_count}</td>
+    <td style="color:var(--teal)">${b.validator_name || '—'}</td>
+    <td>${b.size_bytes ? (b.size_bytes/1024).toFixed(1)+'KB' : '—'}</td>
+    <td style="color:var(--text-muted)">${b.created_at ? timeAgo(b.created_at) : '—'}</td>
+  </tr>`).join('');
+}
+
+// ── Load All Blocks ──
+async function loadAllBlocks() {
+  const d = await api('/blocks?page=1&limit=50');
+  const tbody = document.getElementById('allBlocksBody');
+  if (!d || !d.items || d.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">⛓</div><div class="empty-text">No blocks yet</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = d.items.map(b => `<tr>
+    <td style="font-weight:700;color:var(--gold)">#${b.number}</td>
+    <td class="hash" title="${b.hash}">${b.hash.slice(0,18)}...</td>
+    <td>${b.tx_count}</td>
+    <td style="color:var(--gold)">${b.commission} SAR</td>
+    <td style="color:var(--teal)">${b.validator_name || '—'}</td>
+    <td>${b.size_bytes ? (b.size_bytes/1024).toFixed(1)+'KB' : '—'}</td>
+    <td style="color:var(--text-muted)">${b.created_at ? timeAgo(b.created_at) : '—'}</td>
+  </tr>`).join('');
+}
+
+// ── Load Transactions ──
+async function loadTransactions() {
+  const d = await api('/transactions?page=1&limit=50');
+  const tbody = document.getElementById('txTableBody');
+  if (!d || !d.items || d.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No transactions yet</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = d.items.map(t => {
+    const typeBadge = t.type === 'MINT' ? 'badge-mint' : t.type === 'BURN' ? 'badge-burn' : 'badge-trade';
+    return `<tr>
+      <td style="font-weight:600">${t.display_id}</td>
+      <td><span class="badge ${typeBadge}">${t.type}</span></td>
+      <td>${t.metal}</td>
+      <td style="font-weight:600">${t.grams}g</td>
+      <td style="color:var(--gold)">${t.commission} SAR</td>
+      <td><span class="badge badge-active">${t.status}</span></td>
+      <td style="color:var(--text-muted)">${t.created_at ? timeAgo(t.created_at) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Load Validators ──
+async function loadValidators() {
+  const d = await api('/validators');
+  const grid = document.getElementById('validatorGrid');
+  if (!d || !d.items || d.items.length === 0) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🛡</div><div class="empty-text">No active validators</div></div>';
+    return;
+  }
+  grid.innerHTML = d.items.map(v => `<div class="validator-card">
+    <div class="val-header">
+      <span class="val-name">${v.name}</span>
+      <span class="badge ${v.status==='ACTIVE'?'badge-active':'badge-standby'}">${v.status}</span>
+    </div>
+    <div class="val-row"><span class="k">Display ID</span><span class="v">${v.display_id}</span></div>
+    <div class="val-row"><span class="k">Address</span><span class="v hash" title="${v.address}">${(v.address||'').slice(0,28)}...</span></div>
+    <div class="val-row"><span class="k">Blocks Validated</span><span class="v" style="color:var(--gold)">${v.blocks_validated}</span></div>
+    <div class="val-row"><span class="k">Last Block</span><span class="v">#${v.last_block || '—'}</span></div>
+    <div class="val-row"><span class="k">Commission Earned</span><span class="v" style="color:var(--teal)">${v.commission_earned} SAR</span></div>
+    <div class="val-row"><span class="k">Weight</span><span class="v">${v.weight_percent}%</span></div>
+    <div class="val-row"><span class="k">Joined</span><span class="v">${v.joined_at ? new Date(v.joined_at).toLocaleDateString() : '—'}</span></div>
+  </div>`).join('');
+}
+
+// ── Load Tokens ──
+async function loadTokens() {
+  const d = await api('/tokens');
+  const grid = document.getElementById('tokenGrid');
+  if (!d) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🪙</div><div class="empty-text">No token data</div></div>';
+    return;
+  }
+  const metals = d.by_metal || {};
+  grid.innerHTML = ['gold','silver','platinum'].map(m => {
+    const s = metals[m] || {active:0,burned:0,total_minted:0};
+    const icon = m==='gold'?'🥇':m==='silver'?'🥈':'⚪';
+    return `<div class="token-card">
+      <div style="font-size:28px;margin-bottom:8px">${icon}</div>
+      <div class="token-metal">${m}</div>
+      <div class="token-active">${s.active}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">active tokens (grams)</div>
+      <div class="token-burned">🔥 ${s.burned} burned · ${s.total_minted} total minted</div>
+    </div>`;
+  }).join('') + `<div class="token-card" style="grid-column:1/-1;text-align:center;padding:14px">
+    <span style="font-size:13px;color:var(--text-muted)">Total Active: <strong style="color:var(--gold)">${d.total_active}</strong> · Total Burned: <strong style="color:var(--red)">${d.total_burned}</strong> · Total Minted: <strong style="color:var(--teal)">${d.total_minted}</strong></span>
+  </div>`;
+}
+
+// ── Search ──
 async function doSearch() {
-  const q = document.getElementById("searchInput").value.trim();
-  if(!q) return;
-  if(/^\d+$/.test(q)) { loadBlockDetail(parseInt(q)); return; }
-  if(q.startsWith("0x")||q.length===64||q.length===66) { loadTxDetail(q); return; }
-  if(q.toUpperCase().startsWith("VAL")||q.toUpperCase().startsWith("TANAQUL")) { showTab("validators"); return; }
-  showTab("blocks");
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('tab-search').style.display = '';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const d = await api('/search?q=' + encodeURIComponent(q));
+  const el = document.getElementById('searchResults');
+  if (!d || d.total === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No results for "'+q+'"</div></div>';
+    return;
+  }
+  el.innerHTML = d.results.map(r => {
+    if (r.type === 'block') return `<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Block #${r.number}</div><div class="hash">${r.hash}</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">${r.tx_count} transactions · ${r.created_at}</div></div>`;
+    if (r.type === 'token') return `<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">${r.token_id}</div><div>${r.metal} · <span class="badge badge-${r.status==='ACTIVE'?'active':'burn'}">${r.status}</span></div></div>`;
+    if (r.type === 'transaction') return `<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">${r.display_id}</div><div>${r.tx_type} · ${r.metal} · ${r.grams}g</div></div>`;
+    return '';
+  }).join('');
 }
 
-// — Init
+// ── Time Ago ──
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+// ── Lang Toggle (placeholder) ──
+function toggleLang() {
+  document.documentElement.dir = document.documentElement.dir === 'rtl' ? 'ltr' : 'rtl';
+}
+
+// ── Init ──
 loadStats();
-loadBlocks(1);
 loadProgress();
+loadBlocks();
 setInterval(loadStats, 30000);
 setInterval(loadProgress, 30000);
 </script>
