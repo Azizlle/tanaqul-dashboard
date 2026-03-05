@@ -71,10 +71,12 @@ const AppDataContext = createContext({
   matches:[], setMatches:()=>{},
   validators:[], setValidators:()=>{},
   blacklist:[], setBlacklist:()=>{},
+  transactions:[], setTransactions:()=>{},
   auditLog:[], addAudit:()=>{},
   amlAlerts:[], cmaAlerts:[], amlDismissed:new Set(), dismissAmlAlert:()=>{}, amlLastRun:null,
   pageHint:null, setPageHint:()=>{},
   mmAccount:null, setMMAccount:()=>{}, reconState:null, setReconState:()=>{},
+  appBlocks:[], appBlockStats:null, appDashStats:null,
 });
 const useAppData = () => useContext(AppDataContext);
 
@@ -1165,7 +1167,7 @@ const Dashboard = () => {
   const adminAll    = matches.reduce((a,m)=>a+(Number(m.adminFee)||0),0);
 
   const pendingW    = withdrawals.filter(w=>w.status==="PENDING").length;
-  const walletBal   = walletMovements.reduce((a,w)=>{const raw=w.amount; const amt=typeof raw==="number"?raw:(parseFloat(String(raw).replace(/,/g,""))||0); return a+(w.type==="CREDIT"?amt:-amt);},0);
+  const walletBal   = (walletMovements||[]).reduce((a,w)=>{const raw=w.amount; const amt=typeof raw==="number"?raw:(parseFloat(String(raw).replace(/,/g,""))||0); return a+(w.type==="CREDIT"?amt:-amt);},0);
   const activeOrd   = orders.filter(o=>o.status==="OPEN"||o.status==="PARTIAL").length;
   const pendingAppt = appointments.filter(a=>a.status==="BOOKED"||a.status==="RESCHEDULED").length;
   const totalInv    = investors.length;
