@@ -5632,7 +5632,7 @@ const UserManagement = () => {
   customRoles.forEach(r=>{ allRolePerms[r.id]=r.perms; });
   const [users, setUsers] = useState([]);
   useEffect(()=>{
-    apiFetch("/users").then(r=>r&&r.ok?r.json():null).then(d=>{
+    apiFetch("/admin/users").then(r=>r&&r.ok?r.json():null).then(d=>{
       const items = d?.items || d?.users || (Array.isArray(d)?d:[]);
       if(items.length) setUsers(items.map(u=>({
         id: u.display_id||u.id, name: u.name_en||u.name||"",
