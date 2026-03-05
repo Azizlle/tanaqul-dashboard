@@ -8579,9 +8579,9 @@ const TreasuryReconciliation = () => {
         action={<Btn variant="teal" onClick={runRecon} disabled={reconState.running}>{reconState.running?"Running...":"Run Reconciliation"}</Btn>} />
       {reconState.lastRecon&&<p style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Last: {new Date(reconState.lastRecon).toLocaleString()} — {reconState.status}</p>}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
-        <StatCard icon={Icons.finance(22,C.gold)} title="Total Trading Volume" value={<SARAmount amount={fmt0(overview?.totalVolume||totalVol)}/>} />
+        <StatCard icon={Icons.financials(22,C.gold)} title="Total Trading Volume" value={<SARAmount amount={fmt0(overview?.totalVolume||totalVol)}/>} />
         <StatCard icon={Icons.commission(22,C.teal)} title="Platform Commission" value={<SARAmount amount={fmt0(overview?.totalCommission||totalComm)}/>} />
-        <StatCard icon={Icons.finance(22,"#C85C3E")} title="Total Withdrawals" value={<SARAmount amount={fmt0(overview?.totalWithdrawals||totalWd)}/>} />
+        <StatCard icon={Icons.financials(22,"#C85C3E")} title="Total Withdrawals" value={<SARAmount amount={fmt0(overview?.totalWithdrawals||totalWd)}/>} />
       </div>
       {loading?<p style={{color:C.textMuted,padding:20}}>{t("Loading treasury data...")}</p>:
       overview?(
