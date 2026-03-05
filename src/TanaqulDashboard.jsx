@@ -6007,9 +6007,10 @@ const UserManagement = () => {
 const AccountProfile = () => {
   const { isAr, t } = useLang();
   const [tab, setTab] = useState("INFO");
+  const _adminData = (() => { try { return JSON.parse(localStorage.getItem("tanaqul_admin")||"{}"); } catch(e) { return {}; } })();
   const [profile, setProfile] = useState({
-    name:currentAdmin?.split("@")[0]||"Admin", nameAr:"",
-    email:"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
+    name:_adminData.name||_adminData.email?.split("@")[0]||"Admin", nameAr:"",
+    email:_adminData.email||"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
     phoneVerified:true,
     recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
     recoveryEmail:"abdulaziz.recovery@gmail.com",
