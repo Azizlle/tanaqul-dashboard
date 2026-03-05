@@ -1311,7 +1311,7 @@ const Investors = () => {
     const msgs = {suspend:"Investor suspended — appointments auto-cancelled",activate:"Investor reactivated",ban:"Investor banned — appointments auto-cancelled",unban:"Investor unbanned",notify:"Notification sent"};
     try {
       const uid = sel._uuid || sel.id;
-      const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/activate"}[action];
+      const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/unban"}[action];
       if(endpoint) {
         const r = await apiFetch(endpoint, {method:"POST", body:JSON.stringify({reason:reason||"No reason provided"})});
         if(r && !r.ok) showToast("⚠️ Backend error — changes saved locally only","warn");
@@ -1878,6 +1878,9 @@ const Appointments = () => {
             <Btn variant="danger" onClick={async ()=>{
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Cancelled by admin"})}); } catch(e) {}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
+              // Refresh appointments and investors from API
+              try { const ar=await apiFetch("/appointments?page_size=500"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?page_size=500"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               const refundAmt = Math.max(0, sel.fee - cfee);
               if(refundAmt > 0) {
                 setWalletMovements(prev => [{
@@ -1912,6 +1915,8 @@ const Appointments = () => {
             <Btn variant="danger" onClick={async ()=>{
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/no-show", {method:"POST"}); } catch(e) {}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
+              // Refresh investors from API (no-show count updated server-side)
+              try { const ir=await apiFetch("/investors?page_size=500"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               setInvestors(prev=>prev.map(inv=>{
                 return inv.nationalId===sel.nationalId ? {...inv,noShowCount:(inv.noShowCount||0)+1} : inv;
               }));
@@ -5109,29 +5114,73 @@ const OrderBook = () => {
       }
     }
 
-    const {updatedOrders, newMatches, finalOrder} = runMatch(incoming, orders);
-    // Post MM order to API
+    // Post order to backend — backend handles matching
     try {
-      await apiFetch("/orders", {method:"POST", body:JSON.stringify({
-        type:mmSide, metal:mmMetal, quantity_grams:mmQtyNum, price_per_gram:mmPriceNum,
+      const resp = await apiFetch("/orders", {method:"POST", body:JSON.stringify({
+        side:mmSide, metal:mmMetal, quantity_grams:mmQtyNum, price_per_gram:mmPriceNum,
         order_type:"LIMIT",
       })});
-    } catch(e) {}
-    setOrders(prev => {
-      const idMap = {};
-      updatedOrders.forEach(o => idMap[o.id] = o);
-      const merged = prev.map(o => idMap[o.id] ? idMap[o.id] : o);
-      return [finalOrder, ...merged];
-    });
-    if(newMatches.length>0){
-      setMatches(prev=>{
-        const nextId=prev.length+1;
-        return [...prev,...newMatches.map((m,i)=>({...m,id:"MTC-"+String(nextId+i).padStart(3,"0")}))];
-      });
-      const filled=newMatches.reduce((s,m)=>s+m.qty,0);
-      showMatchToast(`✅ MM: ${filled}g ${isAr?"منفّذ":"matched"} @ SAR ${(mmPriceNum||0).toFixed(2)}`);
-    } else {
-      showMatchToast(isAr?"📋 أمر صانع السوق في دفتر الأوامر":"📋 Market maker order queued");
+      if(resp && resp.ok) {
+        const result = await resp.json();
+        // Refresh orders and matches from API to get backend matching results
+        const [ordResp, matchResp] = await Promise.all([
+          apiFetch("/orders?page_size=500"),
+          apiFetch("/matches?page_size=500"),
+        ]);
+        if(ordResp && ordResp.ok) {
+          const od = await ordResp.json();
+          const items = od.items || od.orders || od;
+          if(Array.isArray(items)) setOrders(items.map(o=>({
+            id:o.display_id||o.id, _uuid:String(o.id),
+            investorId:o.investor_display||o.investor_id||"", metal:o.metal||"Gold",
+            side:o.side||"BUY", qty:String(o.quantity_grams||0), remaining:String(o.remaining_grams||0),
+            price:String(o.price_per_gram||0), total:String(o.total_sar||0),
+            status:o.status||"OPEN", date:o.created_at||"",
+          })));
+        }
+        if(matchResp && matchResp.ok) {
+          const md = await matchResp.json();
+          const mitems = md.items || md.matches || md;
+          if(Array.isArray(mitems)) setMatches(mitems.map(m=>({
+            id:m.display_id||m.id, _uuid:String(m.id), metal:m.metal||"Gold",
+            qty:String(m.quantity_grams||0), price:String(m.price_per_gram||0),
+            totalSAR:String(m.total_sar||0), commission:String(m.commission||0),
+            adminFee:String(m.admin_fee||0),
+            buyerName:m.buyer_name||"", buyerNid:m.buyer_national_id||"",
+            sellerName:m.seller_name||"", sellerNid:m.seller_national_id||"",
+            filledFor:m.buyer_name||"", date:m.matched_at||"",
+            blockNumber:m.block_number||null,
+          })));
+        }
+        const newMatches = result.matches || [];
+        if(newMatches.length > 0) {
+          const filled = newMatches.reduce((s,m)=>s+(Number(m.quantity_grams)||0),0);
+          showMatchToast(`✅ MM: ${filled}g ${isAr?"منفّذ":"matched"} @ SAR ${(mmPriceNum||0).toFixed(2)}`);
+        } else {
+          showMatchToast(isAr?"📋 أمر صانع السوق في دفتر الأوامر":"📋 Market maker order queued");
+        }
+      } else {
+        // API failed — fall back to local matching
+        const {updatedOrders, newMatches, finalOrder} = runMatch(incoming, orders);
+        setOrders(prev => {
+          const idMap = {};
+          updatedOrders.forEach(o => idMap[o.id] = o);
+          const merged = prev.map(o => idMap[o.id] ? idMap[o.id] : o);
+          return [finalOrder, ...merged];
+        });
+        if(newMatches.length>0){
+          setMatches(prev=>{
+            const nextId=prev.length+1;
+            return [...prev,...newMatches.map((m,i)=>({...m,id:"MTC-"+String(nextId+i).padStart(3,"0")}))];
+          });
+          const filled=newMatches.reduce((s,m)=>s+m.qty,0);
+          showMatchToast(`✅ MM: ${filled}g ${isAr?"منفّذ":"matched"} @ SAR ${(mmPriceNum||0).toFixed(2)}`);
+        } else {
+          showMatchToast(isAr?"📋 أمر صانع السوق في دفتر الأوامر":"📋 Market maker order queued");
+        }
+      }
+    } catch(e) {
+      showMatchToast("⚠️ " + (isAr?"خطأ في الاتصال بالخادم":"Backend connection error"));
     }
     addAudit("MARKET_MAKER_ORDER", incoming.id, `${mmSide} ${mmQtyNum}g ${mmMetal} @ SAR ${mmPriceNum}`);
     setMmOpen(false); setMmQty(""); setMmPrice(""); setMmExpDate("");
