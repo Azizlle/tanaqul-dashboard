@@ -3,449 +3,324 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tanaqul Block Explorer | مستكشف بلوكات تنقل</title>
+<title>Tanaqul Block Explorer | مستكشف تنقل</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#060a12;--bg2:#0c1220;--bg3:#121a2d;--card:#0f1729;--card2:#141e34;
-  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
-  --gold:#d4a039;--gold2:#f0c254;--gold-glow:rgba(212,160,57,0.15);
-  --teal:#00d4aa;--teal-glow:rgba(0,212,170,0.1);
-  --text:#e8edf5;--text2:#94a3b8;--text3:#4a5568;
-  --green:#10b981;--red:#ef4444;
-  --sans:'Outfit',sans-serif;--arabic:'Noto Kufi Arabic',sans-serif;--mono:'JetBrains Mono',monospace;
-  --radius:14px;
-}
+:root{--bg:#060a12;--bg2:#0c1220;--bg3:#121a2d;--card:#0f1729;--card2:#141e34;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);--gold:#d4a039;--gold2:#f0c254;--gg:rgba(212,160,57,0.15);--teal:#00d4aa;--tg:rgba(0,212,170,0.1);--text:#e8edf5;--t2:#94a3b8;--t3:#4a5568;--green:#10b981;--red:#ef4444;--purple:#8b5cf6;--blue:#3b82f6;--sans:'Outfit',sans-serif;--ar:'Noto Kufi Arabic',sans-serif;--mono:'JetBrains Mono',monospace;--r:14px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
-[dir=rtl] body{font-family:var(--arabic)}
-[dir=rtl] .mono{font-family:var(--mono)!important;direction:ltr;text-align:right}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+[dir=rtl] body{font-family:var(--ar)}
+[dir=rtl] .m{font-family:var(--mono)!important;direction:ltr}
 ::selection{background:var(--gold);color:var(--bg)}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,var(--gg) 0%,transparent 70%);pointer-events:none;z-index:0}
 
-/* ═══ AMBIENT GLOW ═══ */
-body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,var(--gold-glow) 0%,transparent 70%);pointer-events:none;z-index:0}
-body::after{content:'';position:fixed;bottom:-100px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,var(--teal-glow) 0%,transparent 70%);pointer-events:none;z-index:0}
-
-/* ═══ HEADER ═══ */
-.hdr{background:rgba(12,18,32,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 28px;height:68px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:14px}
-.logo-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:var(--bg);font-family:var(--sans);box-shadow:0 0 20px var(--gold-glow)}
-.logo h1{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px}
-.logo h1 span{color:var(--gold);font-weight:400;font-size:14px;margin-left:8px}
+.hdr{background:rgba(12,18,32,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.lm{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:var(--bg);box-shadow:0 0 20px var(--gg)}
+.logo h1{font-size:19px;font-weight:800;letter-spacing:-.5px}
+.logo h1 span{color:var(--gold);font-weight:400;font-size:13px;margin-left:8px}
 [dir=rtl] .logo h1 span{margin-left:0;margin-right:8px}
-.hdr-right{display:flex;align-items:center;gap:10px}
-.net-badge{display:flex;align-items:center;gap:6px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;color:var(--green)}
-.net-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.lang-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:12px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:var(--arabic);transition:all .2s}
-.lang-btn:hover{border-color:var(--gold);color:var(--gold)}
-.search-wrap{position:relative}
-.search-wrap input{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 14px 8px 34px;border-radius:10px;width:280px;outline:none;transition:border .2s}
-.search-wrap input:focus{border-color:var(--gold)}
-.search-wrap input::placeholder{color:var(--text3)}
-.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);width:16px;height:16px}
-[dir=rtl] .search-wrap input{padding:8px 34px 8px 14px}
-[dir=rtl] .search-wrap svg{left:auto;right:10px}
+.hr{display:flex;align-items:center;gap:8px}
+.nb{display:flex;align-items:center;gap:5px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;color:var(--green)}
+.nd{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:bl 2s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.lb{background:var(--bg3);border:1px solid var(--border2);color:var(--t2);font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:var(--ar);transition:all .2s}
+.lb:hover{border-color:var(--gold);color:var(--gold)}
+.sw{position:relative}
+.sw input{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 12px 7px 32px;border-radius:10px;width:260px;outline:none;transition:border .2s}
+.sw input:focus{border-color:var(--gold)}
+.sw input::placeholder{color:var(--t3)}
+.sw svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);width:15px;height:15px}
+[dir=rtl] .sw input{padding:7px 32px 7px 12px}
+[dir=rtl] .sw svg{left:auto;right:9px}
 
-/* ═══ TABS ═══ */
-.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px;margin:24px auto;max-width:500px}
-.tab{flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-radius:8px;transition:all .2s}
-.tab:hover{color:var(--text2)}
-.tab.on{background:var(--card2);color:var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px;margin:20px auto;max-width:680px}
+.tb{flex:1;text-align:center;padding:7px 0;font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;border-radius:7px;transition:all .2s}
+.tb:hover{color:var(--t2)}
+.tb.on{background:var(--card2);color:var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.3)}
 
-/* ═══ CONTAINER ═══ */
-.wrap{max-width:1160px;margin:0 auto;padding:0 24px 60px;position:relative;z-index:1}
+.w{max-width:1160px;margin:0 auto;padding:0 24px 60px;position:relative;z-index:1}
 
-/* ═══ STAT GRID ═══ */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.st{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all .3s}
-.st:hover{border-color:var(--border2);transform:translateY(-2px)}
-.st-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
-.st-val{font-size:32px;font-weight:900;color:var(--text);font-family:var(--mono);line-height:1}
-.st-val.gld{color:var(--gold)}
-.st-val.tl{color:var(--teal)}
-.st-sub{font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.s{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:all .3s}
+.s:hover{border-color:var(--border2);transform:translateY(-2px)}
+.sl{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.sv{font-size:30px;font-weight:900;font-family:var(--mono);line-height:1}
+.sv.g{color:var(--gold)}.sv.t{color:var(--teal)}
+.ss{font-size:10px;color:var(--t3);margin-top:5px;font-family:var(--mono)}
 
-/* ═══ TOKEN RINGS ═══ */
-.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.ring{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;position:relative;overflow:hidden}
-.ring::before{content:'';position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:120px;height:120px;border-radius:50%;border:2px solid;opacity:.08}
-.ring.floating::before{border-color:var(--teal)}
-.ring.linked::before{border-color:var(--gold)}
-.ring.container::before{border-color:var(--text)}
-.ring-icon{font-size:28px;margin-bottom:8px}
-.ring-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
-.ring-val{font-size:28px;font-weight:800;font-family:var(--mono)}
-.ring.floating .ring-val{color:var(--teal)}
-.ring.linked .ring-val{color:var(--gold)}
-.ring.container .ring-val{color:var(--text)}
-.ring-sub{font-size:10px;color:var(--text3);margin-top:4px}
+.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.rn{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;text-align:center;position:relative;overflow:hidden}
+.rn::before{content:'';position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:110px;height:110px;border-radius:50%;border:2px solid;opacity:.07}
+.rn.fl::before{border-color:var(--teal)}.rn.lk::before{border-color:var(--gold)}.rn.ct::before{border-color:var(--text)}
+.ri{font-size:26px;margin-bottom:6px}
+.rt{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px}
+.rv{font-size:26px;font-weight:800;font-family:var(--mono)}
+.rn.fl .rv{color:var(--teal)}.rn.lk .rv{color:var(--gold)}.rn.ct .rv{color:var(--text)}
+.rsb{font-size:9px;color:var(--t3);margin-top:3px}
 
-/* ═══ PROGRESS ═══ */
-.prog{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
-.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.prog-title{font-size:13px;font-weight:700;color:var(--text)}
-.prog-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:14px}
-.prog-item label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.prog-item .pv{font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono);margin:4px 0}
-.prog-item .pv span{font-size:13px;color:var(--text3);font-weight:400}
-.bar-bg{height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
-.bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
-.bar-fill.sz{background:linear-gradient(90deg,var(--teal),#3b82f6)}
-.bar-fill.tm{background:linear-gradient(90deg,var(--gold),var(--red))}
-.prog-foot{display:flex;justify-content:space-between;align-items:center}
-.prog-foot span{font-size:11px;color:var(--text3)}
-.sts{font-size:10px;font-weight:700;padding:4px 10px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
-.sts-waiting{background:rgba(74,85,104,.15);color:var(--text3)}
-.sts-accumulating{background:var(--gold-glow);color:var(--gold)}
+.prog{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px}
+.pt{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ptt{font-size:13px;font-weight:700}
+.pr{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:12px}
+.pi label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.pv{font-size:20px;font-weight:700;font-family:var(--mono);margin:3px 0}
+.pv span{font-size:12px;color:var(--t3);font-weight:400}
+.bb{height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.bf{height:100%;border-radius:2px;transition:width 1s ease}
+.bf.bsz{background:linear-gradient(90deg,var(--teal),var(--blue))}.bf.btm{background:linear-gradient(90deg,var(--gold),var(--red))}
+.pf{display:flex;justify-content:space-between;align-items:center}
+.pf span{font-size:11px;color:var(--t3)}
+.sts{font-size:9px;font-weight:700;padding:4px 9px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.sts-waiting{background:rgba(74,85,104,.15);color:var(--t3)}
+.sts-accumulating{background:var(--gg);color:var(--gold)}
 .sts-ready{background:rgba(16,185,129,.1);color:var(--green)}
 
-/* ═══ SECTION ═══ */
-.sec{margin-bottom:24px}
-.sec-h{font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px}
-.sec-h em{font-style:normal;color:var(--gold)}
+.sec{margin-bottom:22px}
+.sh{font-size:14px;font-weight:700;margin-bottom:10px}
+.sh em{font-style:normal;color:var(--gold)}
 
-/* ═══ TABLE ═══ */
-.tbl{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.tbl{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
 table{width:100%;border-collapse:collapse}
-thead th{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:14px 16px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border)}
+thead th{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:12px 14px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border)}
 [dir=rtl] thead th{text-align:right}
-tbody td{font-size:13px;color:var(--text);padding:13px 16px;border-bottom:1px solid var(--border);font-family:var(--mono)}
-tbody tr{transition:background .15s}
+tbody td{font-size:12px;color:var(--text);padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--mono)}
+tbody tr{transition:background .15s;cursor:pointer}
 tbody tr:hover{background:var(--card2)}
 tbody tr:last-child td{border-bottom:none}
-.hash-cell{color:var(--teal);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
-.hash-cell:hover{color:var(--gold)}
-.type-badge{display:inline-block;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
-.type-MINT_NEW{background:rgba(0,212,170,.1);color:var(--teal)}
-.type-MINT_RETURN{background:rgba(59,130,246,.1);color:#3b82f6}
-.type-BOND_BREAK{background:var(--gold-glow);color:var(--gold)}
-.type-BOND_WITHDRAW{background:rgba(239,68,68,.1);color:var(--red)}
-.type-BOND_BURN{background:rgba(239,68,68,.1);color:var(--red)}
-.type-TRANSFER{background:rgba(139,92,246,.1);color:#8b5cf6}
-.type-KEY_CREATE{background:rgba(255,255,255,.05);color:var(--text2)}
+.hc{color:var(--teal);font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc:hover{color:var(--gold)}
+.vk{color:var(--purple);font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk{color:var(--gold);font-size:10px}
+.badge{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.b-MINT_NEW,.b-ACTIVE{background:var(--tg);color:var(--teal)}
+.b-MINT_RETURN{background:rgba(59,130,246,.1);color:var(--blue)}
+.b-BOND_BREAK{background:var(--gg);color:var(--gold)}
+.b-BOND_WITHDRAW,.b-BOND_BURN,.b-BURNED{background:rgba(239,68,68,.1);color:var(--red)}
+.b-TRANSFER{background:rgba(139,92,246,.1);color:var(--purple)}
+.b-KEY_CREATE{background:rgba(255,255,255,.05);color:var(--t2)}
+.b-FREE{background:rgba(139,92,246,.08);color:var(--purple)}
+.b-LINKED{background:var(--gg);color:var(--gold)}
+.b-LEFT{background:rgba(239,68,68,.08);color:var(--red)}
 
-/* ═══ BLOCK DETAIL ═══ */
-.blk-detail{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
-.blk-num{font-size:36px;font-weight:900;color:var(--gold);font-family:var(--mono);margin-bottom:4px}
-.blk-hash{font-size:11px;color:var(--teal);font-family:var(--mono);word-break:break-all;margin-bottom:20px;opacity:.8}
-.blk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.blk-stat{background:var(--bg3);border-radius:10px;padding:14px;text-align:center}
-.blk-stat .k{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.blk-stat .v{font-size:20px;font-weight:700;color:var(--text);font-family:var(--mono);margin-top:4px}
-.integrity{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:10px;font-size:12px;font-weight:600;color:var(--green)}
-.integrity.fail{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.15);color:var(--red)}
+.detail{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin-top:14px}
+.dn{font-size:34px;font-weight:900;color:var(--gold);font-family:var(--mono);margin-bottom:3px}
+.dh{font-size:10px;color:var(--teal);font-family:var(--mono);word-break:break-all;margin-bottom:18px;opacity:.8}
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.ds{background:var(--bg3);border-radius:10px;padding:12px;text-align:center}
+.ds .k{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.ds .v{font-size:18px;font-weight:700;font-family:var(--mono);margin-top:3px}
+.integ{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:10px;font-size:12px;font-weight:600}
+.integ.ok{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);color:var(--green)}
+.integ.fail{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);color:var(--red)}
 
-/* ═══ EMPTY ═══ */
-.empty{text-align:center;padding:48px;color:var(--text3)}
-.empty-i{font-size:36px;margin-bottom:10px;opacity:.3}
+.empty{text-align:center;padding:44px;color:var(--t3)}
+.ei{font-size:34px;margin-bottom:8px;opacity:.3}
 
-/* ═══ FOOTER ═══ */
-.ftr{text-align:center;padding:40px 24px;color:var(--text3);font-size:11px;border-top:1px solid var(--border);margin-top:20px}
-.ftr .ar{font-family:var(--arabic);font-size:13px;color:var(--gold);margin-top:8px;opacity:.6}
+.ftr{text-align:center;padding:36px 24px;color:var(--t3);font-size:10px;border-top:1px solid var(--border);margin-top:20px}
+.ftr .fa{font-family:var(--ar);font-size:12px;color:var(--gold);margin-top:6px;opacity:.5}
 
-/* ═══ RESPONSIVE ═══ */
-@media(max-width:768px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .rings{grid-template-columns:1fr}
-  .prog-row{grid-template-columns:1fr}
-  .blk-grid{grid-template-columns:1fr}
-  .search-wrap input{width:180px}
-  .tabs{max-width:100%}
-}
+.pg{display:flex;justify-content:center;gap:6px;margin-top:12px}
+.pg button{background:var(--bg3);border:1px solid var(--border);color:var(--t2);font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer}
+.pg button.on{background:var(--card2);color:var(--gold);border-color:var(--gold)}
+
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.rings{grid-template-columns:1fr}.pr{grid-template-columns:1fr}.dg{grid-template-columns:1fr}.sw input{width:160px}.tabs{max-width:100%}}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div class="logo">
-    <div class="logo-mark">T</div>
-    <h1 id="logoText">Tanaqul <span>Explorer</span></h1>
-  </div>
-  <div class="hdr-right">
-    <div class="net-badge"><div class="net-dot"></div><span id="netLabel">Network Active</span></div>
-    <div class="search-wrap">
+  <div class="logo"><div class="lm">T</div><h1 id="lT">Tanaqul <span>Explorer</span></h1></div>
+  <div class="hr">
+    <div class="nb"><div class="nd"></div><span id="nL">Network Active</span></div>
+    <div class="sw">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Block # or hash..." onkeydown="if(event.key==='Enter')doSearch()">
+      <input id="si" placeholder="Block #, 0xTNQ..., 0xVK..., BAR-..." onkeydown="if(event.key==='Enter')doSearch()">
     </div>
-    <button class="lang-btn" onclick="toggleLang()" id="langBtn">عربي</button>
+    <button class="lb" onclick="tLang()" id="lB">عربي</button>
   </div>
 </div>
 
-<div class="wrap">
-  <!-- Tabs -->
+<div class="w">
   <div class="tabs">
-    <div class="tab on" onclick="go('main',this)" id="tabMain">Overview</div>
-    <div class="tab" onclick="go('blocks',this)" id="tabBlocks">Blocks</div>
-    <div class="tab" onclick="go('tx',this)" id="tabTx">Transactions</div>
+    <div class="tb on" onclick="go('main',this)" id="t0">Overview</div>
+    <div class="tb" onclick="go('blocks',this)" id="t1">Blocks</div>
+    <div class="tb" onclick="go('tx',this)" id="t2">Ledger</div>
+    <div class="tb" onclick="go('tokens',this)" id="t3">Tokens</div>
+    <div class="tb" onclick="go('keys',this)" id="t4">Vault Keys</div>
+    <div class="tb" onclick="go('containers',this)" id="t5">Containers</div>
   </div>
 
-  <!-- ═══ MAIN ═══ -->
+  <!-- OVERVIEW -->
   <div id="v-main">
     <div class="stats">
-      <div class="st"><div class="st-label" data-en="TOTAL BLOCKS" data-ar="إجمالي البلوكات">TOTAL BLOCKS</div><div class="st-val mono" id="xBlocks">—</div></div>
-      <div class="st"><div class="st-label" data-en="TRANSACTIONS" data-ar="المعاملات">TRANSACTIONS</div><div class="st-val mono" id="xTx">—</div></div>
-      <div class="st"><div class="st-label" data-en="VALIDATORS" data-ar="المصادقون">VALIDATORS</div><div class="st-val tl mono" id="xVals">—</div></div>
-      <div class="st"><div class="st-label" data-en="LATEST BLOCK" data-ar="آخر بلوك">LATEST BLOCK</div><div class="st-val gld mono" id="xLatest">—</div><div class="st-sub mono" id="xLatestTime"></div></div>
+      <div class="s"><div class="sl" data-en="TOTAL BLOCKS" data-ar="إجمالي البلوكات">TOTAL BLOCKS</div><div class="sv m" id="xB">—</div></div>
+      <div class="s"><div class="sl" data-en="TRANSACTIONS" data-ar="المعاملات">TRANSACTIONS</div><div class="sv m" id="xT">—</div></div>
+      <div class="s"><div class="sl" data-en="VALIDATORS" data-ar="المصادقون">VALIDATORS</div><div class="sv t m" id="xV">—</div></div>
+      <div class="s"><div class="sl" data-en="LATEST BLOCK" data-ar="آخر بلوك">LATEST BLOCK</div><div class="sv g m" id="xL">—</div><div class="ss m" id="xLT"></div></div>
     </div>
-
-    <!-- Token Rings -->
     <div class="rings">
-      <div class="ring floating">
-        <div class="ring-icon">◎</div>
-        <div class="ring-title" data-en="FLOATING TOKENS" data-ar="رموز عائمة">FLOATING TOKENS</div>
-        <div class="ring-val mono" id="xFloating">0</div>
-        <div class="ring-sub" data-en="freely trading in system" data-ar="تتداول بحرية في النظام">freely trading in system</div>
-      </div>
-      <div class="ring linked">
-        <div class="ring-icon">⬡</div>
-        <div class="ring-title" data-en="LINKED TOKENS" data-ar="رموز مرتبطة">LINKED TOKENS</div>
-        <div class="ring-val mono" id="xLinked">0</div>
-        <div class="ring-sub" data-en="bonded to depositor bars" data-ar="مرتبطة بسبائك المودع">bonded to depositor bars</div>
-      </div>
-      <div class="ring container">
-        <div class="ring-icon">▣</div>
-        <div class="ring-title" data-en="CONTAINERS" data-ar="حاويات السبائك">CONTAINERS</div>
-        <div class="ring-val mono" id="xContainers">0</div>
-        <div class="ring-sub" data-en="bars holding linked tokens" data-ar="سبائك تحتوي على رموز مرتبطة">bars holding linked tokens</div>
-      </div>
+      <div class="rn fl"><div class="ri">◎</div><div class="rt" data-en="FLOATING TOKENS" data-ar="رموز عائمة">FLOATING TOKENS</div><div class="rv m" id="xFl">0</div><div class="rsb" data-en="freely trading" data-ar="تتداول بحرية">freely trading</div></div>
+      <div class="rn lk"><div class="ri">⬡</div><div class="rt" data-en="LINKED TOKENS" data-ar="رموز مرتبطة">LINKED TOKENS</div><div class="rv m" id="xLk">0</div><div class="rsb" data-en="bonded to containers" data-ar="مرتبطة بالحاويات">bonded to containers</div></div>
+      <div class="rn ct"><div class="ri">▣</div><div class="rt" data-en="CONTAINERS" data-ar="الحاويات">CONTAINERS</div><div class="rv m" id="xCt">0</div><div class="rsb" data-en="active bar containers" data-ar="حاويات سبائك نشطة">active bar containers</div></div>
     </div>
-
-    <!-- Progress -->
     <div class="prog">
-      <div class="prog-top">
-        <div class="prog-title" data-en="⛓ Block Progress" data-ar="⛓ تقدم البلوك">⛓ Block Progress</div>
-        <div class="net-badge"><div class="net-dot"></div><span data-en="Active" data-ar="نشط">Active</span></div>
+      <div class="pt"><div class="ptt" data-en="⛓ Block Progress" data-ar="⛓ تقدم البلوك">⛓ Block Progress</div><div class="nb"><div class="nd"></div><span data-en="Active" data-ar="نشط">Active</span></div></div>
+      <div class="pr">
+        <div class="pi"><label data-en="SIZE" data-ar="الحجم">SIZE</label><div class="pv"><span id="pS" class="m">0</span> MB <span>/ 1 MB</span></div><div class="bb"><div class="bf bsz" id="pSB" style="width:0%"></div></div></div>
+        <div class="pi"><label data-en="TIME" data-ar="الوقت">TIME</label><div class="pv"><span id="pT" class="m">0</span>h <span>/ 24h</span></div><div class="bb"><div class="bf btm" id="pTB" style="width:0%"></div></div></div>
       </div>
-      <div class="prog-row">
-        <div class="prog-item">
-          <label data-en="SIZE / THRESHOLD" data-ar="الحجم / الحد">SIZE / THRESHOLD</label>
-          <div class="pv"><span id="pSz" class="mono">0</span> MB <span>/ 1 MB</span></div>
-          <div class="bar-bg"><div class="bar-fill sz" id="pSzBar" style="width:0%"></div></div>
-        </div>
-        <div class="prog-item">
-          <label data-en="TIME / MAX" data-ar="الوقت / الأقصى">TIME / MAX</label>
-          <div class="pv"><span id="pTm" class="mono">0</span>h <span>/ 24h</span></div>
-          <div class="bar-bg"><div class="bar-fill tm" id="pTmBar" style="width:0%"></div></div>
-        </div>
-      </div>
-      <div class="prog-foot">
-        <span><span id="pPend" class="mono">0</span> <span data-en="pending" data-ar="معلقة">pending</span></span>
-        <span class="sts sts-waiting" id="pSts">WAITING</span>
-      </div>
+      <div class="pf"><span><span id="pP" class="m">0</span> <span data-en="pending" data-ar="معلقة">pending</span></span><span class="sts sts-waiting" id="pSt">WAITING</span></div>
     </div>
-
-    <!-- Latest Blocks -->
-    <div class="sec">
-      <div class="sec-h" data-en="Latest <em>Blocks</em>" data-ar="آخر <em>البلوكات</em>">Latest <em>Blocks</em></div>
-      <div class="tbl"><table>
-        <thead><tr>
-          <th data-en="BLOCK" data-ar="بلوك">BLOCK</th>
-          <th data-en="HASH" data-ar="الهاش">HASH</th>
-          <th data-en="TXNS" data-ar="معاملات">TXNS</th>
-          <th data-en="SIZE" data-ar="الحجم">SIZE</th>
-          <th data-en="TIME" data-ar="الوقت">TIME</th>
-        </tr></thead>
-        <tbody id="tblBlocks"><tr><td colspan="5" class="empty"><div class="empty-i">⛓</div></td></tr></tbody>
-      </table></div>
+    <div class="sec"><div class="sh" data-en="Latest <em>Blocks</em>" data-ar="آخر <em>البلوكات</em>">Latest <em>Blocks</em></div>
+      <div class="tbl"><table><thead><tr><th>BLOCK</th><th>HASH</th><th>TXNS</th><th>SIZE</th><th>TIME</th></tr></thead><tbody id="tb0"></tbody></table></div>
     </div>
   </div>
 
-  <!-- ═══ BLOCKS ═══ -->
+  <!-- BLOCKS -->
   <div id="v-blocks" style="display:none">
-    <div class="sec">
-      <div class="sec-h" data-en="All <em>Blocks</em>" data-ar="جميع <em>البلوكات</em>">All <em>Blocks</em></div>
-      <div class="tbl"><table>
-        <thead><tr>
-          <th data-en="BLOCK" data-ar="بلوك">BLOCK</th>
-          <th data-en="HASH" data-ar="الهاش">HASH</th>
-          <th data-en="TXNS" data-ar="معاملات">TXNS</th>
-          <th data-en="SIZE" data-ar="الحجم">SIZE</th>
-          <th data-en="TIME" data-ar="الوقت">TIME</th>
-        </tr></thead>
-        <tbody id="tblAllBlocks"><tr><td colspan="5" class="empty"><div class="empty-i">⛓</div></td></tr></tbody>
-      </table></div>
+    <div class="sec"><div class="sh">All <em>Blocks</em></div>
+      <div class="tbl"><table><thead><tr><th>BLOCK</th><th>HASH</th><th>TXNS</th><th>SIZE</th><th>TIME</th></tr></thead><tbody id="tb1"></tbody></table></div>
     </div>
-    <!-- Block detail appears here when clicked -->
-    <div id="blockDetail" style="display:none"></div>
+    <div id="bDet"></div>
   </div>
 
-  <!-- ═══ TRANSACTIONS ═══ -->
+  <!-- LEDGER -->
   <div id="v-tx" style="display:none">
-    <div class="sec">
-      <div class="sec-h" data-en="Ledger <em>Events</em>" data-ar="أحداث <em>السجل</em>">Ledger <em>Events</em></div>
-      <div class="tbl"><table>
-        <thead><tr>
-          <th data-en="TYPE" data-ar="النوع">TYPE</th>
-          <th data-en="METAL" data-ar="المعدن">METAL</th>
-          <th data-en="GRAMS" data-ar="جرام">GRAMS</th>
-          <th data-en="STATUS" data-ar="الحالة">STATUS</th>
-          <th data-en="TIME" data-ar="الوقت">TIME</th>
-        </tr></thead>
-        <tbody id="tblTx"><tr><td colspan="5" class="empty"><div class="empty-i">📋</div></td></tr></tbody>
-      </table></div>
+    <div class="sec"><div class="sh" data-en="Ledger <em>Events</em>" data-ar="أحداث <em>السجل</em>">Ledger <em>Events</em></div>
+      <div class="tbl"><table><thead><tr><th>TYPE</th><th>METAL</th><th>GRAMS</th><th>STATUS</th><th>TIME</th></tr></thead><tbody id="tb2"></tbody></table></div>
     </div>
   </div>
 
-  <!-- ═══ SEARCH RESULTS ═══ -->
+  <!-- TOKENS -->
+  <div id="v-tokens" style="display:none">
+    <div class="sec"><div class="sh">Token <em>Registry</em></div>
+      <div class="tbl"><table><thead><tr><th>TOKEN ID</th><th>VAULT KEY</th><th>METAL</th><th>STATUS</th><th>MINTS</th><th>MINTED</th></tr></thead><tbody id="tb3"></tbody></table></div>
+      <div class="pg" id="pg3"></div>
+    </div>
+    <div id="tDet"></div>
+  </div>
+
+  <!-- VAULT KEYS -->
+  <div id="v-keys" style="display:none">
+    <div class="sec"><div class="sh">Vault <em>Keys</em></div>
+      <div class="tbl"><table><thead><tr><th>VAULT KEY</th><th>TOKEN ID</th><th>METAL</th><th>STATUS</th><th>CREATED</th></tr></thead><tbody id="tb4"></tbody></table></div>
+      <div class="pg" id="pg4"></div>
+    </div>
+  </div>
+
+  <!-- CONTAINERS -->
+  <div id="v-containers" style="display:none">
+    <div class="sec"><div class="sh">Bar <em>Containers</em></div>
+      <div class="tbl"><table><thead><tr><th>CONTAINER</th><th>METAL</th><th>WEIGHT</th><th>STATUS</th><th>VAULT</th><th>DEPOSITED</th><th>LEFT</th></tr></thead><tbody id="tb5"></tbody></table></div>
+      <div class="pg" id="pg5"></div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
   <div id="v-search" style="display:none">
-    <div class="sec">
-      <div class="sec-h">Search <em>Results</em></div>
-      <div id="searchOut"></div>
-    </div>
+    <div class="sec"><div class="sh">Search <em>Results</em></div><div id="sOut"></div></div>
   </div>
 </div>
 
-<div class="ftr">
-  Tanaqul Blockchain Explorer — Proof of Authority (PoA) · Permissioned Network
-  <div class="ar">بسم الله الرحمن الرحيم — تنقل للمعادن الثمينة</div>
-</div>
+<div class="ftr">Tanaqul Blockchain Explorer — Proof of Authority (PoA) · Permissioned Network<div class="fa">بسم الله الرحمن الرحيم — تنقل للمعادن الثمينة</div></div>
 
 <script>
-const API='https://tanaqul-production.up.railway.app/api/v1/public/explorer';
-let lang='en';
+const A='https://tanaqul-production.up.railway.app/api/v1/public/explorer';
+let L='en',pg={tokens:1,keys:1,containers:1};
 
-async function api(p){try{const r=await fetch(API+p);if(!r.ok)throw r.status;return await r.json()}catch(e){console.warn('API:'+p,e);return null}}
+async function api(p){try{const r=await fetch(A+p);if(!r.ok)throw r.status;return await r.json()}catch(e){console.warn('API:'+p,e);return null}}
+function ago(i){const s=Math.floor((Date.now()-new Date(i).getTime())/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
+function bRow(b){return`<tr onclick="showBlock(${b.number})"><td style="font-weight:700;color:var(--gold)">#${b.number}</td><td class="hc" title="${b.hash}">${b.hash.slice(0,20)}…</td><td>${b.tx_count}</td><td>${b.size_bytes?(b.size_bytes/1024).toFixed(1)+'KB':'—'}</td><td style="color:var(--t2)">${b.created_at?ago(b.created_at):'—'}</td></tr>`}
+function emp(icon,msg){return`<tr><td colspan="7"><div class="empty"><div class="ei">${icon}</div>${msg}</div></td></tr>`}
 
-// ═══ TABS ═══
-function go(v,el){
-  document.querySelectorAll('[id^="v-"]').forEach(e=>e.style.display='none');
-  document.getElementById('v-'+v).style.display='';
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  el.classList.add('on');
-  if(v==='blocks')loadAllBlocks();
-  if(v==='tx')loadTx();
-}
+function go(v,el){document.querySelectorAll('[id^="v-"]').forEach(e=>e.style.display='none');document.getElementById('v-'+v).style.display='';document.querySelectorAll('.tb').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+if(v==='blocks')loadAllBlocks();if(v==='tx')loadTx();if(v==='tokens')loadTokens();if(v==='keys')loadKeys();if(v==='containers')loadContainers()}
 
-// ═══ STATS ═══
-async function loadStats(){
-  const d=await api('/network');if(!d)return;
-  document.getElementById('xBlocks').textContent=d.total_blocks;
-  document.getElementById('xTx').textContent=d.total_transactions;
-  document.getElementById('xVals').textContent=d.validator_count;
-  document.getElementById('xLatest').textContent=d.latest_block?'#'+d.latest_block:'—';
-  if(d.latest_block_time){document.getElementById('xLatestTime').textContent=new Date(d.latest_block_time).toLocaleString(lang==='ar'?'ar-SA':'en-US')}
-  // Rings
-  document.getElementById('xFloating').textContent=d.tokens?.floating||0;
-  document.getElementById('xLinked').textContent=d.tokens?.linked||0;
-  document.getElementById('xContainers').textContent=d.bars?.containers||0;
-}
+async function loadStats(){const d=await api('/network');if(!d)return;
+document.getElementById('xB').textContent=d.total_blocks;document.getElementById('xT').textContent=d.total_transactions;
+document.getElementById('xV').textContent=d.validator_count;document.getElementById('xL').textContent=d.latest_block?'#'+d.latest_block:'—';
+if(d.latest_block_time)document.getElementById('xLT').textContent=new Date(d.latest_block_time).toLocaleString(L==='ar'?'ar-SA':'en-US');
+document.getElementById('xFl').textContent=d.tokens?.floating||0;document.getElementById('xLk').textContent=d.tokens?.linked||0;document.getElementById('xCt').textContent=d.bars?.containers||0}
 
-// ═══ PROGRESS ═══
-async function loadProgress(){
-  const d=await api('/progress');if(!d)return;
-  document.getElementById('pSz').textContent=d.size_mb||0;
-  document.getElementById('pTm').textContent=d.hours||0;
-  document.getElementById('pPend').textContent=d.pending||0;
-  document.getElementById('pSzBar').style.width=Math.min(100,(d.size_mb/d.max_size_mb)*100)+'%';
-  document.getElementById('pTmBar').style.width=Math.min(100,(d.hours/d.max_hours)*100)+'%';
-  const s=document.getElementById('pSts');
-  s.textContent=(d.status||'waiting').toUpperCase();
-  s.className='sts sts-'+(d.status||'waiting');
-}
+async function loadProg(){const d=await api('/progress');if(!d)return;
+document.getElementById('pS').textContent=d.size_mb||0;document.getElementById('pT').textContent=d.hours||0;document.getElementById('pP').textContent=d.pending||0;
+document.getElementById('pSB').style.width=Math.min(100,(d.size_mb/d.max_size_mb)*100)+'%';document.getElementById('pTB').style.width=Math.min(100,(d.hours/d.max_hours)*100)+'%';
+const s=document.getElementById('pSt');s.textContent=(d.status||'waiting').toUpperCase();s.className='sts sts-'+(d.status||'waiting')}
 
-// ═══ BLOCKS ═══
-function blockRow(b){
-  return `<tr onclick="showBlock(${b.number})" style="cursor:pointer">
-    <td style="font-weight:700;color:var(--gold)">#${b.number}</td>
-    <td class="hash-cell" title="${b.hash}">${b.hash.slice(0,20)}…</td>
-    <td>${b.tx_count}</td>
-    <td>${b.size_bytes?(b.size_bytes/1024).toFixed(1)+'KB':'—'}</td>
-    <td style="color:var(--text2)">${b.created_at?ago(b.created_at):'—'}</td>
-  </tr>`;
-}
-async function loadBlocks(){
-  const d=await api('/blocks?page=1&limit=10');
-  const t=document.getElementById('tblBlocks');
-  if(!d||!d.items||!d.items.length){t.innerHTML='<tr><td colspan="5"><div class="empty"><div class="empty-i">⛓</div>'+(lang==='ar'?'لا توجد بلوكات':'No blocks yet')+'</div></td></tr>';return}
-  t.innerHTML=d.items.map(blockRow).join('');
-}
-async function loadAllBlocks(){
-  const d=await api('/blocks?page=1&limit=50');
-  const t=document.getElementById('tblAllBlocks');
-  if(!d||!d.items||!d.items.length){t.innerHTML='<tr><td colspan="5"><div class="empty"><div class="empty-i">⛓</div>No blocks</div></td></tr>';return}
-  t.innerHTML=d.items.map(blockRow).join('');
-}
+async function loadBlocks(){const d=await api('/blocks?page=1&limit=10');const t=document.getElementById('tb0');
+if(!d||!d.items||!d.items.length){t.innerHTML=emp('⛓',L==='ar'?'لا بلوكات':'No blocks yet');return}t.innerHTML=d.items.map(bRow).join('')}
 
-// ═══ BLOCK DETAIL ═══
-async function showBlock(num){
-  const d=await api('/blocks/'+num);if(!d||d.error)return;
-  const el=document.getElementById('blockDetail');
-  const integ=d.integrity||{};
-  el.style.display='';
-  el.innerHTML=`<div class="blk-detail" style="margin-top:16px">
-    <div class="blk-num">#${d.number}</div>
-    <div class="blk-hash">${d.hash}</div>
-    <div class="blk-grid">
-      <div class="blk-stat"><div class="k">${lang==='ar'?'المعاملات':'Transactions'}</div><div class="v">${d.tx_count}</div></div>
-      <div class="blk-stat"><div class="k">${lang==='ar'?'الحجم':'Size'}</div><div class="v">${d.size_bytes?(d.size_bytes/1024).toFixed(1)+'KB':'—'}</div></div>
-      <div class="blk-stat"><div class="k">${lang==='ar'?'الوقت':'Time'}</div><div class="v" style="font-size:12px">${d.created_at?new Date(d.created_at).toLocaleString():'—'}</div></div>
-    </div>
-    <div class="sec-h" style="margin-top:16px">${lang==='ar'?'لقطة <em>الرموز</em>':'Token <em>Snapshot</em>'}</div>
-    <div class="rings" style="margin-bottom:14px">
-      <div class="ring floating"><div class="ring-icon">◎</div><div class="ring-title">${lang==='ar'?'عائمة':'FLOATING'}</div><div class="ring-val mono">${d.token_snapshot?.floating||0}</div></div>
-      <div class="ring linked"><div class="ring-icon">⬡</div><div class="ring-title">${lang==='ar'?'مرتبطة':'LINKED'}</div><div class="ring-val mono">${d.token_snapshot?.linked||0}</div></div>
-      <div class="ring container"><div class="ring-icon">▣</div><div class="ring-title">${lang==='ar'?'حاويات':'CONTAINERS'}</div><div class="ring-val mono">${d.bar_snapshot?.containers||0}</div></div>
-    </div>
-    <div class="integrity ${integ.valid?'':'fail'}">
-      ${integ.valid?'✓':'✗'} ${lang==='ar'?'تحقق السلامة':'Integrity Check'}: ${integ.physical_grams||0}g ${lang==='ar'?'فعلي':'physical'} = ${integ.digital_tokens||0} ${lang==='ar'?'رقمي':'digital'} ${integ.valid?(lang==='ar'?'✓ متطابق':'✓ VALID'):(lang==='ar'?'✗ غير متطابق':'✗ MISMATCH')}
-    </div>
-  </div>`;
-  el.scrollIntoView({behavior:'smooth'});
-}
+async function loadAllBlocks(){const d=await api('/blocks?page=1&limit=50');const t=document.getElementById('tb1');
+if(!d||!d.items||!d.items.length){t.innerHTML=emp('⛓','No blocks');return}t.innerHTML=d.items.map(bRow).join('')}
 
-// ═══ TRANSACTIONS ═══
-async function loadTx(){
-  const d=await api('/transactions?page=1&limit=50');
-  const t=document.getElementById('tblTx');
-  if(!d||!d.items||!d.items.length){t.innerHTML='<tr><td colspan="5"><div class="empty"><div class="empty-i">📋</div>'+(lang==='ar'?'لا توجد معاملات':'No transactions yet')+'</div></td></tr>';return}
-  t.innerHTML=d.items.map(tx=>`<tr>
-    <td><span class="type-badge type-${tx.type}">${tx.type.replace('_',' ')}</span></td>
-    <td>${tx.metal}</td>
-    <td style="font-weight:600">${tx.grams}g</td>
-    <td><span class="type-badge type-MINT_NEW">${tx.status}</span></td>
-    <td style="color:var(--text2)">${tx.created_at?ago(tx.created_at):'—'}</td>
-  </tr>`).join('');
-}
+async function showBlock(n){const d=await api('/blocks/'+n);if(!d||d.error)return;const el=document.getElementById('bDet');el.innerHTML=`<div class="detail">
+<div class="dn">#${d.number}</div><div class="dh">${d.hash}</div>
+<div class="dg"><div class="ds"><div class="k">${L==='ar'?'المعاملات':'TXS'}</div><div class="v">${d.tx_count}</div></div><div class="ds"><div class="k">${L==='ar'?'الحجم':'SIZE'}</div><div class="v">${d.size_bytes?(d.size_bytes/1024).toFixed(1)+'KB':'—'}</div></div><div class="ds"><div class="k">${L==='ar'?'الوقت':'TIME'}</div><div class="v" style="font-size:11px">${d.created_at?new Date(d.created_at).toLocaleString():'—'}</div></div></div>
+${d.token_snapshot?`<div class="sh" style="margin-top:14px">${L==='ar'?'لقطة <em>الرموز</em>':'Token <em>Snapshot</em>'}</div>
+<div class="rings" style="margin-bottom:12px">
+<div class="rn fl"><div class="ri">◎</div><div class="rt">${L==='ar'?'عائمة':'FLOATING'}</div><div class="rv m">${d.token_snapshot.floating}</div></div>
+<div class="rn lk"><div class="ri">⬡</div><div class="rt">${L==='ar'?'مرتبطة':'LINKED'}</div><div class="rv m">${d.token_snapshot.linked}</div></div>
+<div class="rn ct"><div class="ri">▣</div><div class="rt">${L==='ar'?'حاويات':'CONTAINERS'}</div><div class="rv m">${d.bar_snapshot?.containers||0}</div></div></div>`:''}
+${d.integrity?`<div class="integ ${d.integrity.valid?'ok':'fail'}">${d.integrity.valid?'✓':'✗'} ${L==='ar'?'السلامة':'Integrity'}: ${d.integrity.physical_grams}g = ${d.integrity.digital_tokens} tokens ${d.integrity.valid?'✓ VALID':'✗ MISMATCH'}</div>`:''}</div>`;
+el.scrollIntoView({behavior:'smooth'})}
 
-// ═══ SEARCH ═══
-async function doSearch(){
-  const q=document.getElementById('searchInput').value.trim();if(!q)return;
-  document.querySelectorAll('[id^="v-"]').forEach(e=>e.style.display='none');
-  document.getElementById('v-search').style.display='';
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  const d=await api('/search?q='+encodeURIComponent(q));
-  const el=document.getElementById('searchOut');
-  if(!d||!d.total){el.innerHTML='<div class="empty"><div class="empty-i">🔍</div>'+(lang==='ar'?'لا نتائج':'No results for "'+q+'"')+'</div>';return}
-  el.innerHTML=d.results.map(r=>`<div class="st" style="margin-bottom:8px;cursor:pointer" onclick="go('blocks',document.getElementById('tabBlocks'));showBlock(${r.number})">
-    <div class="st-label">Block #${r.number}</div>
-    <div class="hash-cell">${r.hash}</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:4px">${r.tx_count} txns · ${new Date(r.created_at).toLocaleString()}</div>
-  </div>`).join('');
-}
+async function loadTx(){const d=await api('/transactions?page=1&limit=50');const t=document.getElementById('tb2');
+if(!d||!d.items||!d.items.length){t.innerHTML=emp('📋',L==='ar'?'لا معاملات':'No events yet');return}
+t.innerHTML=d.items.map(x=>`<tr><td><span class="badge b-${x.type}">${x.type.replace('_',' ')}</span></td><td>${x.metal}</td><td style="font-weight:600">${x.grams}g</td><td><span class="badge b-${x.status}">${x.status}</span></td><td style="color:var(--t2)">${x.created_at?ago(x.created_at):'—'}</td></tr>`).join('')}
 
-// ═══ LANGUAGE ═══
-function toggleLang(){
-  lang=lang==='en'?'ar':'en';
-  document.documentElement.dir=lang==='ar'?'rtl':'ltr';
-  document.documentElement.lang=lang;
-  document.getElementById('langBtn').textContent=lang==='ar'?'English':'عربي';
-  document.getElementById('logoText').innerHTML=lang==='ar'?'تنقل <span>المستكشف</span>':'Tanaqul <span>Explorer</span>';
-  document.getElementById('netLabel').textContent=lang==='ar'?'الشبكة نشطة':'Network Active';
-  document.getElementById('searchInput').placeholder=lang==='ar'?'رقم البلوك أو الهاش...':'Block # or hash...';
-  document.getElementById('tabMain').textContent=lang==='ar'?'نظرة عامة':'Overview';
-  document.getElementById('tabBlocks').textContent=lang==='ar'?'البلوكات':'Blocks';
-  document.getElementById('tabTx').textContent=lang==='ar'?'المعاملات':'Transactions';
-  document.querySelectorAll('[data-'+lang+']').forEach(el=>{el.innerHTML=el.getAttribute('data-'+lang)});
-  loadStats();
-}
+async function loadTokens(p){p=p||pg.tokens;pg.tokens=p;const d=await api('/tokens?page='+p+'&limit=20');const t=document.getElementById('tb3');
+if(!d||!d.items||!d.items.length){t.innerHTML=emp('🪙','No tokens yet');return}
+t.innerHTML=d.items.map(x=>`<tr onclick="showToken('${x.token_id}')"><td class="tk">${x.token_id}</td><td class="vk" title="${x.vault_key}">${x.vault_key}</td><td>${x.metal}</td><td><span class="badge b-${x.status}">${x.status}</span></td><td>${x.mint_count}</td><td style="color:var(--t2)">${x.minted_at?ago(x.minted_at):'—'}</td></tr>`).join('');
+renderPg('pg3',d.total,20,p,n=>loadTokens(n))}
 
-// ═══ UTILS ═══
-function ago(iso){const s=Math.floor((Date.now()-new Date(iso).getTime())/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
+async function showToken(tid){const d=await api('/tokens/'+tid);if(!d||d.error)return;const el=document.getElementById('tDet');
+el.innerHTML=`<div class="detail"><div class="dn" style="font-size:18px;color:var(--gold)">${d.token_id}</div><div class="dh" style="color:var(--purple)">${d.vault_key}</div>
+<div class="dg"><div class="ds"><div class="k">METAL</div><div class="v" style="font-size:14px">${d.metal}</div></div><div class="ds"><div class="k">STATUS</div><div class="v"><span class="badge b-${d.status}" style="font-size:11px">${d.status}</span></div></div><div class="ds"><div class="k">MINTS</div><div class="v">${d.mint_count}</div></div></div>
+${d.origin_container?`<div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:8px"><span style="font-size:10px;color:var(--t3)">ORIGIN CONTAINER</span><br><span class="m" style="color:var(--gold);font-size:13px">${d.origin_container.container_id}</span> <span style="font-size:11px;color:var(--t2)">${d.origin_container.metal} · ${d.origin_container.weight}</span></div>`:''}
+${d.burned_with_container?`<div style="background:rgba(239,68,68,.05);border-radius:10px;padding:10px 14px;margin-bottom:8px"><span style="font-size:10px;color:var(--red)">BURNED WITH CONTAINER</span><br><span class="m" style="color:var(--red);font-size:13px">${d.burned_with_container.container_id}</span></div>`:''}
+${d.bond_history&&d.bond_history.length?`<div style="margin-top:10px"><span style="font-size:11px;font-weight:700;color:var(--t2)">BOND HISTORY</span>${d.bond_history.map(b=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px"><span style="color:var(--gold)">${b.container_id}</span><span class="badge b-${b.bonded?'LINKED':'FREE'}">${b.bonded?'BONDED':'BROKEN'}</span><span class="m" style="color:var(--t3)">${b.bonded_at?ago(b.bonded_at):''}</span></div>`).join('')}</div>`:''}</div>`;
+el.scrollIntoView({behavior:'smooth'})}
 
-// ═══ INIT ═══
-loadStats();loadProgress();loadBlocks();
-setInterval(()=>{loadStats();loadProgress()},30000);
+async function loadKeys(p){p=p||pg.keys;pg.keys=p;const d=await api('/vault-keys?page='+p+'&limit=20');const t=document.getElementById('tb4');
+if(!d||!d.items||!d.items.length){t.innerHTML=emp('🔑','No vault keys yet');return}
+t.innerHTML=d.items.map(x=>`<tr><td class="vk">${x.vault_key}</td><td class="tk">${x.token_id}</td><td>${x.metal}</td><td><span class="badge b-${x.status}">${x.status}</span></td><td style="color:var(--t2)">${x.created_at?ago(x.created_at):'—'}</td></tr>`).join('');
+renderPg('pg4',d.total,20,p,n=>loadKeys(n))}
+
+async function loadContainers(p){p=p||pg.containers;pg.containers=p;const d=await api('/containers?page='+p+'&limit=20');const t=document.getElementById('tb5');
+if(!d||!d.items||!d.items.length){t.innerHTML=emp('▣','No containers yet');return}
+t.innerHTML=d.items.map(x=>`<tr><td style="font-weight:700;color:var(--gold)">${x.container_id}</td><td>${x.metal}</td><td>${x.weight} (${x.weight_grams}g)</td><td><span class="badge b-${x.status}">${x.status}</span></td><td>${x.vault_location}</td><td style="color:var(--t2)">${x.deposited_at?ago(x.deposited_at):'—'}</td><td style="color:var(--red)">${x.left_on?ago(x.left_on):'—'}</td></tr>`).join('');
+renderPg('pg5',d.total,20,p,n=>loadContainers(n))}
+
+function renderPg(id,total,per,cur,fn){const pages=Math.ceil(total/per);if(pages<=1){document.getElementById(id).innerHTML='';return}
+let h='';for(let i=1;i<=Math.min(pages,10);i++)h+=`<button class="${i===cur?'on':''}" onclick="(${fn.toString()})(${i})">${i}</button>`;
+document.getElementById(id).innerHTML=h}
+
+async function doSearch(){const q=document.getElementById('si').value.trim();if(!q)return;
+document.querySelectorAll('[id^="v-"]').forEach(e=>e.style.display='none');document.getElementById('v-search').style.display='';document.querySelectorAll('.tb').forEach(t=>t.classList.remove('on'));
+const d=await api('/search?q='+encodeURIComponent(q));const el=document.getElementById('sOut');
+if(!d||!d.total){el.innerHTML=`<div class="empty"><div class="ei">🔍</div>${L==='ar'?'لا نتائج':'No results for "'+q+'"'}</div>`;return}
+el.innerHTML=d.results.map(r=>{
+if(r.type==='block')return`<div class="s" style="margin-bottom:8px;cursor:pointer" onclick="go('blocks',document.getElementById('t1'));showBlock(${r.number})"><div class="sl">BLOCK #${r.number}</div><div class="hc">${r.hash}</div><div style="font-size:10px;color:var(--t3);margin-top:4px">${r.tx_count} txns</div></div>`;
+if(r.type==='token')return`<div class="s" style="margin-bottom:8px;cursor:pointer" onclick="go('tokens',document.getElementById('t3'));showToken('${r.token_id}')"><div class="sl">TOKEN</div><div class="tk">${r.token_id}</div><div class="vk" style="margin-top:4px">${r.vault_key}</div><div style="font-size:10px;margin-top:4px"><span class="badge b-${r.status}">${r.status}</span> ${r.metal}</div></div>`;
+if(r.type==='vault_key')return`<div class="s" style="margin-bottom:8px"><div class="sl">VAULT KEY</div><div class="vk">${r.vault_key}</div><div class="tk" style="margin-top:4px">${r.token_id}</div><div style="font-size:10px;margin-top:4px"><span class="badge b-${r.status}">${r.status}</span> ${r.metal}</div></div>`;
+if(r.type==='container')return`<div class="s" style="margin-bottom:8px"><div class="sl">CONTAINER</div><div style="font-weight:700;color:var(--gold)">${r.container_id}</div><div style="font-size:11px;color:var(--t2);margin-top:4px">${r.metal} · ${r.weight} · <span class="badge b-${r.status}">${r.status}</span> · ${r.vault_location}</div></div>`;
+return''}).join('')}
+
+function tLang(){L=L==='en'?'ar':'en';document.documentElement.dir=L==='ar'?'rtl':'ltr';document.documentElement.lang=L;
+document.getElementById('lB').textContent=L==='ar'?'English':'عربي';
+document.getElementById('lT').innerHTML=L==='ar'?'تنقل <span>المستكشف</span>':'Tanaqul <span>Explorer</span>';
+document.getElementById('nL').textContent=L==='ar'?'الشبكة نشطة':'Network Active';
+document.getElementById('si').placeholder=L==='ar'?'رقم البلوك، 0xTNQ...، BAR-...':'Block #, 0xTNQ..., 0xVK..., BAR-...';
+document.getElementById('t0').textContent=L==='ar'?'نظرة عامة':'Overview';
+document.getElementById('t1').textContent=L==='ar'?'البلوكات':'Blocks';
+document.getElementById('t2').textContent=L==='ar'?'السجل':'Ledger';
+document.getElementById('t3').textContent=L==='ar'?'الرموز':'Tokens';
+document.getElementById('t4').textContent=L==='ar'?'مفاتيح الخزنة':'Vault Keys';
+document.getElementById('t5').textContent=L==='ar'?'الحاويات':'Containers';
+document.querySelectorAll('[data-'+L+']').forEach(el=>{el.innerHTML=el.getAttribute('data-'+L)});loadStats()}
+
+loadStats();loadProg();loadBlocks();setInterval(()=>{loadStats();loadProg()},30000);
 </script>
 </body>
 </html>
