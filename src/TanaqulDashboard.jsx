@@ -7896,12 +7896,12 @@ const Settings = ({ onLangChange }) => {
           {vaultLocs.map(v=>(
             <div key={v} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:16,color:C.text,display:"flex",alignItems:"center",gap:6}}>{Icons.vault(14,C.textMuted)}{v}</span>
-              <div style={{display:"flex",gap:6}}><Btn small variant="danger" onClick={()=>setVaultLocs(p=>p.filter(x=>x!==v))}>{t("Remove")}</Btn></div>
+              <div style={{display:"flex",gap:6}}><Btn small variant="danger" onClick={async ()=>{const updated=vaultLocs.filter(x=>x!==v);setVaultLocs(updated);try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:updated})});}catch(e){}}}>{t("Remove")}</Btn></div>
             </div>
           ))}
           {showNewVault&&<div style={{display:"flex",gap:8,marginTop:10}}>
             <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder="Vault name..." style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
-            <Btn small variant="teal" onClick={()=>{if(newVault.trim()){setVaultLocs(p=>[...p,newVault]);setNewVault("");setShowNewVault(false);}}}>Add</Btn>
+            <Btn small variant="teal" onClick={async ()=>{if(newVault.trim()){const updated=[...vaultLocs,newVault];setVaultLocs(updated);setNewVault("");setShowNewVault(false);try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:updated})});}catch(e){}}}}>Add</Btn>
             <Btn small variant="ghost" onClick={()=>setShowNewVault(false)}>{t("Cancel")}</Btn>
           </div>}
           <div style={{marginTop:10}}><Btn small variant="teal" onClick={()=>setShowNewVault(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Add Location</span></Btn></div>
@@ -7929,19 +7929,19 @@ const Settings = ({ onLangChange }) => {
       {tab==="MANUFACTURERS"&&<G title={isAr?"الشركات المصنعة":"Manufacturers"}>
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10,gap:8}}>
           <input value={newManuf} onChange={e=>setNewManuf(e.target.value)} placeholder={isAr?"اسم الشركة المصنعة":"Manufacturer name..."} style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none"}} />
-          <Btn small variant="gold" onClick={()=>{if(newManuf.trim()){setManufacturers(p=>[...p,newManuf.trim()]);setNewManuf("");}}}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"إضافة":"Add"}</span></Btn>
+          <Btn small variant="gold" onClick={async ()=>{if(newManuf.trim()){const updated=[...manufacturers,newManuf.trim()];setManufacturers(updated);setNewManuf("");try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:updated})});}catch(e){}}}}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"إضافة":"Add"}</span></Btn>
         </div>
         {manufacturers.map((m,idx)=>(
           <div key={idx} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`}}>
             {editManufIdx===idx?<div style={{display:"flex",gap:6,flex:1}}>
               <input value={editManufVal} onChange={e=>setEditManufVal(e.target.value)} style={{flex:1,padding:"6px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14}} />
-              <Btn small variant="teal" onClick={()=>{setManufacturers(p=>p.map((x,i)=>i===idx?editManufVal:x));setEditManufIdx(null);}}>{isAr?"حفظ":"Save"}</Btn>
+              <Btn small variant="teal" onClick={async ()=>{const updated=manufacturers.map((x,i)=>i===idx?editManufVal:x);setManufacturers(updated);setEditManufIdx(null);try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:updated})});}catch(e){}}}>{isAr?"حفظ":"Save"}</Btn>
               <Btn small variant="ghost" onClick={()=>setEditManufIdx(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
             </div>:<>
               <span style={{fontSize:14,color:C.text,display:"flex",alignItems:"center",gap:6}}>{Icons.bar(16,C.textMuted)}{m}</span>
               <div style={{display:"flex",gap:6}}>
                 <Btn small variant="outline" onClick={()=>{setEditManufIdx(idx);setEditManufVal(m);}}>{isAr?"تعديل":"Edit"}</Btn>
-                <Btn small variant="danger" onClick={()=>setManufacturers(p=>p.filter((_,i)=>i!==idx))}>{t("Remove")}</Btn>
+                <Btn small variant="danger" onClick={async ()=>{const updated=manufacturers.filter((_,i)=>i!==idx);setManufacturers(updated);try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:updated})});}catch(e){}}}>{t("Remove")}</Btn>
               </div>
             </>}
           </div>
