@@ -6866,7 +6866,7 @@ const CommCenter = () => {
           <textarea value={compBody} onChange={e=>setCompBody(e.target.value)} rows={4} placeholder={isAr?"اكتب الرسالة الجماعية...":"Type bulk message..."}
             style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}} />
         </div>
-        <Btn variant="gold" onClick={()=>{if(!compBody){showToast("⚠️ Message is empty");return;}
+        <Btn variant="gold" onClick={async ()=>{if(!compBody){showToast("⚠️ Message is empty");return;}
           const count=bulkRecipients.length;
           try{const r=await apiFetch("/sms/bulk",{method:"POST",body:JSON.stringify({body:compBody,channel:"SMS",filter_status:bulkFilter,subject:"Bulk"})});if(r&&r.ok){const d=await r.json();showToast(`✅ ${d.sent||count} ${isAr?"رسالة أُرسلت":"messages sent"}`);} else {showToast(isAr?"⚠️ خطأ":"⚠️ Error");}}catch(e){showToast(isAr?"⚠️ خطأ":"⚠️ Error");}
           setCompBody("");}}>{isAr?`إرسال إلى ${bulkRecipients.length} مستثمر`:`Send to ${bulkRecipients.length} investors`}</Btn>
