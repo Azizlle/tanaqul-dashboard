@@ -1662,11 +1662,32 @@ const Vault = () => {
   const { t, isAr } = useLang();
   const { bars } = useAppData();
   const [metal,setMetal]=useState("ALL"); const [status,setStatus]=useState("ALL");
+  const [vaultIntegrity,setVaultIntegrity]=useState(null);
+  const [tokenStats,setTokenStats]=useState({floating:0,linked:0,total:0});
+
+  // Fetch live vault integrity + token stats
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const ir=await apiFetch("/vault/integrity");
+        if(ir&&ir.ok){const d=await ir.json();setVaultIntegrity(d);}
+      }catch(e){}
+      try{
+        const tr=await apiFetch("/vault/tokens?page=1&page_size=1");
+        if(tr&&tr.ok){const d=await tr.json();setTokenStats(prev=>({...prev,total:d.total||0}));}
+      }catch(e){}
+      try{
+        const nr=await fetch(API_BASE.replace("/api/v1","")+"/api/v1/public/explorer/network");
+        if(nr&&nr.ok){const d=await nr.json();setTokenStats({floating:d.tokens?.floating||0,linked:d.tokens?.linked||0,total:d.tokens?.total_active||0});}
+      }catch(e){}
+    })();
+  },[bars]);
 
   const [barsModal,setBarsModal]=useState(null);
   const [vaultToast,setVaultToast]=useState("");
   const showVaultToast = (m)=>{ setVaultToast(m); setTimeout(()=>setVaultToast(""),3000); };
   const rows=bars.filter(b=>(metal==="ALL"||b.metal===metal)&&(status==="ALL"||b.status===status));
+  const integrityOk=vaultIntegrity?vaultIntegrity.valid:bars.filter(b=>b.status==="DAMAGED").length===0;
   return (
     <div>
       <SectionHeader title="Main Vault" sub={isAr?"سجل السبائك الفيزيائية — القيد والخروج يتم عبر المواعيد فقط":"Physical bar registry — linking and unlinking only through appointments"} />
@@ -1674,10 +1695,10 @@ const Vault = () => {
         <StatCard icon={Icons.vault(22,C.navy)} title={isAr?"إجمالي السبائك":"Total Bars"} value={bars.length} />
         <StatCard icon={Icons.block(22,C.teal)} title={t("Linked")} value={bars.filter(b=>b.status==="LINKED").length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Free")} value={bars.filter(b=>b.status==="FREE").length} />
-        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value="0" gold />
-        <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value="8,340" />
-        <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value="15,840" />
-        <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Integrity")} value={bars.filter(b=>b.status==="DAMAGED").length===0&&bars.filter(b=>b.status==="LEFT").length===bars.filter(b=>b.leftOn).length&&bars.filter(b=>b.leftOn&&b.status!=="LEFT").length===0?"1:1 ✓":"⚠ Check"} gold />
+        <StatCard icon={Icons.token(22,C.teal)} title={isAr?"إجمالي الرموز":"Total Tokens"} value={tokenStats.total} gold />
+        <StatCard icon={Icons.token(22,C.navy)} title={t("Floating")} value={tokenStats.floating} />
+        <StatCard icon={Icons.block(22,C.teal)} title={t("Linked Tokens")} value={tokenStats.linked} />
+        <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Integrity")} value={integrityOk?"1:1 ✓":"⚠ Check"} gold />
       </div>
       <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center",justifyContent:"center"}}>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>{[["ALL","الكل"],["Gold","ذهب"],["Silver","فضة"],["Platinum","بلاتين"]].map(([m,mAr])=><button key={m} onClick={()=>setMetal(m)} style={{padding:"6px 14px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${metal===m?C.gold:C.border}`,background:metal===m?C.goldLight:C.white,color:metal===m?C.goldDim:C.textMuted}}>{isAr?mAr:m}</button>)}</div>
@@ -2055,9 +2076,28 @@ const Appointments = () => {
                 const uid=sel._uuid||sel.id;
                 const vRes=await apiFetch("/appointments/"+uid+"/otp/verify",{method:"POST",body:JSON.stringify({otp_code:otpVal})});
                 if(!vRes||!vRes.ok){setOtpError("Incorrect OTP. Please ask the investor to check their phone.");return;}
-                // OTP verified — complete the appointment
-                await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});
-              } catch(e){ /* network offline — allow local state update */ }
+                // ═══ VAULT LIFECYCLE ENGINE ═══
+                if(sel.type==="DEPOSIT"){
+                  // Step 1: Open deposit appointment
+                  await apiFetch("/vault/deposit/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});
+                  // Step 2: Register bar
+                  const regRes=await apiFetch("/vault/deposit/register-bar",{method:"POST",body:JSON.stringify({appointment_id:uid,barcode:startData.barcode?.trim()||"",metal:sel.metal||"Gold",weight_grams:parseFloat(sel.qty)||0,weight_label:sel.qty||"",manufacturer:manufacturer||"",vault_location:sel.vault||"Riyadh"})});
+                  const regData=regRes&&regRes.ok?await regRes.json():{};
+                  // Step 3: Mint tokens
+                  if(regData.bar_id){await apiFetch("/vault/deposit/mint",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:regData.bar_id})});}
+                } else if(sel.type==="WITHDRAWAL"){
+                  // Step 1: Open withdrawal appointment
+                  await apiFetch("/vault/withdraw/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});
+                  // Step 2: Select bar
+                  const barRes=await apiFetch("/vault/withdraw/select-bar/"+uid);
+                  const barData=barRes&&barRes.ok?await barRes.json():{};
+                  // Step 3: Burn tokens
+                  if(barData.bar_id){await apiFetch("/vault/withdraw/burn",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:barData.bar_id})});}
+                } else {
+                  // Fallback: complete via old endpoint
+                  await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});
+                }
+              } catch(e){ console.warn("Vault lifecycle error:",e); }
               // Update local state: mark COMPLETED
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"IN_PROGRESS"}:a));
               setTimeout(()=>setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"COMPLETED"}:a)),500);
@@ -2074,6 +2114,8 @@ const Appointments = () => {
               if(sel.type==="WITHDRAWAL"&&startData.barcode){
                 setBars(prev=>prev.map(b=>b.barcode===startData.barcode.trim()?{...b,status:"LEFT",leftOn:new Date().toISOString().slice(0,10),vault:"—"}:b));
               }
+              // Refresh vault data from API
+              try{const vr=await apiFetch("/vault/bars");if(vr&&vr.ok){const vd=await vr.json();if(vd.items)setBars(vd.items.map(b=>({id:b.display_id||b.id,_uuid:String(b.id),metal:b.metal||"Gold",weight:b.weight||"",purity:b.purity||"999.9",barcode:b.barcode||"",serial:b.serial||"",manufacturer:b.manufacturer||"",vault:b.vault_location||"Riyadh",status:b.status||"FREE",depositor:b.depositor_id||"",depositedAt:b.deposited_at||""})));}}catch(e2){}
               addAudit("COMPLETE_APPOINTMENT", sel.id, sel.investor+" — "+sel.type+" — "+sel.metal+" "+sel.qty);
               closeAll();
             }} style={{opacity:otpVal.length===6&&!otpExpired?1:0.5}}>
@@ -2834,10 +2876,35 @@ const ValidatorsTab = () => {
 
 const Blocks = () => {
   const { t, isAr, commSplit } = useLang();
-  const { matches, appBlocks, appBlockStats } = useAppData();
+  const { matches, appBlocks, appBlockStats, setAppBlocks } = useAppData();
   const [chainStats, setChainStats] = useState(appBlockStats);
+  const [blockDetail,setBlockDetail]=useState(null);
+  const [genesisLoading,setGenesisLoading]=useState(false);
   // Chain stats already available via appBlockStats from main fetchApiData
   const [tab,setTab]=useState("BLOCKS");
+
+  // Genesis Block creation
+  const createGenesis = async () => {
+    setGenesisLoading(true);
+    try{
+      const r=await apiFetch("/blocks/genesis",{method:"POST"});
+      if(r&&r.ok){const d=await r.json();alert("Genesis Block #1 Created!\nHash: "+d.hash);
+        // Refresh blocks
+        const br=await apiFetch("/blocks");if(br&&br.ok){const bd=await br.json();if(bd.items)setAppBlocks(bd.items.map(b=>({number:b.number,hash:b.hash||"",txCount:b.tx_count||0,commission:String(b.commission||0),tanaqulShare:String(b.tanaqul_share||0),creatorShare:String(b.creator_share||0),validatorsShare:String(b.validators_share||0),validator:b.validator_name||"Tanaqul",timestamp:b.created_at||"",size:b.size_bytes?(Number(b.size_bytes)/1048576).toFixed(2)+" MB":"0 MB"})));}
+      } else {const d=await r.json().catch(()=>({}));alert(d.detail||"Genesis already exists or error");}
+    }catch(e){alert("Error: "+e.message);}
+    setGenesisLoading(false);
+  };
+
+  // Block detail fetch
+  const openBlock = async (num) => {
+    try{
+      const r=await fetch(API_BASE.replace("/api/v1","")+"/api/v1/public/explorer/blocks/"+num);
+      if(r&&r.ok){const d=await r.json();setBlockDetail(d);}
+    }catch(e){}
+  };
+
+  const apiSplit = appBlockStats?.commission_split;
   const apiSplit = appBlockStats?.commission_split;
   const tanaqulPct = apiSplit ? apiSplit.platform_percent : ((commSplit.buying||30)+(commSplit.selling||30));
   const creatorPct = apiSplit ? apiSplit.creator_percent : (commSplit.creator||20);
@@ -2864,10 +2931,11 @@ const Blocks = () => {
         <span style={{fontSize:13,color:"#A89880"}}>Split: <span style={{color:C.teal}}>{tanaqulPct}% Tanaqul / {creatorPct}% Creator / {validatorsPct}% Validators</span></span>
         <span style={{color:C.silverText}}>|</span>
         <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>Last: {(appBlockStats?.latest_block_hash ? (appBlockStats.latest_block_hash.substring(0,10)+"..."+appBlockStats.latest_block_hash.slice(-4)) : "–")}</span>
+        {appBlocks.length===0&&<button onClick={createGenesis} disabled={genesisLoading} style={{marginLeft:"auto",padding:"6px 16px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",border:"1px solid "+C.gold,background:C.goldLight,color:C.goldDim}}>{genesisLoading?"Creating...":"⛓ Create Genesis Block #1"}</button>}
       </div>
       <TabBar tabs={[{id:"BLOCKS",label:isAr?"البلوكات":"BLOCKS"},{id:"TRANSACTIONS",label:isAr?"المعاملات":"TRANSACTIONS"},{id:"VALIDATORS",label:isAr?"المدققون":"VALIDATORS"}]} active={tab} onChange={setTab} />
-      {tab==="BLOCKS"&&<TTable cols={[
-        {key:"number",label:"Block #",render:v=><span style={{fontFamily:"monospace",color:C.gold}}>#{v}</span>},
+      {tab==="BLOCKS"&&<><TTable cols={[
+        {key:"number",label:"Block #",render:v=><span style={{fontFamily:"monospace",color:C.gold,cursor:"pointer"}} onClick={()=>openBlock(v)}>#{v}</span>},
         {key:"hash",label:"Hash",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
         {key:"txCount",label:"TXs"},
         {key:"commission",label:"Commission",render:v=><SARAmount amount={v}/>},
@@ -2875,7 +2943,24 @@ const Blocks = () => {
         {key:"creatorShare",label:`Creator ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validatorsShare",label:`Validators ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
         {key:"validator",label:"Creator"},{key:"size",label:"Size"},{key:"timestamp",label:"Time"},
-      ]} rows={appBlocks} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />}
+      ]} rows={appBlocks} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />
+      {blockDetail&&<Modal title={"Block #"+blockDetail.number} onClose={()=>setBlockDetail(null)}>
+        <div style={{fontFamily:"monospace",fontSize:11,color:C.teal,wordBreak:"break-all",marginBottom:16,background:C.bg,padding:12,borderRadius:8}}>{blockDetail.hash}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>TRANSACTIONS</p><p style={{fontSize:20,fontWeight:700,color:C.navy}}>{blockDetail.tx_count}</p></div>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>SIZE</p><p style={{fontSize:20,fontWeight:700,color:C.navy}}>{blockDetail.size_bytes?(blockDetail.size_bytes/1024).toFixed(1)+"KB":"—"}</p></div>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>TIME</p><p style={{fontSize:13,fontWeight:600,color:C.navy}}>{blockDetail.created_at?new Date(blockDetail.created_at).toLocaleString():"—"}</p></div>
+        </div>
+        {blockDetail.token_snapshot&&<><p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{isAr?"لقطة الرموز":"Token Snapshot"}</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
+          <div style={{background:C.tealLight,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.teal,fontWeight:700}}>◎ {isAr?"عائمة":"FLOATING"}</p><p style={{fontSize:22,fontWeight:800,color:C.teal}}>{blockDetail.token_snapshot.floating}</p></div>
+          <div style={{background:C.goldLight,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.goldDim,fontWeight:700}}>⬡ {isAr?"مرتبطة":"LINKED"}</p><p style={{fontSize:22,fontWeight:800,color:C.goldDim}}>{blockDetail.token_snapshot.linked}</p></div>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:700}}>▣ {isAr?"حاويات":"CONTAINERS"}</p><p style={{fontSize:22,fontWeight:800,color:C.navy}}>{blockDetail.bar_snapshot?.containers||0}</p></div>
+        </div></>}
+        {blockDetail.integrity&&<div style={{background:blockDetail.integrity.valid?"#DCFCE7":"#FEE2E2",borderRadius:10,padding:"10px 14px",textAlign:"center",fontSize:13,fontWeight:600,color:blockDetail.integrity.valid?"#16A34A":"#DC2626"}}>
+          {blockDetail.integrity.valid?"✓":"✗"} {isAr?"تحقق السلامة":"Integrity"}: {blockDetail.integrity.physical_grams}g {isAr?"فعلي":"physical"} = {blockDetail.integrity.digital_tokens} {isAr?"رقمي":"digital"} {blockDetail.integrity.valid?(isAr?"✓ متطابق":"✓ VALID"):(isAr?"✗ غير متطابق":"✗ MISMATCH")}
+        </div>}
+      </Modal>}</>}
       {tab==="TRANSACTIONS"&&<TTable cols={[
         {key:"id",label:"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
         {key:"investor",label:"Investor"},{key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
@@ -9030,7 +9115,7 @@ export default function App() {
     amlAlerts, cmaAlerts, amlDismissed, dismissAmlAlert, amlLastRun,
     pageHint, setPageHint,
     mmAccount, setMMAccount, reconState, setReconState,
-    appBlocks, appBlockStats, appDashStats,
+    appBlocks, setAppBlocks, appBlockStats, appDashStats,
   };
 
   if (!loggedIn) return (
