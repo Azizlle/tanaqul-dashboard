@@ -4957,6 +4957,40 @@ const OrderBook = () => {
   const spread     = bestBid&&bestAsk?(bestAsk-bestBid).toFixed(2):null;
   const spreadPct  = bestBid&&bestAsk?(((bestAsk-bestBid)/bestBid)*100).toFixed(2):null;
   const spreadWide = spreadPct&&parseFloat(spreadPct)>parseFloat(maxSpreadPct);
+
+  // ═══ SPREAD STABILIZER — Auto-inject synthetic orders when spread widens ═══
+  const stabLastRef = useRef(0);
+  useEffect(()=>{
+    if(!stabEnabled || !spreadWide || !bestBid || !bestAsk) return;
+    // Debounce: max once per 30 seconds
+    if(Date.now()-stabLastRef.current < 30000) return;
+    // Check exposure cap
+    const currentExposure = orders.filter(o=>o.synthetic&&(o.status==="OPEN"||o.status==="PARTIAL")).reduce((a,o)=>a+Math.round(((Number(o.qty)||0)-(Number(o.filled)||0))*(Number(o.price)||0)),0);
+    if(currentExposure >= parseInt(stabCapSAR||500000)) return;
+
+    stabLastRef.current = Date.now();
+    const midPrice = (bestBid+bestAsk)/2;
+    const halfSpread = parseFloat(maxSpreadPct||2)/2/100;
+    const synBidPrice = +(midPrice*(1-halfSpread)).toFixed(2);
+    const synAskPrice = +(midPrice*(1+halfSpread)).toFixed(2);
+    const synQty = Math.min(50, Math.floor((parseInt(stabCapSAR||500000)-currentExposure)/midPrice));
+    if(synQty < 1) return;
+
+    const ts = new Date().toISOString().slice(0,16).replace("T"," ");
+    const synBuy = {id:"SYN-B-"+Date.now(), investor:"Takharoj Finance", investorAr:"تخارج المالية", nationalId:"7031990530", side:"BUY", metal:metalFilter||"Gold", qty:synQty, filled:0, price:synBidPrice, payment:"Wallet", expiry:"GTC", status:"OPEN", placed:ts, synthetic:true, reason:`Spread ${spreadPct}% > ${maxSpreadPct}%`};
+    const synSell = {id:"SYN-S-"+Date.now(), investor:"Takharoj Finance", investorAr:"تخارج المالية", nationalId:"7031990530", side:"SELL", metal:metalFilter||"Gold", qty:synQty, filled:0, price:synAskPrice, payment:"Wallet", expiry:"GTC", status:"OPEN", placed:ts, synthetic:true, reason:`Spread ${spreadPct}% > ${maxSpreadPct}%`};
+
+    setOrders(p=>[synBuy,synSell,...p]);
+    setSynLog(p=>[synBuy,synSell,...p]);
+    addAudit("STABILIZER_INJECT", synBuy.id, `BUY ${synQty}g @ ${synBidPrice} + SELL ${synQty}g @ ${synAskPrice} — spread ${spreadPct}%`);
+
+    // Try posting to backend
+    try{
+      apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"BUY",metal:metalFilter||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
+      apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"SELL",metal:metalFilter||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
+    }catch(e){}
+  },[stabEnabled, spreadWide, bestBid, bestAsk, orders]);
+
   const openList      = orders.filter(o=>o.status==="OPEN"||o.status==="PARTIAL");
   const filledList    = orders.filter(o=>o.status==="FILLED");
   const cancelledList = orders.filter(o=>o.status==="CANCELLED");
@@ -5400,7 +5434,7 @@ const OrderBook = () => {
                 <span style={{fontSize:13,fontWeight:600,color:"#C85C3E"}}>{isAr?"أوامر الشراء معطّلة — يمكن وضع أوامر بيع فقط":"Bid orders disabled — SELL orders only"}</span>
               </div>
             )}
-            <Btn variant="gold" onClick={()=>{if(!tradingOpen){showMatchToast(isAr?"⚠️ السوق مغلق":"⚠️ Market is closed");return;}setMmOpen(true);}}>⚡ {isAr?"صانع السوق":"Market Maker"}</Btn>
+            <Btn variant="gold" onClick={()=>setTab("stabilizer")}>⚡ {isAr?"صانع السوق":"Market Maker"}</Btn>
           </div>
           <TTable cols={[
             {key:"id",      label:"Order ID"},
