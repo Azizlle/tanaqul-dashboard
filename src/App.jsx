@@ -2667,7 +2667,7 @@ const Blacklist = () => {
     };
     try {
       const res = await apiFetch("/blacklist", {method:"POST", body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})});
-      if(res?.id) newEntry._uuid = String(res.id);
+      if(res && res.ok) { const data = await res.json(); if(data?.id) newEntry._uuid = String(data.id); }
     } catch(e) {}
     setBlacklist(prev=>[newEntry,...prev]);
     addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
@@ -2827,7 +2827,7 @@ const ValidatorsTab = () => {
             <Btn variant="teal" onClick={async ()=>{
               if(!vName||!vAddr){showBlkToast(isAr?"⚠️ الاسم والعنوان مطلوبان":"⚠️ Name and address required");return;}
               const newV={id:"VAL-"+(validators.length+1).toString().padStart(3,"0"),name:vName,address:vAddr,status:"ACTIVE",blocksValidated:0,weight:"0%",commissionEarned:"0",joined:new Date().toISOString().slice(0,10)};
-              try { const res = await apiFetch("/validators", {method:"POST", body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:""})}); if(res?.id) newV._uuid=String(res.id); } catch(e) {}
+              try { const res = await apiFetch("/validators", {method:"POST", body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:""})}); if(res&&res.ok){const data=await res.json();if(data?.id)newV._uuid=String(data.id);} } catch(e) {}
               setValidators(p=>[...p,newV]);
               showBlkToast(isAr?"✅ تم إضافة المدقق":"✅ Validator added");
               setShowAdd(false);setVName("");setVAddr("");setVEnd("");
