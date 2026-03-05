@@ -5728,12 +5728,16 @@ const UserManagement = () => {
   useEffect(()=>{
     apiFetch("/admin/users").then(r=>r&&r.ok?r.json():null).then(d=>{
       const items = d?.items || d?.users || (Array.isArray(d)?d:[]);
-      if(items.length) setUsers(items.map(u=>({
-        id: u.display_id||u.id, name: u.name_en||u.name||"",
-        nameAr: u.name_ar||"", email: u.email||"",
-        role: u.role||"VIEWER", status: u.status||"ACTIVE",
-        lastLogin: u.last_login||"", createdAt: u.created_at||"",
-      })));
+      if(items.length) setUsers(items.map(u=>{
+        const role = (u.role||"viewer").toUpperCase();
+        return {
+          id: u.display_id||u.id, name: u.name_en||u.name||"",
+          nameAr: u.name_ar||"", email: u.email||"",
+          role: role, status: u.status||(u.is_active===false?"SUSPENDED":"ACTIVE"),
+          lastLogin: u.last_login||"", createdAt: u.created_at||"",
+          perms: ROLE_PERMS[role]||[], sessions: 0, twoFA: true,
+        };
+      }));
     }).catch(()=>{});
   },[]);
   const [modal, setModal] = useState(null); // null | "add" | user object
@@ -6019,17 +6023,45 @@ const UserManagement = () => {
 const AccountProfile = () => {
   const { isAr, t } = useLang();
   const [tab, setTab] = useState("INFO");
-  const _adminData = (() => { try { return JSON.parse(localStorage.getItem("tanaqul_admin")||"{}"); } catch(e) { return {}; } })();
   const [profile, setProfile] = useState({
-    name:_adminData.name||_adminData.email?.split("@")[0]||"Admin", nameAr:"",
-    email:_adminData.email||"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
-    phoneVerified:true,
-    recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
-    recoveryEmail:"abdulaziz.recovery@gmail.com",
-    role:"Super Admin", roleAr:"مسؤول أعلى",
-    joined:"2025-09-01", lastLogin:"2026-03-02 09:14",
-    twoFA:true, lang:"ar",
+    name:"", nameAr:"", email:"", phone:"", role:"",
+    phoneVerified:false, recoveryPhone:"", recoveryPhoneVerified:false,
+    recoveryEmail:"", joined:"", lastLogin:"", twoFA:true, lang:"ar",
   });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real profile from API
+  useEffect(()=>{
+    (async()=>{
+      try{
+        // Get current admin from token
+        const token = localStorage.getItem("tanaqul_token");
+        if(token){
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const adminId = payload.sub || payload.id;
+          // Fetch admin users list and find current
+          const r = await apiFetch("/admin/users");
+          if(r&&r.ok){
+            const d = await r.json();
+            const items = d.items||d.users||[];
+            const me = items.find(u=>String(u.id)===String(adminId)) || items.find(u=>u.email===payload.email) || items[0];
+            if(me){
+              setProfile(p=>({...p,
+                name: me.name_en||me.name||payload.email?.split("@")[0]||"Admin",
+                nameAr: me.name_ar||"",
+                email: me.email||payload.email||"",
+                role: (me.role||"viewer").replace("_"," ").replace(/\b\w/g,l=>l.toUpperCase()),
+                joined: me.created_at?me.created_at.slice(0,10):"",
+                lastLogin: me.last_login||"",
+                phone: me.phone||"+966 50 XXX XXXX",
+              }));
+            }
+          }
+        }
+      }catch(e){}
+      setLoading(false);
+    })();
+  },[]);
   const [pwForm, setPwForm] = useState({current:"",newPw:"",confirm:""});
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
