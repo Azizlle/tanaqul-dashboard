@@ -8751,7 +8751,7 @@ export default function App() {
           const items = data.items || data.movements || data;
           if (!Array.isArray(items)) return null;
           return items.map(m => ({
-            id: m.display_id || m.id, nationalId: m.national_id || "",
+            id: m.display_id || m.id, _uuid: String(m.id), nationalId: m.national_id || "",
             investor: m.investor_name || m.national_id || "",
             vaultKey: m.vault_key || "", type: m.type || "CREDIT",
             amount: String(m.amount || 0), reason: m.reason || "",
@@ -8762,7 +8762,7 @@ export default function App() {
           const items = data.items || data.validators || data;
           if (!Array.isArray(items)) return null;
           return items.map(v => ({
-            id: v.display_id || v.id, name: v.name || "",
+            id: v.display_id || v.id, _uuid: String(v.id), name: v.name || "",
             address: v.address || "", status: v.status || "STANDBY",
             blocks: v.blocks_validated || 0, lastBlock: v.last_block || 0,
             commission: String(v.commission_earned || 0),
@@ -8775,7 +8775,7 @@ export default function App() {
           const items = data.items || data.blacklist || data;
           if (!Array.isArray(items)) return null;
           return items.map(b => ({
-            id: b.display_id || b.id, name: b.name || "",
+            id: b.display_id || b.id, _uuid: String(b.id), name: b.name || "",
             nationalId: b.national_id || "", vaultKey: b.vault_key || "",
             reason: b.reason || "", bannedBy: b.banned_by || "",
             date: b.created_at || "", active: b.is_active !== false,
