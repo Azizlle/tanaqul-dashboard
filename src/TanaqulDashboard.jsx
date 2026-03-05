@@ -5721,6 +5721,13 @@ const ROLE_PERMS = {
 const UserManagement = () => {
   const { isAr, t } = useLang();
   const [customRoles, setCustomRoles] = useState([]);
+  // Load custom roles from API
+  useEffect(()=>{
+    apiFetch("/settings/roles").then(r=>r&&r.ok?r.json():null).then(d=>{
+      if(d&&Array.isArray(d)&&d.length>0) setCustomRoles(d);
+      else if(d&&d.items&&Array.isArray(d.items)) setCustomRoles(d.items);
+    }).catch(()=>{});
+  },[]);
   const allRoles = [...ROLES.filter(r=>r.id!=="CUSTOM"), ...customRoles, ROLES.find(r=>r.id==="CUSTOM")];
   const allRolePerms = {...ROLE_PERMS};
   customRoles.forEach(r=>{ allRolePerms[r.id]=r.perms; });
@@ -5767,7 +5774,7 @@ const UserManagement = () => {
             <div style={{width:10,height:10,borderRadius:3,background:r.color}} />
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{isAr?r.labelAr:r.label}</span>
             <span style={{fontSize:12,color:C.textMuted}}>— {isAr?r.descAr:r.desc}</span>
-            {r.custom&&<button onClick={()=>{setCustomRoles(p=>p.filter(x=>x.id!==r.id));showToast(isAr?"تم حذف الدور":"Role deleted");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:C.red,fontWeight:700,padding:"0 4px"}}>✕</button>}
+            {r.custom&&<button onClick={async ()=>{const updated=customRoles.filter(x=>x.id!==r.id);setCustomRoles(updated);try{await apiFetch("/settings/roles",{method:"PUT",body:JSON.stringify({items:updated})});}catch(e){}showToast(isAr?"تم حذف الدور":"Role deleted");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:C.red,fontWeight:700,padding:"0 4px"}}>✕</button>}
           </div>
         ))}
       </div>
@@ -5827,9 +5834,13 @@ const UserManagement = () => {
           <Btn variant="gold" onClick={async ()=>{
             if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
             const id="USR-"+String(Date.now()).slice(-3);
-            try{await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role})});}catch(e){}
-            setUsers(p=>[...p,{id,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
-            setModal(null);showToast(isAr?"✅ تم إضافة المستخدم — كلمة مرور مؤقتة أُرسلت للبريد":"✅ User added — temporary password sent to email");
+            let apiUser = null;
+            try{const r=await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role.toLowerCase()})});if(r&&r.ok)apiUser=await r.json();}catch(e){}
+            const realId = apiUser?.id||id;
+            setUsers(p=>[...p,{id:realId,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
+            setModal(null);
+            if(apiUser?.temp_password){showToast(isAr?`✅ تم إنشاء المستخدم — كلمة المرور المؤقتة: ${apiUser.temp_password}`:`✅ User created — Temp password: ${apiUser.temp_password}`);}
+            else{showToast(isAr?"✅ تم إضافة المستخدم":"✅ User added");}
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
         </div>
       </Modal>}
@@ -5859,11 +5870,11 @@ const UserManagement = () => {
           <div style={{display:"flex",gap:8}}>
             <Btn variant="gold" onClick={async ()=>{
               setUsers(p=>p.map(x=>x.id===modal.id?{...x,role:editRole,perms:editRole==="CUSTOM"?editPerms:ROLE_PERMS[editRole]}:x));
-              try{await apiFetch("/admin/users/"+modal.id+"/role",{method:"POST",body:JSON.stringify({role:editRole})});}catch(e){}
+              try{await apiFetch("/admin/users/"+modal.id+"/role",{method:"POST",body:JSON.stringify({role:editRole.toLowerCase()})});}catch(e){}
               setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
             }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
-            {!modal.twoFA&&<Btn variant="teal" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,twoFA:true}:x));showToast(isAr?"🔒 تم تفعيل المصادقة الثنائية":"🔒 2FA enabled");setModal(null);}}>{isAr?"تفعيل 2FA":"Enable 2FA"}</Btn>}
-            {modal.sessions>0&&<Btn variant="danger" onClick={()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,sessions:0}:x));showToast(isAr?"تم إلغاء جميع الجلسات":"All sessions revoked");}}>{isAr?"إلغاء الجلسات":"Revoke Sessions"}</Btn>}
+            {!modal.twoFA&&<Btn variant="teal" onClick={async ()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,twoFA:true}:x));try{await apiFetch("/admin/users/"+modal.id+"/2fa",{method:"POST"});}catch(e){}showToast(isAr?"🔒 تم تفعيل المصادقة الثنائية":"🔒 2FA enabled");setModal(null);}}>{isAr?"تفعيل 2FA":"Enable 2FA"}</Btn>}
+            {modal.sessions>0&&<Btn variant="danger" onClick={async ()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,sessions:0}:x));try{await apiFetch("/admin/users/"+modal.id+"/revoke-sessions",{method:"POST"});}catch(e){}showToast(isAr?"تم إلغاء جميع الجلسات":"All sessions revoked");}}>{isAr?"إلغاء الجلسات":"Revoke Sessions"}</Btn>}
           </div>
         </div>
       </Modal>}
@@ -5921,7 +5932,7 @@ const UserManagement = () => {
               descAr:`مخصص: ${newRole.perms.length} وحدة`,
               perms:[...newRole.perms],
             };
-            setCustomRoles(p=>[...p,role]);
+            setCustomRoles(p=>{const updated=[...p,role];try{apiFetch("/settings/roles",{method:"PUT",body:JSON.stringify({items:updated})});}catch(e){}return updated;});
             setRoleModal(false);
             showToast(isAr?"✅ تم إنشاء الدور: "+newRole.labelAr:"✅ Role created: "+newRole.label);
           }}>{isAr?"إنشاء الدور":"Create Role"}</Btn>
@@ -5932,9 +5943,26 @@ const UserManagement = () => {
       {activityModal&&(()=>{
         const u = activityModal;
         const role = roleOf(u.role);
-        const log = u.log||[];
+        const log = u.log||u._apiLog||[];
         const actionTypes = [...new Set(log.map(e=>e.action))];
         const filtered = logFilter==="ALL"?log:log.filter(e=>e.action===logFilter);
+        // Fetch from API if not loaded yet
+        if(!u._apiLogLoaded){
+          u._apiLogLoaded = true;
+          apiFetch("/audit-logs?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
+            if(d&&d.items){
+              const userLogs = d.items.filter(a=>a.admin_id===u.id||a.entity_id===u.id).map(a=>({
+                date:a.created_at?a.created_at.slice(0,16).replace("T"," "):"",
+                action:a.action||"", actionAr:a.action||"",
+                detail:a.details||a.entity_type||"", ip:"—",
+              }));
+              if(userLogs.length>0){
+                u._apiLog = [...userLogs,...(u.log||[])];
+                setActivityModal({...u});
+              }
+            }
+          }).catch(()=>{});
+        }
         return (
           <Modal title={`${isAr?"سجل نشاط":"Activity Log"} — ${isAr?u.nameAr:u.name}`} onClose={()=>setActivityModal(null)}>
             <div style={{padding:"4px 0"}}>
