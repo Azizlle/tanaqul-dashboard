@@ -6193,7 +6193,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,phone:profile.phone})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -8071,7 +8071,7 @@ const PAGES = [
   {id:"settings",     icon:"settings",     label:"Settings"},
   {id:"health",       icon:"health",       label:"System Health"},
   {id:"treasury",     icon:"treasury",     label:"Treasury & Recon"},
-  {id:"profile",      icon:"profile",      label:"Account Profile"},
+  // Profile accessible via user name click in sidebar, not as separate page
 ];
 
 // ─── TOTP Implementation (RFC 6238) ──────────────────────────────────────────
