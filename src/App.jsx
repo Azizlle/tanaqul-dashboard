@@ -2667,7 +2667,7 @@ const Blacklist = () => {
     };
     try {
       const res = await apiFetch("/blacklist", {method:"POST", body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})});
-      if(res && res.ok) { const data = await res.json(); if(data?.id) newEntry._uuid = String(data.id); }
+      if(res && res.ok) { const data = await res.json(); if(data?.id) { newEntry._uuid = String(data.id); newEntry.id = data.display_id || newEntry.id; newEntry.bannedBy = data.banned_by || "Admin"; newEntry.date = data.created_at || newEntry.date; } }
     } catch(e) {}
     setBlacklist(prev=>[newEntry,...prev]);
     addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
@@ -2680,15 +2680,18 @@ const Blacklist = () => {
     if(!entry) return;
     try {
       const uid = entry._uuid || entry.id;
-      // Try DELETE method first (RESTful pattern), then POST /unban as fallback
-      let res = await apiFetch("/blacklist/"+uid, {method:"DELETE"});
-      if(!res || !res.ok) {
-        // Fallback: try POST with national_id in body
-        res = await apiFetch("/blacklist/"+uid+"/unban", {method:"POST", body:JSON.stringify({national_id:entry.nationalId})});
-      }
-      if(!res || !res.ok) {
-        // Fallback: try by national_id
+      let res;
+      // Try by national_id first (most reliable — unique in DB)
+      if(entry.nationalId) {
         res = await apiFetch("/blacklist/unban", {method:"POST", body:JSON.stringify({national_id:entry.nationalId})});
+      }
+      // Fallback: DELETE by uuid/display_id
+      if(!res || !res.ok) {
+        res = await apiFetch("/blacklist/"+uid, {method:"DELETE"});
+      }
+      // Fallback: POST unban by uuid/display_id
+      if(!res || !res.ok) {
+        res = await apiFetch("/blacklist/"+uid+"/unban", {method:"POST", body:JSON.stringify({national_id:entry.nationalId})});
       }
     } catch(e) {}
     setBlacklist(prev=>prev.filter(b=>b.id!==id));
