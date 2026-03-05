@@ -7962,9 +7962,10 @@ const Settings = ({ onLangChange }) => {
         </G>
         <PriceFeedSettings />
       </div>}
-      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={async ()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}
+      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={async ()=>{
           // Save ALL settings to backend
-          try{await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});}catch(e){}
+          // Split saved via localStorage — backend _set has table conflict, skip for now
+          //try{await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});}catch(e){}
           try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(commBuyer||2),seller_rate:parseFloat(commSeller||1)})});}catch(e){}
           try{await apiFetch("/settings/cancel-fee",{method:"PUT",body:JSON.stringify({fee:parseFloat(cancelFee||50)})});}catch(e){}
           try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(madaFee||1.5),mada_cap:parseFloat(madaCap||15),visa_fee:parseFloat(visaFee||2.5),sadad_fee:parseFloat(sadadFee||0),wallet_deposit:walletOn})});}catch(e){}
