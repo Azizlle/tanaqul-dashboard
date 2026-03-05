@@ -8904,59 +8904,134 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
 
 // ═══ SYSTEM HEALTH ══════════════════════════════════════════════════════════
 const SystemHealth = () => {
-  const { isAr } = useContext(AppDataContext);
+  const { isAr } = useLang();
   const t = (en, ar) => isAr ? (ar||en) : en;
-  const [checks, setChecks] = useState([
-    {id:"api",    label:"Backend API",        labelAr:"واجهة برمجة التطبيقات", status:"checking", latency:null},
-    {id:"db",     label:"Database",           labelAr:"قاعدة البيانات",         status:"checking", latency:null},
-    {id:"chain",  label:"Blockchain Node",    labelAr:"عقدة البلوكتشين",        status:"checking", latency:null},
-    {id:"price",  label:"Price Feed",         labelAr:"بيانات الأسعار",          status:"checking", latency:null},
-    {id:"sms",    label:"SMS Gateway",        labelAr:"بوابة الرسائل",           status:"checking", latency:null},
-  ]);
+  const [health, setHealth] = useState(null);
+  const [priceStatus, setPriceStatus] = useState({status:"checking",latency:null});
+  const [smsStatus, setSmsStatus] = useState({status:"unknown"});
   const [lastChecked, setLastChecked] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [apiLatency, setApiLatency] = useState(null);
 
   const runChecks = async () => {
+    setLoading(true);
     setLastChecked(new Date().toLocaleTimeString());
-    // API check
+    // Full health from backend
     try {
       const t0 = Date.now();
-      const r = await fetch(API_BASE.replace("/api/v1","") + "/health").catch(()=>null) ||
-                await fetch(API_BASE + "/dashboard/stats", {headers:{Authorization:"Bearer "+localStorage.getItem("tanaqul_token")}}).catch(()=>null);
-      const lat = Date.now()-t0;
-      setChecks(p=>p.map(c=>c.id==="api"?{...c,status:r&&r.ok?"ok":"degraded",latency:lat}:c));
-    } catch(e) { setChecks(p=>p.map(c=>c.id==="api"?{...c,status:"down",latency:null}:c)); }
-    // Price feed check
+      const r = await fetch(API_BASE.replace("/api/v1","") + "/api/v1/health/full");
+      setApiLatency(Date.now()-t0);
+      if(r&&r.ok) { const d = await r.json(); setHealth(d); }
+    } catch(e) { setHealth({api:{status:"down"},database:{status:"down"}}); }
+    // Price feed
     try {
       const t0 = Date.now();
       const r = await fetch("https://api.metals.dev/v1/latest?api_key=demo&currency=SAR&unit=toz").catch(()=>null);
-      setChecks(p=>p.map(c=>c.id==="price"?{...c,status:r&&r.ok?"ok":"degraded",latency:Date.now()-t0}:c));
-    } catch(e) { setChecks(p=>p.map(c=>c.id==="price"?{...c,status:"unknown",latency:null}:c)); }
-    // Others unknown until backend exposes health endpoint
-    setChecks(p=>p.map(c=>["db","chain","sms"].includes(c.id)?{...c,status:"unknown"}:c));
+      setPriceStatus({status:r&&r.ok?"ok":"degraded",latency:Date.now()-t0});
+    } catch(e) { setPriceStatus({status:"down",latency:null}); }
+    // SMS — check from settings
+    try {
+      const r = await apiFetch("/settings/sms");
+      if(r&&r.ok) { const d = await r.json(); setSmsStatus({status:d.enabled?"ok":"disabled",endpoint:d.api_endpoint||""}); }
+    } catch(e) { setSmsStatus({status:"unknown"}); }
+    setLoading(false);
   };
 
   useEffect(()=>{ runChecks(); },[]);
 
-  const statusColor = {ok:C.greenSolid, degraded:"#E67E22", down:"#C85C3E", unknown:C.textMuted, checking:C.textMuted};
-  const statusLabel = {ok:"Operational", degraded:"Degraded", down:"Down", unknown:"Unknown", checking:"Checking..."};
+  const sc = {ok:"#16A34A",degraded:"#E67E22",down:"#C85C3E",unknown:"#94A3B8",checking:"#94A3B8",disabled:"#D4943A",no_genesis:"#E67E22",error:"#C85C3E"};
+  const sl = {ok:t("Operational","تشغيلي"),degraded:t("Degraded","متدهور"),down:t("Down","متوقف"),unknown:t("Unknown","غير معروف"),checking:t("Checking...","جاري الفحص..."),disabled:t("Disabled","معطّل"),no_genesis:t("No Genesis","لا جينيسيس"),error:t("Error","خطأ")};
+
+  const db = health?.database||{};
+  const bc = health?.blockchain||{};
+  const srv = health?.server||{};
+  const tables = health?.tables||{};
+  const api = health?.api||{};
 
   return (
     <div>
-      <SectionHeader title={t("System Health","صحة النظام")} sub={t("API, database, blockchain and integration status","حالة الواجهة وقاعدة البيانات والبلوكتشين")}
-        action={<Btn variant="teal" onClick={runChecks}>{t("Run Checks","فحص الآن")}</Btn>} />
+      <SectionHeader title={t("System Health","صحة النظام")} sub={t("Real-time monitoring — API, database, blockchain, integrations, server","مراقبة فورية — الواجهة، قاعدة البيانات، البلوكتشين، التكاملات، الخادم")}
+        action={<Btn variant="teal" onClick={runChecks}>{loading?"⏳":"🔄"} {t("Run Checks","فحص الآن")}</Btn>} />
       {lastChecked&&<p style={{fontSize:12,color:C.textMuted,marginBottom:16}}>{t("Last checked","آخر فحص")}: {lastChecked}</p>}
-      <div style={{display:"grid",gap:12}}>
-        {checks.map(c=>(
-          <div key={c.id} style={{background:C.cardBg,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div>
-              <p style={{fontWeight:700,fontSize:15,color:C.text}}>{isAr?c.labelAr:c.label}</p>
-              {c.latency!=null&&<p style={{fontSize:12,color:C.textMuted}}>Latency: {c.latency}ms</p>}
+
+      {/* Overview Cards */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:12,marginBottom:20}}>
+        <StatCard icon="🖥" title={t("API","الواجهة")} value={sl[api.status]||"—"} gold={api.status==="ok"} />
+        <StatCard icon="🗄" title={t("Database","قاعدة البيانات")} value={sl[db.status]||"—"} gold={db.status==="ok"} />
+        <StatCard icon="⛓" title={t("Blockchain","البلوكتشين")} value={sl[bc.status]||"—"} gold={bc.status==="ok"} />
+        <StatCard icon="📈" title={t("Price Feed","الأسعار")} value={sl[priceStatus.status]||"—"} />
+        <StatCard icon="📱" title={t("SMS Gateway","بوابة SMS")} value={sl[smsStatus.status]||"—"} />
+        <StatCard icon="⏱" title={t("API Latency","زمن الاستجابة")} value={apiLatency?apiLatency+"ms":"—"} />
+      </div>
+
+      {/* Services */}
+      <div style={{marginBottom:20}}>
+        <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:10}}>{t("Services","الخدمات")}</p>
+        <div style={{display:"grid",gap:8}}>
+          {[
+            {id:"api",label:t("Backend API","واجهة برمجة التطبيقات"),status:api.status||"checking",detail:`v${api.version||"?"} · Python ${api.python||"?"} · ${api.platform||"?"}`,latency:apiLatency},
+            {id:"db",label:t("PostgreSQL Database","قاعدة بيانات PostgreSQL"),status:db.status||"checking",detail:`${db.tables||"?"} tables · ${db.size||"?"} · ${db.latency_ms||"?"}ms`,latency:db.latency_ms},
+            {id:"chain",label:t("Blockchain Node","عقدة البلوكتشين"),status:bc.status||"checking",detail:`${bc.blocks||0} blocks · Block #${bc.latest_block||0} · ${bc.active_validators||0} validators`},
+            {id:"price",label:t("Price Feed (metals.dev)","بيانات الأسعار"),status:priceStatus.status,detail:priceStatus.latency?`Latency: ${priceStatus.latency}ms`:"",latency:priceStatus.latency},
+            {id:"sms",label:t("SMS Gateway","بوابة الرسائل القصيرة"),status:smsStatus.status,detail:smsStatus.endpoint||t("Not configured","غير مُعد")},
+          ].map(s=>(
+            <div key={s.id} style={{background:C.white,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <p style={{fontWeight:700,fontSize:15,color:C.navy}}>{s.label}</p>
+                <p style={{fontSize:12,color:C.textMuted,marginTop:2}}>{s.detail}</p>
+                {s.latency!=null&&<div style={{width:80,height:4,borderRadius:2,background:C.bg,marginTop:6}}><div style={{height:4,borderRadius:2,background:s.latency<200?"#16A34A":s.latency<500?"#E67E22":"#C85C3E",width:Math.min(100,s.latency/10)+"%"}}/></div>}
+              </div>
+              <span style={{fontWeight:700,fontSize:13,color:sc[s.status]||C.textMuted,background:(sc[s.status]||C.textMuted)+"18",padding:"5px 16px",borderRadius:20}}>{sl[s.status]||s.status}</span>
             </div>
-            <span style={{fontWeight:700,fontSize:13,color:statusColor[c.status]||C.textMuted,background:statusColor[c.status]+"22",padding:"4px 14px",borderRadius:20}}>
-              {statusLabel[c.status]||c.status}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      {/* Server Parameters */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:20}}>
+        <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:20}}>
+          <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:12}}>{t("Server Parameters","معلمات الخادم")}</p>
+          {[
+            [t("Process ID","معرّف العملية"), srv.pid||"—"],
+            [t("Python Version","إصدار بايثون"), srv.python||"—"],
+            [t("Operating System","نظام التشغيل"), srv.os||"—"],
+            [t("Memory Usage","استخدام الذاكرة"), srv.memory_kb?(srv.memory_kb/1024).toFixed(1)+" MB":"—"],
+            [t("Checked At","وقت الفحص"), srv.checked_at?new Date(srv.checked_at).toLocaleString():"—"],
+          ].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+            <span style={{fontSize:13,color:C.textMuted}}>{k}</span>
+            <span style={{fontSize:13,fontWeight:600,color:C.navy,fontFamily:"monospace"}}>{v}</span>
+          </div>)}
+        </div>
+        <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:20}}>
+          <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:12}}>{t("Database Tables","جداول قاعدة البيانات")}</p>
+          {Object.entries(tables).length>0?Object.entries(tables).map(([tbl,count])=><div key={tbl} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+            <span style={{fontSize:12,color:C.textMuted,fontFamily:"monospace"}}>{tbl}</span>
+            <span style={{fontSize:12,fontWeight:600,color:count==="missing"?"#C85C3E":C.navy,fontFamily:"monospace"}}>{count==="missing"?"❌ MISSING":count+" rows"}</span>
+          </div>):<p style={{fontSize:13,color:C.textMuted}}>—</p>}
+          {health?.settings&&<div style={{marginTop:10,padding:"8px 0",borderTop:`1px solid ${C.border}`}}>
+            <span style={{fontSize:12,color:C.textMuted}}>{t("Stored Settings","الإعدادات المخزنة")}: </span>
+            <span style={{fontSize:12,fontWeight:600,color:C.navy}}>{health.settings.stored}</span>
+          </div>}
+        </div>
+      </div>
+
+      {/* Endpoints Status */}
+      <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:20}}>
+        <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:12}}>{t("Infrastructure","البنية التحتية")}</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+          {[
+            {label:t("Railway","Railway"),val:t("Backend Host","استضافة الخلفية"),url:"tanaqul-production.up.railway.app"},
+            {label:t("Vercel","Vercel"),val:t("Frontend Host","استضافة الواجهة"),url:"tanaqul-dashboard.vercel.app"},
+            {label:t("PostgreSQL","PostgreSQL"),val:db.size||"—",url:"Railway managed"},
+            {label:t("Explorer","المستكشف"),val:t("Public","عام"),url:"tanaqul-dashboard.vercel.app/explorer.html"},
+            {label:t("Swagger Docs","وثائق API"),val:t("Interactive","تفاعلي"),url:"tanaqul-production.up.railway.app/docs"},
+            {label:t("GitHub","GitHub"),val:t("Source Code","الكود المصدري"),url:"github.com/Azizlle/tanaqul"},
+          ].map(i=><div key={i.label} style={{background:C.bg,borderRadius:10,padding:"12px 14px"}}>
+            <p style={{fontSize:12,fontWeight:700,color:C.navy}}>{i.label}</p>
+            <p style={{fontSize:11,color:C.textMuted,marginTop:2}}>{i.val}</p>
+            <p style={{fontSize:10,color:C.teal,fontFamily:"monospace",marginTop:4,wordBreak:"break-all"}}>{i.url}</p>
+          </div>)}
+        </div>
       </div>
     </div>
   );
