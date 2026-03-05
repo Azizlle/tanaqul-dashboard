@@ -6083,8 +6083,12 @@ const AccountProfile = () => {
                 email: me.email||payload.email||"",
                 role: (me.role||"viewer").replace("_"," ").replace(/\b\w/g,l=>l.toUpperCase()),
                 joined: me.created_at?me.created_at.slice(0,10):"",
-                lastLogin: me.last_login||"",
-                phone: me.phone||"+966 50 XXX XXXX",
+                lastLogin: me.last_login?me.last_login.slice(0,16).replace("T"," "):"",
+                phone: me.phone||"",
+                recoveryPhone: me.recovery_phone||"",
+                recoveryEmail: me.recovery_email||"",
+                twoFA: me.two_fa_enabled||false,
+                phoneVerified: !!me.phone,
               }));
             }
           }
