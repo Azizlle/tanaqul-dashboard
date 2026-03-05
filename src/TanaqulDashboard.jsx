@@ -9061,7 +9061,16 @@ export default function App() {
       const payload=JSON.parse(atob(t.split(".")[1])); return payload.email||payload.sub||"admin@tanaqul.sa";
     } catch(e){ return "admin@tanaqul.sa"; }
   });
-  const [page,     setPage]     = useState("dashboard");
+  const [page,     setPage_]     = useState(() => {
+    const hash = window.location.hash.replace("#","");
+    return hash && hash !== "dashboard" ? hash : "dashboard";
+  });
+  const setPage = (p) => { setPage_(p); window.location.hash = p; };
+  useEffect(() => {
+    const onHash = () => { const h = window.location.hash.replace("#",""); if(h) setPage_(h); };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const [pageHint, setPageHint] = useState(null); // {tab:"WITHDRAWAL REQUESTS"} etc.
   const [open,     setOpen]     = useState(true);
   const [lang,     setLang]     = useState(() => localStorage.getItem("tanaqul_lang") || "en");
