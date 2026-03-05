@@ -2432,7 +2432,7 @@ const MiniDonut = ({ pct, color="#C4956A", size=56 }) => {
 
 const Reports = () => {
   const { t, isAr } = useLang();
-  const { matches, investors, walletMovements, bars } = useAppData();
+  const { matches, investors, walletMovements, bars, withdrawals, appointments, orders, appBlockStats } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
   const fmtK = n => (n||0).toLocaleString("en-SA",{maximumFractionDigits:0});
   const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
@@ -6441,6 +6441,7 @@ const CommCenter = () => {
   const { investors, amlAlerts, cmaAlerts, amlDismissed, withdrawals, appointments } = useAppData();
   const [tab, setTab] = useState("inbox");
   const [messages, setMessages] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [readSet, setReadSet] = useState(new Set());
   useEffect(()=>{
     const notifs = [];
