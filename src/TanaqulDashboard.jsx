@@ -1288,7 +1288,7 @@ const Dashboard = () => {
 
 const Investors = () => {
   const { lang, t, isAr } = useLang();
-  const { investors, setInvestors, appointments, setAppointments, blacklist, addAudit, pageHint, setPageHint } = useAppData();
+  const { investors=[], setInvestors=()=>{}, appointments=[], setAppointments=()=>{}, blacklist=[], addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
   const [search,setSearch]=useState(""); 
   const [filter,setFilter]=useState("ALL"); 
 
@@ -1490,7 +1490,7 @@ const Investors = () => {
 
 const TransactionLog = () => {
   const { t, isAr } = useLang();
-  const { matches } = useAppData();
+  const { matches=[] } = useAppData();
   const [txns, setTxns] = useState([]);
   const liveTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,buyerName:m.filledFor,sellerName:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
   const allTxns = [...liveTxRows, ...txns];
@@ -1660,7 +1660,7 @@ const TransactionLog = () => {
 
 const Vault = () => {
   const { t, isAr } = useLang();
-  const { bars } = useAppData();
+  const { bars=[] } = useAppData();
   const [metal,setMetal]=useState("ALL"); const [status,setStatus]=useState("ALL");
   const [vaultIntegrity,setVaultIntegrity]=useState(null);
   const [tokenStats,setTokenStats]=useState({floating:0,linked:0,total:0});
@@ -1770,7 +1770,7 @@ const ApptBadge = ({status}) => {
 const Appointments = () => {
   const { t, isAr, cancelFee: ctxCancelFee } = useLang();
   const cfee = parseFloat(ctxCancelFee || "50");
-  const { appointments, setAppointments, bars, setBars, investors, setInvestors, walletMovements, setWalletMovements, addAudit, pageHint, setPageHint } = useAppData();
+  const { appointments=[], setAppointments=()=>{}, bars=[], setBars=()=>{}, investors=[], setInvestors=()=>{}, walletMovements=[], setWalletMovements=()=>{}, addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
   const [type,setType]=useState("ALL");
   const [statusFilter,setStatusFilter]=useState("ALL");
 
@@ -2154,7 +2154,7 @@ const Appointments = () => {
 
 const Financials = () => {
   const { t, isAr } = useLang();
-  const { withdrawals, setWithdrawals, matches, walletMovements, addAudit, pageHint, setPageHint } = useAppData();
+  const { withdrawals=[], setWithdrawals=()=>{}, matches=[], walletMovements=[], addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
   const [tab,setTab]=useState("ORDERS");
   const [storageFeeConfig, setStorageFeeConfig] = useState({gold_rate_percent:0.5,silver_rate_percent:0.75,platinum_rate_percent:0.6,grace_period_days:5});
   const [storageFeeHistory, setStorageFeeHistory] = useState([]);
@@ -2691,7 +2691,7 @@ const Reports = () => {
 
 const Blacklist = () => {
   const { t, isAr } = useLang();
-  const { blacklist, setBlacklist, addAudit } = useAppData();
+  const { blacklist=[], setBlacklist=()=>{}, addAudit=()=>{} } = useAppData();
   const [showAdd,setShowAdd]=useState(false);
   const [form,setForm]=useState({nationalId:"",name:"",reason:""});
   const [editRow,setEditRow]=useState(null);
@@ -2784,7 +2784,7 @@ const Blacklist = () => {
 
 const ValidatorsTab = () => {
   const { t, isAr } = useLang();
-  const { validators, setValidators } = useAppData();
+  const { validators=[], setValidators=()=>{} } = useAppData();
   const [showAdd,setShowAdd]=useState(false);
   const [vName,setVName]=useState("");
   const [vAddr,setVAddr]=useState("");
@@ -2876,7 +2876,7 @@ const ValidatorsTab = () => {
 
 const Blocks = () => {
   const { t, isAr, commSplit } = useLang();
-  const { matches, appBlocks, appBlockStats, setAppBlocks } = useAppData();
+  const { matches=[], appBlocks=[], appBlockStats=null, setAppBlocks=()=>{} } = useAppData();
   const [chainStats, setChainStats] = useState(appBlockStats);
   const [blockDetail,setBlockDetail]=useState(null);
   const [genesisLoading,setGenesisLoading]=useState(false);
@@ -2994,7 +2994,7 @@ const Sparkline = ({data,color="#C4956A",w=80,h=24}) => {
 
 const AuditLog = () => {
   const { isAr, t, reportingConfig } = useLang();
-  const { auditLog, investors, matches, orders, walletMovements, withdrawals, appointments, bars, blacklist, amlAlerts: globalAmlAlerts, cmaAlerts: globalCmaAlerts, amlDismissed, dismissAmlAlert, amlLastRun, pageHint, setPageHint } = useAppData();
+  const { auditLog, investors, matches, orders, walletMovements, withdrawals, appointments, bars, blacklist, amlAlerts: globalAmlAlerts=[], cmaAlerts: globalCmaAlerts=[], amlDismissed=new Set(), dismissAmlAlert=()=>{}, amlLastRun=null, pageHint, setPageHint } = useAppData();
   const [tab, setTab] = useState("trail");
 
   // Auto-switch tab from action center hint
@@ -6225,7 +6225,7 @@ const AccountProfile = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
   const { t, isAr } = useLang();
-  const { investors, appointments, bars, withdrawals, orders } = useAppData();
+  const { investors=[], appointments=[], bars=[], withdrawals=[], orders=[] } = useAppData();
   const [query, setQuery] = useState("");
   const [selIdx, setSelIdx] = useState(0);
   const inputRef = useRef(null);
@@ -6386,7 +6386,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const InvestorTimeline = ({ investor, onClose }) => {
   const { isAr } = useLang();
-  const { appointments, withdrawals, orders, matches } = useAppData();
+  const { appointments=[], withdrawals=[], orders=[], matches=[] } = useAppData();
   if(!investor) return null;
 
   const nid = investor.nationalId;
@@ -6571,7 +6571,7 @@ const COMM_TEMPLATES = [
 const MOCK_MESSAGES = [];
 const CommCenter = () => {
   const { t, isAr } = useLang();
-  const { investors } = useAppData();
+  const { investors=[] } = useAppData();
   const [tab, setTab] = useState("inbox");
   const [messages, setMessages] = useState([]);
   const [readSet, setReadSet] = useState(new Set());
@@ -8094,7 +8094,7 @@ const MetalPill = ({ symbol, label, color, bgColor, price, change }) => {
 const HeaderPills = () => {
   const { t, isAr } = useLang();
   const { gold, silver, plat, status } = useLivePrices();
-  const { validators, appBlockStats } = useAppData();
+  const { validators=[], appBlockStats=null } = useAppData();
   const [, tick] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => tick(n => n + 1), 15000);
