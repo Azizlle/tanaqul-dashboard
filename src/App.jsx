@@ -2677,11 +2677,22 @@ const Blacklist = () => {
 
   const unban = async (id) => {
     const entry = blacklist.find(b=>b.id===id);
+    if(!entry) return;
     try {
-      const uid = entry?._uuid || entry?.id;
-      if(uid) await apiFetch("/blacklist/"+uid+"/unban", {method:"POST"});
+      const uid = entry._uuid || entry.id;
+      // Try DELETE method first (RESTful pattern), then POST /unban as fallback
+      let res = await apiFetch("/blacklist/"+uid, {method:"DELETE"});
+      if(!res || !res.ok) {
+        // Fallback: try POST with national_id in body
+        res = await apiFetch("/blacklist/"+uid+"/unban", {method:"POST", body:JSON.stringify({national_id:entry.nationalId})});
+      }
+      if(!res || !res.ok) {
+        // Fallback: try by national_id
+        res = await apiFetch("/blacklist/unban", {method:"POST", body:JSON.stringify({national_id:entry.nationalId})});
+      }
     } catch(e) {}
     setBlacklist(prev=>prev.filter(b=>b.id!==id));
+    addAudit("BLACKLIST_REMOVE", entry.id, entry.nationalId+" — "+entry.name+" unbanned");
     showBlToast("✅ User unbanned — account restored");
   };
 
