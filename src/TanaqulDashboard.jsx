@@ -9079,6 +9079,8 @@ const TreasuryReconciliation = () => {
   // Load from API
   useEffect(()=>{
     apiFetch("/treasury/overview").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setOverview(d);setLoading(false);}).catch(()=>setLoading(false));
+    apiFetch("/treasury/recon/history").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.items)setDailyHistory(d.items);}).catch(()=>{});
+    apiFetch("/treasury/sweep/history").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.items)setSweepHistory(d.items);}).catch(()=>{});
   },[]);
 
   // Nightly Reconciliation
@@ -9106,7 +9108,7 @@ const TreasuryReconciliation = () => {
     setDailyHistory(p=>[entry,...p]);
 
     if(!allOk){
-      if(!cashOk) setDiscrepancies(p=>[{id:"DSC-"+Date.now(),date:today,type:"cash",expected:poolExpected,actual:poolActual,diff:poolExpected-poolActual,status:"open",note:""},...p]);
+      if(!cashOk) setDiscrepancies(p=>{const updated=[{id:"DSC-"+Date.now(),date:today,type:"cash",expected:poolExpected,actual:poolActual,diff:poolExpected-poolActual,status:"open",note:""},...p];try{apiFetch("/treasury/recon",{method:"POST",body:JSON.stringify({type:"discrepancy",items:updated})});}catch(e){}return updated;});
     }
     // Save to API
     try{await apiFetch("/treasury/recon",{method:"POST",body:JSON.stringify(entry)});}catch(e){}
@@ -9127,9 +9129,11 @@ const TreasuryReconciliation = () => {
     showToast(`✅ Sweep complete: SAR ${fmt0(sweepTotal)} → Takharoj Operating Account`);
   };
 
-  const resolveDiscrep = (id) => {
-    setDiscrepancies(p=>p.map(d=>d.id===id?{...d,status:"resolved",note:resolveNote,resolvedAt:new Date().toISOString()}:d));
+  const resolveDiscrep = async (id) => {
+    const updated = discrepancies.map(d=>d.id===id?{...d,status:"resolved",note:resolveNote,resolvedAt:new Date().toISOString()}:d);
+    setDiscrepancies(updated);
     setResolveId(null);setResolveNote("");
+    try{await apiFetch("/treasury/recon",{method:"POST",body:JSON.stringify({type:"discrepancy_resolve",items:updated})});}catch(e){}
     showToast("✅ Discrepancy resolved");
   };
 
