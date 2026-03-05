@@ -5212,7 +5212,9 @@ const OrderBook = () => {
     try {
       const resp = await apiFetch("/orders", {method:"POST", body:JSON.stringify({
         side:mmSide, metal:mmMetal, quantity_grams:mmQtyNum, price_per_gram:mmPriceNum,
-        order_type:"LIMIT",
+        order_type:"LIMIT", investor_id:null, national_id:"SYSTEM",
+        payment_method:"Wallet", expiry_type:mmExpiry||"GTC",
+        is_market_maker:true,
       })});
       if(resp && resp.ok) {
         const result = await resp.json();
