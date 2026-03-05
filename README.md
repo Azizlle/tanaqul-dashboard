@@ -1,31 +1,41 @@
-# Tanaqul Dashboard — React Frontend
+# Tanaqul Dashboard — Admin Panel
 
-Admin dashboard for the Tanaqul precious metals trading platform.
+React admin dashboard for the Tanaqul precious metals trading platform.
 
-## Quick Start
+## Tech Stack
+
+- **Framework:** React 18 + Vite
+- **Hosting:** Vercel
+- **Backend:** FastAPI on Railway
+
+## Setup
 
 ```bash
+git clone <repo-url>
+cd tanaqul-dashboard
 npm install
 npm run dev
 ```
 
 Opens at http://localhost:3000
 
+## Environment Variables
+
+Create a `.env` file:
+
+```
+VITE_API_BASE=http://localhost:8000/api/v1
+```
+
+For production, set `VITE_API_BASE` in Vercel environment variables.
+
 ## Deploy to Vercel
 
-1. Push this repo to GitHub
-2. Go to vercel.com → New Project → Import repo
-3. Framework: Vite
-4. Add environment variable:
-   - `VITE_API_BASE` = `https://tanaqul-production.up.railway.app/api/v1`
-5. Deploy
+1. Import repo at vercel.com
+2. Framework: **Vite**
+3. Add environment variable: `VITE_API_BASE`
+4. Deploy
 
-## Login Credentials
+## License
 
-- Email: `admin@tanaqul.sa`
-- Password: `*(redacted - change immediately)*`
-
-## Backend API
-
-Swagger docs: https://tanaqul-production.up.railway.app/docs
-
+Private — All rights reserved.
