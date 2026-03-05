@@ -6598,7 +6598,42 @@ const CommCenter = () => {
   const unread = notifications.filter(n=>!readSet.has(n.id)).length;
   const markRead = (id) => setReadSet(p=>new Set([...p,id]));
   const markAllRead = () => setReadSet(new Set(notifications.map(n=>n.id)));
-  return { notifications, unread, readSet, markRead, markAllRead };
+
+  return (
+    <div>
+      <SectionHeader title={isAr?"مركز الاتصالات":"Communication Center"} sub={isAr?"الإشعارات والرسائل":"Notifications & messaging"} />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
+        <StatCard icon="📬" title={isAr?"الإشعارات":"Notifications"} value={notifications.length} />
+        <StatCard icon="📩" title={isAr?"غير مقروءة":"Unread"} value={unread} gold />
+        <StatCard icon="📋" title={isAr?"الرسائل":"Messages"} value={messages.length} />
+      </div>
+      <TabBar tabs={[{id:"inbox",label:isAr?"الوارد":"Inbox"},{id:"notifs",label:isAr?"الإشعارات":"Notifications"},{id:"templates",label:isAr?"القوالب":"Templates"}]} active={tab} onChange={setTab} />
+      {tab==="inbox"&&<div style={{background:"#FFF",borderRadius:14,border:"1px solid #E2E8F0",padding:24,textAlign:"center",color:"#64748B"}}>
+        <p style={{fontSize:40,marginBottom:8}}>📬</p>
+        <p style={{fontSize:15,fontWeight:600}}>{isAr?"لا توجد رسائل":"No messages yet"}</p>
+        <p style={{fontSize:13,marginTop:4}}>{isAr?"ستظهر رسائل المستثمرين هنا":"Investor messages will appear here"}</p>
+      </div>}
+      {tab==="notifs"&&<div>
+        {notifications.length===0?<div style={{background:"#FFF",borderRadius:14,border:"1px solid #E2E8F0",padding:24,textAlign:"center",color:"#64748B"}}>
+          <p style={{fontSize:40,marginBottom:8}}>🔔</p>
+          <p style={{fontSize:15,fontWeight:600}}>{isAr?"لا إشعارات":"No notifications"}</p>
+        </div>:
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {notifications.map(n=><div key={n.id} style={{background:readSet.has(n.id)?"#F8FAFC":"#FFF",border:"1px solid #E2E8F0",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>markRead(n.id)}>
+            <span style={{fontSize:20}}>{n.icon}</span>
+            <div style={{flex:1}}><p style={{fontSize:14,fontWeight:600,color:"#1A2855"}}>{n.title}</p><p style={{fontSize:12,color:"#64748B"}}>{n.detail}</p></div>
+            <span style={{fontSize:11,color:"#94A3B8"}}>{n.type}</span>
+          </div>)}
+          {unread>0&&<button onClick={markAllRead} style={{alignSelf:"center",padding:"6px 16px",borderRadius:8,border:"1px solid #E2E8F0",background:"#FFF",fontSize:13,fontWeight:600,color:"#64748B",cursor:"pointer"}}>{isAr?"تعليم الكل كمقروء":"Mark all read"}</button>}
+        </div>}
+      </div>}
+      {tab==="templates"&&<div style={{background:"#FFF",borderRadius:14,border:"1px solid #E2E8F0",padding:24,textAlign:"center",color:"#64748B"}}>
+        <p style={{fontSize:40,marginBottom:8}}>📝</p>
+        <p style={{fontSize:15,fontWeight:600}}>{isAr?"قوالب الرسائل":"Message Templates"}</p>
+        <p style={{fontSize:13,marginTop:4}}>{isAr?"ستتوفر قريباً":"Coming soon"}</p>
+      </div>}
+    </div>
+  );
 };
 
 const NotificationBell = ({notifications, unread, readSet, markRead, markAllRead, setPage, isAr}) => {
