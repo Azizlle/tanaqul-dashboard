@@ -6571,67 +6571,311 @@ const COMM_TEMPLATES = [
 const MOCK_MESSAGES = [];
 const CommCenter = () => {
   const { t, isAr } = useLang();
-  const { investors=[], amlAlerts=[], cmaAlerts=[], amlDismissed=new Set(), withdrawals=[], appointments=[] } = useAppData();
-  const [tab, setTab] = useState("inbox");
-  const [messages, setMessages] = useState([]);
+  const { investors=[], amlAlerts=[], cmaAlerts=[], amlDismissed=new Set(), withdrawals=[], appointments=[], setInvestors } = useAppData();
+  const [tab, setTab] = useState("notifications");
   const [notifications, setNotifications] = useState([]);
   const [readSet, setReadSet] = useState(new Set());
+  const [sentMessages, setSentMessages] = useState([]);
+  const [drafts, setDrafts] = useState([]);
+  const [scheduled, setScheduled] = useState([]);
+  // Compose
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [compTo, setCompTo] = useState(""); const [compBody, setCompBody] = useState(""); const [compSubject, setCompSubject] = useState("");
+  const [compChannel, setCompChannel] = useState("SMS"); const [compScheduleDate, setCompScheduleDate] = useState("");
+  const [compSearch, setCompSearch] = useState("");
+  const [bulkMode, setBulkMode] = useState(false); const [bulkFilter, setBulkFilter] = useState("ALL");
+  const [editTpl, setEditTpl] = useState(null);
+  const [toast, setToast] = useState("");
+  const showToast = (m) => { setToast(m); setTimeout(()=>setToast(""),3000); };
+
+  // 44 notification templates
+  const [templates, setTemplates] = useState([
+    {id:"T01",cat:"Account",name:isAr?"ترحيب":"Welcome",nameAr:"ترحيب",body:"Welcome to Tanaqul Precious Metals. Your account is now active.",bodyAr:"مرحباً بك في منصة تنقل للمعادن الثمينة. حسابك مفعّل الآن."},
+    {id:"T02",cat:"Account",name:"Account Suspended",nameAr:"تعليق الحساب",body:"Your account has been temporarily suspended. Contact support.",bodyAr:"تم تعليق حسابك مؤقتاً. يرجى التواصل مع الدعم."},
+    {id:"T03",cat:"Account",name:"Account Reactivated",nameAr:"إعادة تفعيل",body:"Your account has been reactivated. You can now trade again.",bodyAr:"تم إعادة تفعيل حسابك. يمكنك التداول الآن."},
+    {id:"T04",cat:"Account",name:"Account Banned",nameAr:"حظر الحساب",body:"Your account has been permanently banned.",bodyAr:"تم حظر حسابك بشكل دائم."},
+    {id:"T05",cat:"Account",name:"Account Unbanned",nameAr:"رفع الحظر",body:"Your account ban has been lifted. Welcome back.",bodyAr:"تم رفع الحظر عن حسابك. مرحباً بعودتك."},
+    {id:"T06",cat:"Security",name:"Login OTP",nameAr:"رمز الدخول",body:"Your login OTP is: {OTP}. Valid for 5 minutes.",bodyAr:"رمز التحقق: {OTP}. صالح لمدة 5 دقائق."},
+    {id:"T07",cat:"Security",name:"New Device Login",nameAr:"دخول جديد",body:"New login detected from {DEVICE}. If this wasn't you, secure your account immediately.",bodyAr:"تم رصد دخول من جهاز جديد {DEVICE}. إذا لم يكن هذا أنت، أمّن حسابك فوراً."},
+    {id:"T08",cat:"Security",name:"Password Changed",nameAr:"تغيير كلمة المرور",body:"Your password has been changed successfully.",bodyAr:"تم تغيير كلمة المرور بنجاح."},
+    {id:"T09",cat:"Appointment",name:"Appointment Booked",nameAr:"حجز موعد",body:"Your {TYPE} appointment is booked for {DATE} at {VAULT}.",bodyAr:"تم حجز موعد {TYPE} بتاريخ {DATE} في {VAULT}."},
+    {id:"T10",cat:"Appointment",name:"Reminder 24hrs",nameAr:"تذكير 24 ساعة",body:"Reminder: Your appointment is tomorrow at {TIME}, {VAULT}.",bodyAr:"تذكير: موعدك غداً الساعة {TIME} في {VAULT}."},
+    {id:"T11",cat:"Appointment",name:"Reminder 1hr",nameAr:"تذكير ساعة",body:"Your appointment is in 1 hour at {VAULT}. Please arrive on time.",bodyAr:"موعدك بعد ساعة في {VAULT}. يرجى الحضور في الوقت."},
+    {id:"T12",cat:"Appointment",name:"Cancelled by Investor",nameAr:"إلغاء من المستثمر",body:"Your appointment has been cancelled. Refund: {AMOUNT} SAR.",bodyAr:"تم إلغاء موعدك. المبلغ المسترد: {AMOUNT} ريال."},
+    {id:"T13",cat:"Appointment",name:"Cancelled by Admin",nameAr:"إلغاء من الإدارة",body:"Your appointment has been cancelled by admin. Full refund issued.",bodyAr:"تم إلغاء موعدك من قبل الإدارة. تم استرداد المبلغ كاملاً."},
+    {id:"T14",cat:"Appointment",name:"Rescheduled",nameAr:"إعادة جدولة",body:"Your appointment has been rescheduled to {DATE}.",bodyAr:"تم إعادة جدولة موعدك إلى {DATE}."},
+    {id:"T15",cat:"Appointment",name:"No Show",nameAr:"عدم حضور",body:"You did not attend your appointment. No refund issued. 2+ no-shows require a deposit.",bodyAr:"لم تحضر موعدك. لم يتم استرداد المبلغ."},
+    {id:"T16",cat:"Appointment",name:"Completed — Deposit",nameAr:"إيداع مكتمل",body:"Deposit complete! {GRAMS}g {METAL} tokens minted to your vault.",bodyAr:"تم الإيداع! تم صك {GRAMS} جرام {METAL} في محفظتك."},
+    {id:"T17",cat:"Appointment",name:"Completed — Withdrawal",nameAr:"سحب مكتمل",body:"Withdrawal complete! {GRAMS}g {METAL} bar handed over. Tokens burned.",bodyAr:"تم السحب! تم تسليم سبيكة {GRAMS} جرام {METAL}. تم حرق الرموز."},
+    {id:"T18",cat:"Appointment",name:"Vault OTP",nameAr:"رمز الخزنة",body:"Your vault verification OTP: {OTP}. Share with vault operator.",bodyAr:"رمز التحقق من الخزنة: {OTP}. شاركه مع مشغّل الخزنة."},
+    {id:"T19",cat:"Order",name:"Buy Order Placed",nameAr:"أمر شراء",body:"Buy order placed: {GRAMS}g {METAL} at {PRICE} SAR/g.",bodyAr:"تم وضع أمر شراء: {GRAMS} جرام {METAL} بسعر {PRICE} ريال/جرام."},
+    {id:"T20",cat:"Order",name:"Buy Order Executed",nameAr:"تنفيذ شراء",body:"Your buy order executed! {GRAMS}g {METAL} added to vault. Total: {TOTAL} SAR.",bodyAr:"تم تنفيذ أمر الشراء! {GRAMS} جرام {METAL} أُضيفت. الإجمالي: {TOTAL} ريال."},
+    {id:"T21",cat:"Order",name:"Sell Order Placed",nameAr:"أمر بيع",body:"Sell order placed: {GRAMS}g {METAL} at {PRICE} SAR/g.",bodyAr:"تم وضع أمر بيع: {GRAMS} جرام {METAL} بسعر {PRICE} ريال/جرام."},
+    {id:"T22",cat:"Order",name:"Sell Order Executed",nameAr:"تنفيذ بيع",body:"Your sell order executed! {GRAMS}g {METAL} sold. {TOTAL} SAR credited.",bodyAr:"تم تنفيذ أمر البيع! بيع {GRAMS} جرام {METAL}. تم إضافة {TOTAL} ريال."},
+    {id:"T23",cat:"Order",name:"Order Cancelled",nameAr:"إلغاء أمر",body:"Your order has been cancelled.",bodyAr:"تم إلغاء أمرك."},
+    {id:"T24",cat:"Order",name:"Order Partially Filled",nameAr:"تنفيذ جزئي",body:"Your order partially filled: {FILLED}g of {TOTAL}g. Remaining active.",bodyAr:"تم تنفيذ أمرك جزئياً: {FILLED} من {TOTAL} جرام. الباقي نشط."},
+    {id:"T25",cat:"Wallet",name:"Wallet Top-Up",nameAr:"شحن المحفظة",body:"Wallet credited: {AMOUNT} SAR via {METHOD}.",bodyAr:"تم شحن المحفظة: {AMOUNT} ريال عبر {METHOD}."},
+    {id:"T26",cat:"Wallet",name:"Withdrawal Requested",nameAr:"طلب سحب",body:"Withdrawal request: {AMOUNT} SAR. Processing within 48hrs.",bodyAr:"طلب سحب: {AMOUNT} ريال. سيتم المعالجة خلال 48 ساعة."},
+    {id:"T27",cat:"Wallet",name:"Withdrawal Approved",nameAr:"سحب مقبول",body:"Your withdrawal of {AMOUNT} SAR has been approved.",bodyAr:"تمت الموافقة على سحب {AMOUNT} ريال."},
+    {id:"T28",cat:"Wallet",name:"Withdrawal Rejected",nameAr:"سحب مرفوض",body:"Your withdrawal was rejected. Reason: {REASON}. Funds returned.",bodyAr:"تم رفض السحب. السبب: {REASON}. تم إرجاع المبلغ."},
+    {id:"T29",cat:"Wallet",name:"Withdrawal Processed",nameAr:"سحب معالج",body:"Your withdrawal of {AMOUNT} SAR has been sent to your bank.",bodyAr:"تم إرسال سحب {AMOUNT} ريال إلى حسابك البنكي."},
+    {id:"T30",cat:"Wallet",name:"Cancellation Refund",nameAr:"استرداد إلغاء",body:"Refund of {AMOUNT} SAR credited to your wallet.",bodyAr:"تم استرداد {AMOUNT} ريال إلى محفظتك."},
+    {id:"T31",cat:"Blockchain",name:"Block Created",nameAr:"بلوك جديد",body:"New block #{NUMBER} created. {TX_COUNT} transactions confirmed.",bodyAr:"تم إنشاء بلوك #{NUMBER}. تم تأكيد {TX_COUNT} معاملة."},
+    {id:"T32",cat:"Blockchain",name:"Token Transfer",nameAr:"نقل رمز",body:"Token transfer complete: {GRAMS}g {METAL}.",bodyAr:"تم نقل الرمز: {GRAMS} جرام {METAL}."},
+    {id:"T33",cat:"Blockchain",name:"Validator Reward",nameAr:"مكافأة مصادق",body:"Validator reward: {AMOUNT} SAR for block #{NUMBER}.",bodyAr:"مكافأة المصادق: {AMOUNT} ريال عن بلوك #{NUMBER}."},
+    {id:"T34",cat:"Compliance",name:"KYC Expiring",nameAr:"انتهاء التحقق",body:"Your identity verification expires on {DATE}. Please renew via NAFATH.",bodyAr:"تنتهي صلاحية التحقق بتاريخ {DATE}. يرجى التجديد عبر نفاذ."},
+    {id:"T35",cat:"Compliance",name:"AML Review",nameAr:"مراجعة غسل أموال",body:"Your account is under routine AML review. No action required.",bodyAr:"حسابك تحت مراجعة روتينية. لا يلزم إجراء."},
+    {id:"T36",cat:"General",name:"Custom Message",nameAr:"رسالة مخصصة",body:"",bodyAr:""},
+  ]);
+
+  // Build notifications from system state
   useEffect(()=>{
     const notifs = [];
     const now = Date.now();
-    // AML/CMA critical alerts
     [...(amlAlerts||[]),...(cmaAlerts||[])].filter(a=>!amlDismissed.has(a.key)&&(a.level==="CRITICAL"||a.level==="HIGH")).slice(0,5).forEach((a,i)=>{
-      notifs.push({id:"N-AML-"+a.key,type:"aml",icon:"🚨",title:a.title,detail:a.name+" — "+a.level,time:now-i*120000,page:"auditlog"});
+      notifs.push({id:"N-AML-"+a.key,type:"🚨 AML",icon:"🚨",title:a.title||"AML Alert",detail:(a.name||"")+" — "+a.level,time:now-i*120000,page:"auditlog",severity:"critical"});
     });
-    // Pending withdrawals
     const pending = (withdrawals||[]).filter(w=>w.status==="PENDING");
-    if(pending.length>0) notifs.push({id:"N-WD",type:"finance",icon:"💸",title:`${pending.length} pending withdrawal${pending.length>1?"s":""}`,detail:"Awaiting approval",time:now-300000,page:"financials"});
-    // Expired appointments
+    if(pending.length>0) notifs.push({id:"N-WD",type:"💸 Finance",icon:"💸",title:`${pending.length} pending withdrawal${pending.length>1?"s":""}`,detail:"Awaiting approval",time:now-300000,page:"financials",severity:"high"});
     const expired = (appointments||[]).filter(a=>a.status==="EXPIRED");
-    if(expired.length>0) notifs.push({id:"N-APPT",type:"ops",icon:"⏰",title:`${expired.length} expired appointment${expired.length>1?"s":""}`,detail:"Mark attended or no-show",time:now-600000,page:"appointments"});
-    // KYC expiring
+    if(expired.length>0) notifs.push({id:"N-APPT",type:"⏰ Ops",icon:"⏰",title:`${expired.length} expired appointment${expired.length>1?"s":""}`,detail:"Mark attended or no-show",time:now-600000,page:"appointments",severity:"medium"});
     const today = new Date().toISOString().slice(0,10);
     const kycSoon = (investors||[]).filter(i=>i.kycExpiry&&i.kycExpiry<new Date(Date.now()+30*86400000).toISOString().slice(0,10)&&i.kycExpiry>=today&&i.status==="ACTIVE");
-    if(kycSoon.length>0) notifs.push({id:"N-KYC",type:"compliance",icon:"🪪",title:`${kycSoon.length} KYC expiring soon`,detail:"Within 30 days",time:now-900000,page:"investors"});
+    if(kycSoon.length>0) notifs.push({id:"N-KYC",type:"🪪 Compliance",icon:"🪪",title:`${kycSoon.length} KYC expiring soon`,detail:"Within 30 days",time:now-900000,page:"investors",severity:"medium"});
+    const todayAppts = (appointments||[]).filter(a=>a.date===today&&a.status==="BOOKED");
+    if(todayAppts.length>0) notifs.push({id:"N-TODAY",type:"📅 Today",icon:"📅",title:`${todayAppts.length} appointment${todayAppts.length>1?"s":""} today`,detail:"Check vault schedule",time:now-100000,page:"appointments",severity:"info"});
     setNotifications(notifs);
   },[amlAlerts,cmaAlerts,amlDismissed,withdrawals,appointments,investors]);
+
   const unread = notifications.filter(n=>!readSet.has(n.id)).length;
   const markRead = (id) => setReadSet(p=>new Set([...p,id]));
   const markAllRead = () => setReadSet(new Set(notifications.map(n=>n.id)));
+  const timeAgo = (ts) => { const d=(Date.now()-ts)/1000; if(d<60)return isAr?"الآن":"now"; if(d<3600)return`${Math.floor(d/60)}${isAr?" د":"m"}`; return`${Math.floor(d/3600)}${isAr?" س":"h"}`; };
+
+  const sendMessage = (to, body, channel, schedule) => {
+    const msg = {id:"MSG-"+Date.now(),to,body,channel,sentAt:schedule||new Date().toISOString(),status:schedule?"SCHEDULED":"SENT",subject:compSubject};
+    if(schedule){setScheduled(p=>[msg,...p]);showToast(isAr?"✅ تم جدولة الرسالة":"✅ Message scheduled");}
+    else{setSentMessages(p=>[msg,...p]);showToast(isAr?"✅ تم إرسال الرسالة":"✅ Message sent");}
+    setCompTo("");setCompBody("");setCompSubject("");setCompScheduleDate("");setComposeOpen(false);
+  };
+  const saveDraft = () => {
+    setDrafts(p=>[{id:"DRF-"+Date.now(),to:compTo,body:compBody,subject:compSubject,savedAt:new Date().toISOString()},...p]);
+    showToast(isAr?"✅ تم حفظ المسودة":"✅ Draft saved");setComposeOpen(false);
+  };
+  const bulkRecipients = bulkFilter==="ALL"?investors:investors.filter(i=>i.status===bulkFilter);
+
+  const catColors = {Account:"#2ABCD4",Security:"#C85C3E",Appointment:"#D4943A",Order:"#7C3AED",Wallet:"#16A34A",Blockchain:"#1A2855",Compliance:"#DC2626",General:"#64748B"};
 
   return (
     <div>
-      <SectionHeader title={isAr?"مركز الاتصالات":"Communication Center"} sub={isAr?"الإشعارات والرسائل":"Notifications & messaging"} />
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
-        <StatCard icon="📬" title={isAr?"الإشعارات":"Notifications"} value={notifications.length} />
+      {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{toast}</div>}
+      <SectionHeader title={isAr?"مركز الاتصالات":"Communication Center"} sub={isAr?"إشعارات، رسائل، قوالب، جدولة":"Notifications, messaging, templates, scheduling"} />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:22}}>
+        <StatCard icon="🔔" title={isAr?"إشعارات":"Notifications"} value={notifications.length} />
         <StatCard icon="📩" title={isAr?"غير مقروءة":"Unread"} value={unread} gold />
-        <StatCard icon="📋" title={isAr?"الرسائل":"Messages"} value={messages.length} />
+        <StatCard icon="📤" title={isAr?"مرسلة":"Sent"} value={sentMessages.length} />
+        <StatCard icon="📝" title={isAr?"مسودات":"Drafts"} value={drafts.length} />
+        <StatCard icon="⏰" title={isAr?"مجدولة":"Scheduled"} value={scheduled.length} />
       </div>
-      <TabBar tabs={[{id:"inbox",label:isAr?"الوارد":"Inbox"},{id:"notifs",label:isAr?"الإشعارات":"Notifications"},{id:"templates",label:isAr?"القوالب":"Templates"}]} active={tab} onChange={setTab} />
-      {tab==="inbox"&&<div style={{background:"#FFF",borderRadius:14,border:"1px solid #E2E8F0",padding:24,textAlign:"center",color:"#64748B"}}>
-        <p style={{fontSize:40,marginBottom:8}}>📬</p>
-        <p style={{fontSize:15,fontWeight:600}}>{isAr?"لا توجد رسائل":"No messages yet"}</p>
-        <p style={{fontSize:13,marginTop:4}}>{isAr?"ستظهر رسائل المستثمرين هنا":"Investor messages will appear here"}</p>
-      </div>}
-      {tab==="notifs"&&<div>
-        {notifications.length===0?<div style={{background:"#FFF",borderRadius:14,border:"1px solid #E2E8F0",padding:24,textAlign:"center",color:"#64748B"}}>
-          <p style={{fontSize:40,marginBottom:8}}>🔔</p>
-          <p style={{fontSize:15,fontWeight:600}}>{isAr?"لا إشعارات":"No notifications"}</p>
-        </div>:
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {notifications.map(n=><div key={n.id} style={{background:readSet.has(n.id)?"#F8FAFC":"#FFF",border:"1px solid #E2E8F0",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>markRead(n.id)}>
-            <span style={{fontSize:20}}>{n.icon}</span>
-            <div style={{flex:1}}><p style={{fontSize:14,fontWeight:600,color:"#1A2855"}}>{n.title}</p><p style={{fontSize:12,color:"#64748B"}}>{n.detail}</p></div>
-            <span style={{fontSize:11,color:"#94A3B8"}}>{n.type}</span>
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <TabBar tabs={[
+          {id:"notifications",label:isAr?"الإشعارات":"Notifications"},
+          {id:"compose",label:isAr?"إنشاء":"Compose"},
+          {id:"sent",label:isAr?"المرسلة":"Sent"},
+          {id:"drafts",label:isAr?"المسودات":"Drafts"},
+          {id:"scheduled",label:isAr?"المجدولة":"Scheduled"},
+          {id:"templates",label:isAr?"القوالب":"Templates"},
+          {id:"bulk",label:isAr?"رسائل جماعية":"Bulk SMS"},
+        ]} active={tab} onChange={setTab} />
+      </div>
+
+      {/* ═══ NOTIFICATIONS ═══ */}
+      {tab==="notifications"&&<div>
+        {unread>0&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}><Btn small variant="outline" onClick={markAllRead}>{isAr?"تعليم الكل كمقروء":"Mark all read"}</Btn></div>}
+        {notifications.length===0?
+          <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:40,textAlign:"center"}}>
+            <p style={{fontSize:36,marginBottom:8}}>✅</p>
+            <p style={{fontSize:15,fontWeight:600,color:C.navy}}>{isAr?"لا إشعارات جديدة":"All caught up!"}</p>
+          </div>
+        :<div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {notifications.map(n=><div key={n.id} onClick={()=>markRead(n.id)}
+            style={{background:readSet.has(n.id)?C.bg:C.white,border:`1px solid ${readSet.has(n.id)?C.border:C.gold+"44"}`,borderRadius:12,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
+            <span style={{fontSize:24,flexShrink:0}}>{n.icon}</span>
+            <div style={{flex:1}}>
+              <p style={{fontSize:14,fontWeight:readSet.has(n.id)?500:700,color:C.navy}}>{n.title}</p>
+              <p style={{fontSize:12,color:C.textMuted,marginTop:2}}>{n.detail}</p>
+            </div>
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <span style={{fontSize:10,color:C.textMuted}}>{n.type}</span>
+              <p style={{fontSize:11,color:C.textMuted}}>{timeAgo(n.time)}</p>
+              {!readSet.has(n.id)&&<div style={{width:8,height:8,borderRadius:4,background:n.severity==="critical"?C.red:C.gold,marginTop:4,marginLeft:"auto"}}/>}
+            </div>
           </div>)}
-          {unread>0&&<button onClick={markAllRead} style={{alignSelf:"center",padding:"6px 16px",borderRadius:8,border:"1px solid #E2E8F0",background:"#FFF",fontSize:13,fontWeight:600,color:"#64748B",cursor:"pointer"}}>{isAr?"تعليم الكل كمقروء":"Mark all read"}</button>}
         </div>}
       </div>}
-      {tab==="templates"&&<div style={{background:"#FFF",borderRadius:14,border:"1px solid #E2E8F0",padding:24,textAlign:"center",color:"#64748B"}}>
-        <p style={{fontSize:40,marginBottom:8}}>📝</p>
-        <p style={{fontSize:15,fontWeight:600}}>{isAr?"قوالب الرسائل":"Message Templates"}</p>
-        <p style={{fontSize:13,marginTop:4}}>{isAr?"ستتوفر قريباً":"Coming soon"}</p>
+
+      {/* ═══ COMPOSE ═══ */}
+      {tab==="compose"&&<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:24}}>
+        <p style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:16}}>{isAr?"إنشاء رسالة جديدة":"Compose New Message"}</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+          <div>
+            <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"إلى":"To"}</label>
+            <input value={compTo} onChange={e=>setCompTo(e.target.value)} placeholder={isAr?"اسم المستثمر أو رقم الجوال":"Investor name or phone"}
+              style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none"}} />
+            {compTo.length>1&&<div style={{maxHeight:120,overflowY:"auto",border:`1px solid ${C.border}`,borderRadius:8,marginTop:4}}>
+              {investors.filter(i=>(i.nameEn||"").toLowerCase().includes(compTo.toLowerCase())||(i.phone||"").includes(compTo)).slice(0,5).map(i=>
+                <div key={i.id} onClick={()=>setCompTo(i.phone||i.nameEn||i.id)} style={{padding:"8px 12px",fontSize:13,cursor:"pointer",borderBottom:`1px solid ${C.border}`}}
+                  onMouseEnter={e=>e.currentTarget.style.background=C.bg} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  {i.nameEn||i.nameAr} — {i.phone||i.nationalId}
+                </div>)}
+            </div>}
+          </div>
+          <div>
+            <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"القناة":"Channel"}</label>
+            <div style={{display:"flex",gap:6}}>
+              {["SMS","Push","Both"].map(ch=><button key={ch} onClick={()=>setCompChannel(ch)}
+                style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${compChannel===ch?C.gold:C.border}`,background:compChannel===ch?C.goldLight:C.white,fontSize:13,fontWeight:600,color:compChannel===ch?C.goldDim:C.textMuted,cursor:"pointer"}}>{ch}</button>)}
+            </div>
+          </div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"الموضوع":"Subject"}</label>
+          <input value={compSubject} onChange={e=>setCompSubject(e.target.value)} placeholder={isAr?"موضوع اختياري":"Optional subject"}
+            style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none"}} />
+        </div>
+        <div style={{marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+            <label style={{fontSize:12,fontWeight:600,color:C.textMuted}}>{isAr?"الرسالة":"Message"}</label>
+            <select onChange={e=>{if(e.target.value){const tpl=templates.find(t=>t.id===e.target.value);if(tpl)setCompBody(isAr?tpl.bodyAr:tpl.body);}}} style={{fontSize:12,padding:"4px 8px",borderRadius:6,border:`1px solid ${C.border}`,color:C.textMuted}}>
+              <option value="">{isAr?"— استخدام قالب —":"— Use template —"}</option>
+              {templates.map(tpl=><option key={tpl.id} value={tpl.id}>{isAr?tpl.nameAr:tpl.name}</option>)}
+            </select>
+          </div>
+          <textarea value={compBody} onChange={e=>setCompBody(e.target.value)} rows={5} placeholder={isAr?"اكتب رسالتك...":"Type your message..."}
+            style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}} />
+          <p style={{fontSize:11,color:C.textMuted,marginTop:4}}>{compBody.length}/160 {isAr?"حرف":"chars"} {compBody.length>160&&<span style={{color:C.red}}>({Math.ceil(compBody.length/160)} SMS)</span>}</p>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"جدولة (اختياري)":"Schedule (optional)"}</label>
+          <input type="datetime-local" value={compScheduleDate} onChange={e=>setCompScheduleDate(e.target.value)}
+            style={{padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none"}} />
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <Btn variant="gold" onClick={()=>{if(!compTo||!compBody){showToast(isAr?"⚠️ أكمل الحقول":"⚠️ Fill all fields");return;}sendMessage(compTo,compBody,compChannel,compScheduleDate||null);}}>{compScheduleDate?(isAr?"جدولة الإرسال":"Schedule Send"):(isAr?"إرسال":"Send")}</Btn>
+          <Btn variant="outline" onClick={saveDraft}>{isAr?"حفظ كمسودة":"Save Draft"}</Btn>
+        </div>
       </div>}
+
+      {/* ═══ SENT ═══ */}
+      {tab==="sent"&&<div>
+        {sentMessages.length===0?<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:40,textAlign:"center"}}><p style={{fontSize:36,marginBottom:8}}>📤</p><p style={{fontSize:15,fontWeight:600,color:C.navy}}>{isAr?"لا رسائل مرسلة":"No sent messages"}</p></div>
+        :<TTable cols={[
+          {key:"to",label:isAr?"إلى":"To"},{key:"subject",label:isAr?"الموضوع":"Subject"},
+          {key:"body",label:isAr?"الرسالة":"Message",render:v=><span style={{maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"inline-block"}}>{v}</span>},
+          {key:"channel",label:isAr?"القناة":"Channel",render:v=><Badge label={v}/>},
+          {key:"sentAt",label:isAr?"التاريخ":"Date",render:v=>v?new Date(v).toLocaleString():"—"},
+          {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+        ]} rows={sentMessages} />}
+      </div>}
+
+      {/* ═══ DRAFTS ═══ */}
+      {tab==="drafts"&&<div>
+        {drafts.length===0?<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:40,textAlign:"center"}}><p style={{fontSize:36,marginBottom:8}}>📝</p><p style={{fontSize:15,fontWeight:600,color:C.navy}}>{isAr?"لا مسودات":"No drafts"}</p></div>
+        :<div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {drafts.map(d=><div key={d.id} style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><p style={{fontSize:14,fontWeight:600,color:C.navy}}>{d.subject||"(No subject)"}</p><p style={{fontSize:12,color:C.textMuted}}>{isAr?"إلى":"To"}: {d.to} — {d.body.slice(0,60)}...</p></div>
+            <div style={{display:"flex",gap:6}}>
+              <Btn small variant="gold" onClick={()=>{setCompTo(d.to);setCompBody(d.body);setCompSubject(d.subject||"");setDrafts(p=>p.filter(x=>x.id!==d.id));setTab("compose");}}>{isAr?"تحرير":"Edit"}</Btn>
+              <Btn small variant="danger" onClick={()=>setDrafts(p=>p.filter(x=>x.id!==d.id))}>{isAr?"حذف":"Delete"}</Btn>
+            </div>
+          </div>)}
+        </div>}
+      </div>}
+
+      {/* ═══ SCHEDULED ═══ */}
+      {tab==="scheduled"&&<div>
+        {scheduled.length===0?<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:40,textAlign:"center"}}><p style={{fontSize:36,marginBottom:8}}>⏰</p><p style={{fontSize:15,fontWeight:600,color:C.navy}}>{isAr?"لا رسائل مجدولة":"No scheduled messages"}</p></div>
+        :<TTable cols={[
+          {key:"to",label:isAr?"إلى":"To"},{key:"body",label:isAr?"الرسالة":"Message",render:v=><span style={{maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"inline-block"}}>{v}</span>},
+          {key:"sentAt",label:isAr?"موعد الإرسال":"Send At",render:v=>v?new Date(v).toLocaleString():"—"},
+          {key:"channel",label:isAr?"القناة":"Channel",render:v=><Badge label={v}/>},
+          {key:"id",label:isAr?"إجراء":"Action",render:(_,row)=><Btn small variant="danger" onClick={()=>setScheduled(p=>p.filter(x=>x.id!==row.id))}>{isAr?"إلغاء":"Cancel"}</Btn>},
+        ]} rows={scheduled} />}
+      </div>}
+
+      {/* ═══ TEMPLATES ═══ */}
+      {tab==="templates"&&<div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+          {["ALL",...new Set(templates.map(t=>t.cat))].map(c=><button key={c} onClick={()=>setCompSearch(c==="ALL"?"":c)}
+            style={{padding:"5px 12px",borderRadius:8,fontSize:12,fontWeight:600,border:`1px solid ${(!compSearch&&c==="ALL")||compSearch===c?C.gold:C.border}`,background:(!compSearch&&c==="ALL")||compSearch===c?C.goldLight:C.white,color:(!compSearch&&c==="ALL")||compSearch===c?C.goldDim:C.textMuted,cursor:"pointer"}}>{c}</button>)}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+          {templates.filter(t=>!compSearch||t.cat===compSearch).map(tpl=><div key={tpl.id} style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 18px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:13,fontWeight:700,color:C.navy}}>{isAr?tpl.nameAr:tpl.name}</span>
+              <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4,background:catColors[tpl.cat]+"18",color:catColors[tpl.cat]}}>{tpl.cat}</span>
+            </div>
+            <p style={{fontSize:12,color:C.textMuted,lineHeight:1.4,marginBottom:8,minHeight:32}}>{isAr?tpl.bodyAr:tpl.body||"(empty)"}</p>
+            <div style={{display:"flex",gap:6}}>
+              <Btn small variant="outline" onClick={()=>{setCompBody(isAr?tpl.bodyAr:tpl.body);setCompSubject(isAr?tpl.nameAr:tpl.name);setTab("compose");}}>{isAr?"استخدام":"Use"}</Btn>
+              <Btn small variant="ghost" onClick={()=>setEditTpl({...tpl})}>{isAr?"تعديل":"Edit"}</Btn>
+            </div>
+          </div>)}
+        </div>
+      </div>}
+
+      {/* ═══ BULK SMS ═══ */}
+      {tab==="bulk"&&<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:24}}>
+        <p style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>{isAr?"رسائل جماعية":"Bulk SMS"}</p>
+        <p style={{fontSize:12,color:C.textMuted,marginBottom:16}}>{isAr?"إرسال رسالة لجميع المستثمرين أو مجموعة محددة":"Send to all investors or a filtered group"}</p>
+        <div style={{display:"flex",gap:6,marginBottom:14}}>
+          {[["ALL",isAr?"الكل":"All"],["ACTIVE",isAr?"نشط":"Active"],["SUSPENDED",isAr?"معلّق":"Suspended"]].map(([v,l])=>
+            <button key={v} onClick={()=>setBulkFilter(v)} style={{padding:"8px 16px",borderRadius:8,fontSize:13,fontWeight:600,border:`1px solid ${bulkFilter===v?C.teal:C.border}`,background:bulkFilter===v?C.tealLight:C.white,color:bulkFilter===v?C.teal:C.textMuted,cursor:"pointer"}}>{l} ({v==="ALL"?investors.length:investors.filter(i=>i.status===v).length})</button>)}
+        </div>
+        <p style={{fontSize:13,fontWeight:600,color:C.navy,marginBottom:8}}>{isAr?"سيتم الإرسال إلى":"Will send to"}: <span style={{color:C.gold}}>{bulkRecipients.length} {isAr?"مستثمر":"investors"}</span></p>
+        <div style={{marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+            <label style={{fontSize:12,fontWeight:600,color:C.textMuted}}>{isAr?"الرسالة":"Message"}</label>
+            <select onChange={e=>{if(e.target.value){const tpl=templates.find(t=>t.id===e.target.value);if(tpl)setCompBody(isAr?tpl.bodyAr:tpl.body);}}} style={{fontSize:12,padding:"4px 8px",borderRadius:6,border:`1px solid ${C.border}`,color:C.textMuted}}>
+              <option value="">{isAr?"— قالب —":"— Template —"}</option>
+              {templates.map(tpl=><option key={tpl.id} value={tpl.id}>{isAr?tpl.nameAr:tpl.name}</option>)}
+            </select>
+          </div>
+          <textarea value={compBody} onChange={e=>setCompBody(e.target.value)} rows={4} placeholder={isAr?"اكتب الرسالة الجماعية...":"Type bulk message..."}
+            style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}} />
+        </div>
+        <Btn variant="gold" onClick={()=>{if(!compBody){showToast("⚠️ Message is empty");return;}
+          const count=bulkRecipients.length;
+          bulkRecipients.forEach(inv=>{setSentMessages(p=>[{id:"BULK-"+Date.now()+"-"+inv.id,to:inv.phone||inv.nationalId||inv.id,body:compBody,channel:"SMS",sentAt:new Date().toISOString(),status:"SENT",subject:"Bulk"},...p]);});
+          showToast(`✅ ${count} ${isAr?"رسالة أُرسلت":"messages sent"}`);setCompBody("");}}>{isAr?`إرسال إلى ${bulkRecipients.length} مستثمر`:`Send to ${bulkRecipients.length} investors`}</Btn>
+        <p style={{fontSize:11,color:C.textMuted,marginTop:12}}>{isAr?"ملاحظة: يتطلب ربط بوابة SMS":"Note: Requires SMS gateway in Settings"}</p>
+      </div>}
+
+      {/* ═══ EDIT TEMPLATE MODAL ═══ */}
+      {editTpl&&<Modal title={isAr?"تعديل القالب":"Edit Template — "+editTpl.name} onClose={()=>setEditTpl(null)}>
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"الاسم (English)":"Name (English)"}</label>
+          <input value={editTpl.name} onChange={e=>setEditTpl({...editTpl,name:e.target.value})} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13}} />
+        </div>
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"الاسم (عربي)":"Name (Arabic)"}</label>
+          <input value={editTpl.nameAr} onChange={e=>setEditTpl({...editTpl,nameAr:e.target.value})} dir="rtl" style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,fontFamily:"inherit"}} />
+        </div>
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"النص (English)":"Body (English)"}</label>
+          <textarea value={editTpl.body} onChange={e=>setEditTpl({...editTpl,body:e.target.value})} rows={3} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,resize:"vertical",fontFamily:"inherit"}} />
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"النص (عربي)":"Body (Arabic)"}</label>
+          <textarea value={editTpl.bodyAr} onChange={e=>setEditTpl({...editTpl,bodyAr:e.target.value})} rows={3} dir="rtl" style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,resize:"vertical",fontFamily:"inherit"}} />
+        </div>
+        <p style={{fontSize:11,color:C.textMuted,marginBottom:12}}>{isAr?"المتغيرات":"Variables"}: {"{OTP}"}, {"{DATE}"}, {"{GRAMS}"}, {"{METAL}"}, {"{AMOUNT}"}, {"{VAULT}"}, {"{DEVICE}"}, {"{REASON}"}, {"{PRICE}"}, {"{TOTAL}"}, {"{TYPE}"}, {"{NUMBER}"}, {"{TX_COUNT}"}, {"{METHOD}"}, {"{FILLED}"}</p>
+        <div style={{display:"flex",gap:8}}>
+          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(t=>t.id===editTpl.id?editTpl:t));setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ":"Save"}</Btn>
+          <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
+        </div>
+      </Modal>}
     </div>
   );
 };
