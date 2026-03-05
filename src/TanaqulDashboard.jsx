@@ -2036,7 +2036,7 @@ const Appointments = () => {
           </div>
         </div>
         <div style={{marginTop:16,display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>setStartStep(3)}>Continue to OTP Verification →</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{const uid=sel._uuid||sel.id;await apiFetch("/appointments/"+uid+"/otp/generate",{method:"POST"});}catch(e){}setStartStep(3);}}>Continue to OTP Verification →</Btn>
           <Btn variant="outline" onClick={()=>setStartStep(1)}>← Back</Btn>
         </div>
       </Modal>}
@@ -2062,7 +2062,7 @@ const Appointments = () => {
             <span style={{fontSize:14,fontWeight:700,color:otpExpired?"#C85C3E":otpSecs<60?"#D4943A":C.textMuted}}>
               {otpExpired?"⛔ OTP expired":`⏱ ${Math.floor(otpSecs/60)}:${String(otpSecs%60).padStart(2,"0")} remaining`}
             </span>
-            <button onClick={()=>{setOtpSecs(300);setOtpExpired(false);setOtpVal("");setOtpError("");}}
+            <button onClick={async ()=>{setOtpSecs(300);setOtpExpired(false);setOtpVal("");setOtpError("");try{const uid=sel._uuid||sel.id;await apiFetch("/appointments/"+uid+"/otp/generate",{method:"POST"});}catch(e){}}}
               style={{fontSize:13,fontWeight:700,color:C.teal,background:"none",border:`1px solid ${C.teal}`,borderRadius:6,padding:"3px 10px",cursor:"pointer"}}>
               Resend OTP
             </button>
@@ -2078,21 +2078,31 @@ const Appointments = () => {
                 if(!vRes||!vRes.ok){setOtpError("Incorrect OTP. Please ask the investor to check their phone.");return;}
                 // ═══ VAULT LIFECYCLE ENGINE ═══
                 if(sel.type==="DEPOSIT"){
-                  // Step 1: Open deposit appointment
-                  await apiFetch("/vault/deposit/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});
+                  // Step 1: Open deposit appointment (may fail if already IN_PROGRESS — that's OK)
+                  try{await apiFetch("/vault/deposit/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});}catch(e){}
                   // Step 2: Register bar
                   const regRes=await apiFetch("/vault/deposit/register-bar",{method:"POST",body:JSON.stringify({appointment_id:uid,barcode:startData.barcode?.trim()||"",metal:sel.metal||"Gold",weight_grams:parseFloat(sel.qty)||0,weight_label:sel.qty||"",manufacturer:manufacturer||"",vault_location:sel.vault||"Riyadh"})});
                   const regData=regRes&&regRes.ok?await regRes.json():{};
                   // Step 3: Mint tokens
-                  if(regData.bar_id){await apiFetch("/vault/deposit/mint",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:regData.bar_id})});}
+                  if(regData.bar_id){
+                    const mintRes=await apiFetch("/vault/deposit/mint",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:regData.bar_id})});
+                    if(mintRes&&mintRes.ok){const mintData=await mintRes.json();console.log("✅ Minted:",mintData);}
+                  }
+                  // Step 4: Complete appointment
+                  try{await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});}catch(e){}
                 } else if(sel.type==="WITHDRAWAL"){
-                  // Step 1: Open withdrawal appointment
-                  await apiFetch("/vault/withdraw/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});
+                  // Step 1: Open withdrawal appointment (may fail if already IN_PROGRESS)
+                  try{await apiFetch("/vault/withdraw/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});}catch(e){}
                   // Step 2: Select bar
                   const barRes=await apiFetch("/vault/withdraw/select-bar/"+uid);
                   const barData=barRes&&barRes.ok?await barRes.json():{};
                   // Step 3: Burn tokens
-                  if(barData.bar_id){await apiFetch("/vault/withdraw/burn",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:barData.bar_id})});}
+                  if(barData.bar_id){
+                    const burnRes=await apiFetch("/vault/withdraw/burn",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:barData.bar_id})});
+                    if(burnRes&&burnRes.ok){const burnData=await burnRes.json();console.log("✅ Burned:",burnData);}
+                  }
+                  // Step 4: Complete appointment
+                  try{await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});}catch(e){}
                 } else {
                   // Fallback: complete via old endpoint
                   await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});
