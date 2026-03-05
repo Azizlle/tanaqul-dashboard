@@ -1317,7 +1317,7 @@ const Investors = () => {
         if(r && !r.ok) showToast("⚠️ Backend error — changes saved locally only","warn");
         // Refresh investor list after status change
         try {
-          const ir = await apiFetch("/investors?page_size=500");
+          const ir = await apiFetch("/investors?limit=500");
           if(ir&&ir.ok){ const id2=await ir.json(); const items=id2.items||id2.investors||[]; if(Array.isArray(items)&&items.length>0) setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} 
         } catch(e2){}
       }
@@ -1879,8 +1879,8 @@ const Appointments = () => {
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Cancelled by admin"})}); } catch(e) {}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Refresh appointments and investors from API
-              try { const ar=await apiFetch("/appointments?page_size=500"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
-              try { const ir=await apiFetch("/investors?page_size=500"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
+              try { const ar=await apiFetch("/appointments?limit=500"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?limit=500"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               const refundAmt = Math.max(0, sel.fee - cfee);
               if(refundAmt > 0) {
                 setWalletMovements(prev => [{
@@ -1916,7 +1916,7 @@ const Appointments = () => {
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/no-show", {method:"POST"}); } catch(e) {}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
               // Refresh investors from API (no-show count updated server-side)
-              try { const ir=await apiFetch("/investors?page_size=500"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?limit=500"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               setInvestors(prev=>prev.map(inv=>{
                 return inv.nationalId===sel.nationalId ? {...inv,noShowCount:(inv.noShowCount||0)+1} : inv;
               }));
@@ -2172,7 +2172,7 @@ const Financials = () => {
     }));
     addAudit("WITHDRAWAL_"+type.toUpperCase(), row.id, (row.investor||"")+" — SAR "+row.amount);
     // Refresh withdrawals from API
-    try { const wr=await apiFetch("/withdrawals?page_size=500"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requestedAt:w.requested_at||"",processedAt:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
+    try { const wr=await apiFetch("/withdrawals?limit=500"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requestedAt:w.requested_at||"",processedAt:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
     const msgs = {approve:"✅ Withdrawal approved",reject:"✅ Withdrawal rejected",processed:"✅ Marked as processed",notify:"✅ Notification sent"};
     showFinToast(msgs[type]);
     setWModal(null);
@@ -2437,7 +2437,7 @@ const MiniDonut = ({ pct, color="#C4956A", size=56 }) => {
 
 const Reports = () => {
   const { t, isAr } = useLang();
-  const { matches, investors, walletMovements, bars, withdrawals } = useAppData();
+  const { matches, investors, walletMovements, bars, withdrawals, appointments } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
   const fmtK = n => (n||0).toLocaleString("en-SA",{maximumFractionDigits:0});
   const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
@@ -5124,8 +5124,8 @@ const OrderBook = () => {
         const result = await resp.json();
         // Refresh orders and matches from API to get backend matching results
         const [ordResp, matchResp] = await Promise.all([
-          apiFetch("/orders?page_size=500"),
-          apiFetch("/matches?page_size=500"),
+          apiFetch("/orders?limit=500"),
+          apiFetch("/matches?limit=500"),
         ]);
         if(ordResp && ordResp.ok) {
           const od = await ordResp.json();
@@ -5632,7 +5632,7 @@ const UserManagement = () => {
   customRoles.forEach(r=>{ allRolePerms[r.id]=r.perms; });
   const [users, setUsers] = useState([]);
   useEffect(()=>{
-    apiFetch("/users?page_size=100").then(r=>r&&r.ok?r.json():null).then(d=>{
+    apiFetch("/users?limit=100").then(r=>r&&r.ok?r.json():null).then(d=>{
       const items = d?.items || d?.users || (Array.isArray(d)?d:[]);
       if(items.length) setUsers(items.map(u=>({
         id: u.display_id||u.id, name: u.name_en||u.name||"",
@@ -8706,7 +8706,7 @@ export default function App() {
     if (!token) return;
     try {
       const endpoints = [
-        { path: "/investors?page_size=500", setter: setAppInvestors, transform: (data) => {
+        { path: "/investors?limit=500", setter: setAppInvestors, transform: (data) => {
           const items = data.items || data.investors || data;
           if (!Array.isArray(items)) return null;
           return items.map(inv => ({
@@ -8723,7 +8723,7 @@ export default function App() {
             email: inv.email || "", phone: inv.phone || "",
           }));
         }},
-        { path: "/vault/bars?page_size=500", setter: setAppBars, transform: (data) => {
+        { path: "/vault/bars?limit=500", setter: setAppBars, transform: (data) => {
           const items = data.items || data.bars || data;
           if (!Array.isArray(items)) return null;
           return items.map(b => ({
@@ -8735,7 +8735,7 @@ export default function App() {
             depositor: b.depositor_id || "", depositedAt: b.deposited_at || "",
           }));
         }},
-        { path: "/appointments?page_size=500", setter: setAppAppointments, transform: (data) => {
+        { path: "/appointments?limit=500", setter: setAppAppointments, transform: (data) => {
           const items = data.items || data.appointments || data;
           if (!Array.isArray(items)) return null;
           return items.map(a => ({
@@ -8750,7 +8750,7 @@ export default function App() {
             otp: a.otp_code || "", notes: a.notes || "",
           }));
         }},
-        { path: "/withdrawals?page_size=500", setter: setAppWithdrawals, transform: (data) => {
+        { path: "/withdrawals?limit=500", setter: setAppWithdrawals, transform: (data) => {
           const items = data.items || data.withdrawals || data;
           if (!Array.isArray(items)) return null;
           return items.map(w => ({
@@ -8762,7 +8762,7 @@ export default function App() {
             processed: w.processed_at || "", rejectReason: w.reject_reason || "",
           }));
         }},
-        { path: "/wallet/movements?page_size=500", setter: setAppWalletMoves, transform: (data) => {
+        { path: "/wallet/movements?limit=500", setter: setAppWalletMoves, transform: (data) => {
           const items = data.items || data.movements || data;
           if (!Array.isArray(items)) return null;
           return items.map(m => ({
@@ -8773,7 +8773,7 @@ export default function App() {
             date: m.created_at || "",
           }));
         }},
-        { path: "/validators?page_size=500", setter: setAppValidators, transform: (data) => {
+        { path: "/validators?limit=500", setter: setAppValidators, transform: (data) => {
           const items = data.items || data.validators || data;
           if (!Array.isArray(items)) return null;
           return items.map(v => ({
@@ -8786,7 +8786,7 @@ export default function App() {
             walletAddress: v.wallet_address || "",
           }));
         }},
-        { path: "/blacklist?page_size=500", setter: setAppBlacklist, transform: (data) => {
+        { path: "/blacklist?limit=500", setter: setAppBlacklist, transform: (data) => {
           const items = data.items || data.blacklist || data;
           if (!Array.isArray(items)) return null;
           return items.map(b => ({
@@ -8796,7 +8796,7 @@ export default function App() {
             date: b.created_at || "", active: b.is_active !== false,
           }));
         }},
-        { path: "/orders?page_size=500", setter: setAppOrders, transform: (data) => {
+        { path: "/orders?limit=500", setter: setAppOrders, transform: (data) => {
           const items = data.items || data.orders || data;
           if (!Array.isArray(items)) return null;
           return items.map(o => ({
@@ -8809,7 +8809,7 @@ export default function App() {
           }));
         }},
         // transactions derived from matches below
-        { path: "/matches?page_size=500", setter: (data) => {
+        { path: "/matches?limit=500", setter: (data) => {
           setAppMatches(data);
           // Also populate transactions from matches
           setAppTransactions(data.map(m => ({
@@ -8838,7 +8838,7 @@ export default function App() {
             blockNumber: m.block_number || null,
           }));
         }},
-        { path: "/blocks?page_size=100", setter: setAppBlocks, transform: (data) => {
+        { path: "/blocks?limit=100", setter: setAppBlocks, transform: (data) => {
           const items = data.items || data.blocks || data;
           if (!Array.isArray(items)) return null;
           return items.map(b => ({
