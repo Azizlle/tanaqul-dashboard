@@ -5753,7 +5753,7 @@ const UserManagement = () => {
   const [newRole, setNewRole] = useState({label:"",labelAr:"",color:C.blueSolid,perms:[]});
   const [editPerms, setEditPerms] = useState([]);
   const [editRole, setEditRole] = useState("VIEWER");
-  const [newUser, setNewUser] = useState({name:"",email:"",role:"VIEWER"});
+  const [newUser, setNewUser] = useState({name:"",nameAr:"",email:"",role:"VIEWER",password:""});
   const [logFilter, setLogFilter] = useState("ALL");
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
@@ -5807,6 +5807,7 @@ const UserManagement = () => {
                 <Btn small variant="primary" onClick={()=>{setActivityModal(u);setLogFilter("ALL");}}>{isAr?"سجل النشاط":"Activity Log"}</Btn>
                 {u.status==="ACTIVE"&&u.role!=="SUPER_ADMIN"&&u.role!=="super_admin"&&<Btn small variant="danger" onClick={async ()=>{try{await apiFetch("/admin/users/"+u.id+"/suspend",{method:"POST"});}catch(e){}setUsers(p=>p.map(x=>x.id===u.id?{...x,status:"SUSPENDED",sessions:0,log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account suspended",actionAr:"إيقاف الحساب",detail:"Suspended by Super Admin",ip:"—"},...(x.log||[])]}:x));showToast(isAr?"تم إيقاف المستخدم":"User suspended");}}>{isAr?"إيقاف":"Suspend"}</Btn>}
                 {u.status==="SUSPENDED"&&<Btn small variant="teal" onClick={async ()=>{try{await apiFetch("/admin/users/"+u.id+"/activate",{method:"POST"});}catch(e){}setUsers(p=>p.map(x=>x.id===u.id?{...x,status:"ACTIVE",log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account reactivated",actionAr:"إعادة تفعيل الحساب",detail:"Reactivated by Super Admin",ip:"—"},...(x.log||[])]}:x));showToast(isAr?"تم تفعيل المستخدم":"User reactivated");}}>{isAr?"تفعيل":"Activate"}</Btn>}
+                {u.role!=="SUPER_ADMIN"&&u.role!=="super_admin"&&<Btn small variant="ghost" onClick={async ()=>{if(!confirm(isAr?`هل أنت متأكد من حذف ${u.name}؟`:`Delete ${u.name}?`))return;try{await apiFetch("/admin/users/"+u.id,{method:"DELETE"});}catch(e){}setUsers(p=>p.filter(x=>x.id!==u.id));showToast(isAr?"تم حذف المستخدم":"User deleted");}}>{isAr?"حذف":"Delete"}</Btn>}
               </div>
             </div>
           );
@@ -5821,6 +5822,7 @@ const UserManagement = () => {
             <div style={{flex:1}}><Inp label="الاسم الكامل (عربي)" value={newUser.nameAr} onChange={v=>setNewUser(p=>({...p,nameAr:v}))} placeholder="مثال: نورة الشمسي" /></div>
           </div>
           <Inp label={isAr?"البريد الإلكتروني":"Email"} value={newUser.email} onChange={v=>setNewUser(p=>({...p,email:v}))} placeholder="user@tanaqul.sa" />
+          <Inp label={isAr?"كلمة المرور":"Password"} value={newUser.password} onChange={v=>setNewUser(p=>({...p,password:v}))} placeholder={isAr?"كلمة مرور قوية":"Strong password"} type="password" />
           <Sel label={isAr?"الدور":"Role"} value={newUser.role} onChange={v=>setNewUser(p=>({...p,role:v}))} options={allRoles.map(r=>({value:r.id,label:isAr?r.labelAr:r.label}))} />
           <div style={{background:C.bg,borderRadius:10,padding:"12px 14px"}}>
             <p style={{fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:6}}>{isAr?"الصلاحيات":"Permissions"}</p>
@@ -5833,9 +5835,10 @@ const UserManagement = () => {
           </div>
           <Btn variant="gold" onClick={async ()=>{
             if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
+            if(!newUser.password||newUser.password.length<8){showToast(isAr?"⚠️ كلمة المرور يجب أن تكون 8 أحرف على الأقل":"⚠️ Password must be at least 8 characters");return;}
             const id="USR-"+String(Date.now()).slice(-3);
             let apiUser = null;
-            try{const r=await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role.toLowerCase()})});if(r&&r.ok)apiUser=await r.json();}catch(e){}
+            try{const r=await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role.toLowerCase(),password:newUser.password})});if(r&&r.ok)apiUser=await r.json();}catch(e){}
             const realId = apiUser?.id||id;
             setUsers(p=>[...p,{id:realId,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
             setModal(null);
@@ -6375,7 +6378,6 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       {id:"settings",label:"Settings",labelAr:"الإعدادات",icon:"⚙️"},
       {id:"health",label:"System Health",labelAr:"حالة النظام",icon:"❤️"},
       {id:"treasury",label:"Treasury & Recon",labelAr:"الخزينة والتسوية",icon:"⚖️"},
-      {id:"profile",label:"Account Profile",labelAr:"الملف الشخصي",icon:"👤"},
     ];
     PAGES_SEARCH.forEach(pg => {
       if(results.length >= MAX) return;
