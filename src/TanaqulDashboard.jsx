@@ -4959,9 +4959,10 @@ const OrderBook = () => {
   const spreadWide = spreadPct&&parseFloat(spreadPct)>parseFloat(maxSpreadPct);
 
   // ═══ SPREAD STABILIZER — Auto-inject synthetic orders when spread widens ═══
+  // Shuts down automatically when bid orders are disabled
   const stabLastRef = useRef(0);
   useEffect(()=>{
-    if(!stabEnabled || !spreadWide || !bestBid || !bestAsk) return;
+    if(!stabEnabled || !bidEnabled || !spreadWide || !bestBid || !bestAsk) return;
     // Debounce: max once per 30 seconds
     if(Date.now()-stabLastRef.current < 30000) return;
     // Check exposure cap
@@ -4989,7 +4990,7 @@ const OrderBook = () => {
       apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"BUY",metal:metalFilter||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
       apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"SELL",metal:metalFilter||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
     }catch(e){}
-  },[stabEnabled, spreadWide, bestBid, bestAsk, orders]);
+  },[stabEnabled, bidEnabled, spreadWide, bestBid, bestAsk, orders]);
 
   const openList      = orders.filter(o=>o.status==="OPEN"||o.status==="PARTIAL");
   const filledList    = orders.filter(o=>o.status==="FILLED");
@@ -5489,8 +5490,8 @@ const OrderBook = () => {
                   <p style={{fontWeight:700,fontSize:16,color:C.navy}}>{isAr?"\u0645\u0648\u0627\u0632\u0646 \u0627\u0644\u0633\u0628\u0631\u064a\u062f":"Spread Stabilizer"}</p>
                   <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{isAr?"\u064a\u0636\u062e \u0623\u0648\u0627\u0645\u0631 \u0627\u0635\u0637\u0646\u0627\u0639\u064a\u0629 \u0639\u0646\u062f \u0627\u062a\u0633\u0627\u0639 \u0627\u0644\u0633\u0628\u0631\u064a\u062f":"Injects synthetic orders when spread widens"}</p>
                 </div>
-                <button onClick={()=>setStabEnabled(p=>!p)} style={{padding:"6px 16px",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",border:"none",background:stabEnabled?C.teal:C.textMuted,color:C.white}}>
-                  {stabEnabled?(isAr?"\u0645\u0641\u0639\u0651\u0644":"ACTIVE"):(isAr?"\u0645\u0639\u0637\u0651\u0644":"OFF")}
+                <button onClick={()=>setStabEnabled(p=>!p)} disabled={!bidEnabled} style={{padding:"6px 16px",borderRadius:8,fontSize:14,fontWeight:700,cursor:bidEnabled?"pointer":"not-allowed",border:"none",background:!bidEnabled?"#94A3B8":stabEnabled?C.teal:C.textMuted,color:C.white}}>
+                  {!bidEnabled?(isAr?"06450639063706510644 2014 062706440634063106270621 0645063a06440642":"OFF 2014 Bids disabled"):stabEnabled?(isAr?"06450641063906510644":"ACTIVE"):(isAr?"06450639063706510644":"OFF")}
                 </button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
