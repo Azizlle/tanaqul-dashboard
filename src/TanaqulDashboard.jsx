@@ -6101,10 +6101,42 @@ const AccountProfile = () => {
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState({show:false,field:null,code:"",sent:false,verified:false,timer:0});
-  const [sessions] = useState([]);
-  const [activityLog] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [activityLog, setActivityLog] = useState([]);
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
   const showSaved = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
+
+  // Load sessions and activity from API
+  useEffect(()=>{
+    // Current session info
+    const token = localStorage.getItem("tanaqul_token");
+    if(token){
+      try{
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setSessions([{
+          id:"current",current:true,
+          device:navigator.userAgent.includes("Chrome")?"Chrome":"Browser",
+          os:navigator.platform||"Unknown",
+          ip:"Current session",
+          lastActive:"Now",
+          loginAt: payload.iat ? new Date(payload.iat*1000).toLocaleString() : "—",
+        }]);
+      }catch(e){}
+    }
+    // Activity log
+    apiFetch("/audit-logs?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
+      if(d&&d.items){
+        setActivityLog(d.items.map(a=>({
+          id:a.id, action:a.action||"",
+          detail:a.details||a.entity_type||"",
+          entityType:a.entity_type||"",
+          entityId:a.entity_id||"",
+          level:a.level||"INFO",
+          time:a.created_at?new Date(a.created_at).toLocaleString():"",
+        })));
+      }
+    }).catch(()=>{});
+  },[]);
 
   // Phone OTP countdown
   useEffect(()=>{
@@ -6272,7 +6304,7 @@ const AccountProfile = () => {
                   <span style={{fontSize:15,fontWeight:600,color:C.navy}}>{s.device}</span>
                   {s.current&&<span style={{fontSize:11,fontWeight:700,color:C.gold,background:`${C.gold}18`,padding:"2px 6px",borderRadius:4}}>{isAr?"الجلسة الحالية":"CURRENT"}</span>}
                 </div>
-                <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{s.ip} — {s.location} — {s.time}</p>
+                <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{s.os} — {s.ip} — {isAr?"دخول":"Login"}: {s.loginAt}</p>
               </div>
               {!s.current&&<Btn small variant="danger" onClick={()=>showToast(isAr?"تم إلغاء الجلسة":"Session revoked")}>{isAr?"إلغاء":"Revoke"}</Btn>}
             </div>
@@ -6286,15 +6318,17 @@ const AccountProfile = () => {
       {/* Activity Log Tab */}
       {tab==="ACTIVITY"&&<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:20,boxShadow:C.cardShadow}}>
         <p style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:14}}>{isAr?"سجل النشاط":"Activity Log"}</p>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {activityLog.length===0?<p style={{color:C.textMuted,fontSize:14,textAlign:"center",padding:20}}>{isAr?"لا نشاط بعد":"No activity yet"}</p>:
+        <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:400,overflowY:"auto"}}>
           {activityLog.map((entry,i)=>(
-            <div key={i} style={{display:"flex",gap:12,padding:"10px 14px",borderRadius:8,background:i%2===0?C.bg:"transparent",alignItems:"center"}}>
-              <span style={{fontSize:12,fontFamily:"monospace",color:C.textMuted,flexShrink:0,minWidth:110}}>{entry.date}</span>
-              <span style={{fontSize:14,fontWeight:600,color:C.navy,minWidth:120}}>{entry.action}</span>
-              <span style={{fontSize:13,color:C.textMuted,flex:1}}>{entry.detail}</span>
+            <div key={entry.id||i} style={{display:"flex",gap:12,padding:"10px 14px",borderRadius:8,background:i%2===0?C.bg:"transparent",alignItems:"center"}}>
+              <span style={{fontSize:10,fontFamily:"monospace",color:C.textMuted,flexShrink:0,minWidth:130}}>{entry.time}</span>
+              <span style={{fontSize:11,fontWeight:700,color:entry.level==="CRITICAL"?"#C85C3E":entry.level==="WARN"?"#D4943A":C.teal,padding:"2px 8px",borderRadius:4,background:entry.level==="CRITICAL"?"#C85C3E12":entry.level==="WARN"?"#D4943A12":C.tealLight,flexShrink:0}}>{entry.level}</span>
+              <span style={{fontSize:13,fontWeight:600,color:C.navy,minWidth:140}}>{entry.action}</span>
+              <span style={{fontSize:12,color:C.textMuted,flex:1}}>{entry.entityType} {entry.entityId?`#${entry.entityId.slice(0,8)}`:""}</span>
             </div>
           ))}
-        </div>
+        </div>}
       </div>}
     </div>
   );
