@@ -2905,7 +2905,6 @@ const Blocks = () => {
   };
 
   const apiSplit = appBlockStats?.commission_split;
-  const apiSplit = appBlockStats?.commission_split;
   const tanaqulPct = apiSplit ? apiSplit.platform_percent : ((commSplit.buying||30)+(commSplit.selling||30));
   const creatorPct = apiSplit ? apiSplit.creator_percent : (commSplit.creator||20);
   const validatorsPct = apiSplit ? apiSplit.validators_percent : (commSplit.validators||20);
