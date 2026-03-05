@@ -5874,9 +5874,10 @@ const UserManagement = () => {
 const AccountProfile = () => {
   const { isAr, t } = useLang();
   const [tab, setTab] = useState("INFO");
+  const adminEmail = (() => { try { const tk = localStorage.getItem("tanaqul_token"); if(tk){ const p=JSON.parse(atob(tk.split(".")[1])); return p.email||p.sub||"admin@tanaqul.sa"; } } catch(e){} return "admin@tanaqul.sa"; })();
   const [profile, setProfile] = useState({
-    name:currentAdmin?.split("@")[0]||"Admin", nameAr:"",
-    email:"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
+    name:adminEmail?.split("@")[0]||"Admin", nameAr:"",
+    email:adminEmail||"admin@tanaqul.sa", phone:"+966 50 XXX XXXX",
     phoneVerified:true,
     recoveryPhone:"+966 55 XXX XXXX", recoveryPhoneVerified:false,
     recoveryEmail:"abdulaziz.recovery@gmail.com",
@@ -5987,7 +5988,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profName,phone:profPhone})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,phone:profile.phone})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -6092,7 +6093,7 @@ const AccountProfile = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
   const { t, isAr } = useLang();
-  const { investors, appointments, bars, withdrawals, orders } = useAppData();
+  const { investors, appointments, bars, withdrawals, orders, transactions } = useAppData();
   const [query, setQuery] = useState("");
   const [selIdx, setSelIdx] = useState(0);
   const inputRef = useRef(null);
@@ -6253,7 +6254,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const InvestorTimeline = ({ investor, onClose }) => {
   const { isAr } = useLang();
-  const { appointments, withdrawals, orders, matches } = useAppData();
+  const { appointments, withdrawals, orders, matches, transactions } = useAppData();
   if(!investor) return null;
 
   const nid = investor.nationalId;
@@ -6465,7 +6466,37 @@ const CommCenter = () => {
   const unread = notifications.filter(n=>!readSet.has(n.id)).length;
   const markRead = (id) => setReadSet(p=>new Set([...p,id]));
   const markAllRead = () => setReadSet(new Set(notifications.map(n=>n.id)));
-  return { notifications, unread, readSet, markRead, markAllRead };
+  const { t } = useLang();
+
+  return (
+    <div>
+      <SectionHeader title={isAr?"مركز الاتصالات":"Communication Center"} sub={isAr?"الإشعارات والرسائل":"Notifications & Messages"} />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
+        <StatCard icon={Icons.bell(22,C.gold)} title={isAr?"الإشعارات":"Notifications"} value={notifications.length} />
+        <StatCard icon={Icons.bell(22,"#C85C3E")} title={isAr?"غير مقروءة":"Unread"} value={unread} />
+        <StatCard icon={Icons.check(22,C.greenSolid)} title={isAr?"مقروءة":"Read"} value={notifications.length - unread} />
+      </div>
+      {notifications.length === 0 ? (
+        <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:40,textAlign:"center"}}>
+          <p style={{fontSize:38,marginBottom:12}}>✉️</p>
+          <p style={{fontSize:16,color:C.textMuted}}>{isAr?"لا توجد إشعارات حالياً":"No notifications at this time"}</p>
+        </div>
+      ) : (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {notifications.map(n => (
+            <div key={n.id} onClick={()=>markRead(n.id)} style={{background:readSet.has(n.id)?C.white:C.goldLight,borderRadius:12,border:`1px solid ${C.border}`,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer",transition:"background 0.15s"}}>
+              <span style={{fontSize:20,flexShrink:0}}>{n.icon}</span>
+              <div style={{flex:1}}>
+                <p style={{fontSize:14,fontWeight:readSet.has(n.id)?500:700,color:C.navy}}>{n.title}</p>
+                <p style={{fontSize:12,color:C.textMuted}}>{n.detail}</p>
+              </div>
+              <span style={{fontSize:11,color:C.textMuted}}>{n.time ? new Date(n.time).toLocaleTimeString() : ""}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const NotificationBell = ({notifications, unread, readSet, markRead, markAllRead, setPage, isAr}) => {
@@ -7507,7 +7538,7 @@ const Settings = ({ onLangChange }) => {
       <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={async ()=>{const s=parseInt(splitBuying||0)+parseInt(splitSelling||0)+parseInt(splitCreator||0)+parseInt(splitValidators||0);if(s!==100){setSavedMain(false);const el=document.getElementById("split-err");if(el){el.textContent=isAr?`⚠️ مجموع التقسيم يجب أن يساوي 100% — حالياً ${s}%`:`⚠️ Commission split must total 100% — currently ${s}%`;el.style.display="block";setTimeout(()=>{el.style.display="none";},4000);}return;}try{
             await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});
           }catch(e){}
-          try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(buyerRate||2),seller_rate:parseFloat(sellerRate||1)})});}catch(e){}
+          try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(commBuyer||2),seller_rate:parseFloat(commSeller||1)})});}catch(e){}
           try{await apiFetch("/settings/cancel-fee",{method:"PUT",body:JSON.stringify({fee:parseFloat(cancelFee||50)})});}catch(e){}
           try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(gatewaySettings?.madaFee||1.5),mada_cap:parseFloat(gatewaySettings?.madaCap||15),visa_fee:parseFloat(gatewaySettings?.visaFee||2.5),sadad_fee:parseFloat(gatewaySettings?.sadadFee||0)})});}catch(e){}
           showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
