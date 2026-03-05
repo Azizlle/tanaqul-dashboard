@@ -9125,7 +9125,18 @@ const TreasuryReconciliation = () => {
   // Load from API
   useEffect(()=>{
     apiFetch("/treasury/overview").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setOverview(d);setLoading(false);}).catch(()=>setLoading(false));
-    apiFetch("/treasury/recon/history").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.items)setDailyHistory(d.items);}).catch(()=>{});
+    apiFetch("/treasury/recon/history").then(r=>r&&r.ok?r.json():null).then(d=>{
+      if(d&&d.items){
+        // Separate recon entries from discrepancy entries
+        const recons = d.items.filter(i=>!i.type||i.type!=="discrepancy"&&i.type!=="discrepancy_resolve");
+        const discrepEntries = d.items.filter(i=>i.type==="discrepancy_resolve"||i.type==="discrepancy");
+        setDailyHistory(recons);
+        if(discrepEntries.length>0){
+          const latest = discrepEntries[0];
+          if(latest.items) setDiscrepancies(latest.items);
+        }
+      }
+    }).catch(()=>{});
     apiFetch("/treasury/sweep/history").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.items)setSweepHistory(d.items);}).catch(()=>{});
   },[]);
 
@@ -9673,6 +9684,16 @@ export default function App() {
   useEffect(() => {
     if (loggedIn) {
       fetchApiData();
+      // Load audit logs from backend
+      apiFetch("/audit-logs?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
+        if(d&&d.items&&d.items.length>0){
+          setAuditLog(d.items.map(a=>({
+            id:a.id, action:a.action, entityType:a.entity_type||"",
+            entityId:a.entity_id||"", detail:a.details||"",
+            level:a.level||"INFO", time:a.created_at||"",
+          })));
+        }
+      }).catch(()=>{});
       // Refresh every 60 seconds
       const iv = setInterval(fetchApiData, 60000);
       return () => clearInterval(iv);
