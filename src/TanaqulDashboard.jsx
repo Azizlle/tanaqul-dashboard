@@ -4888,7 +4888,7 @@ const OrderBook = () => {
 
   const issueRefund = (order, filledQty, execSAR, reason) => {
     if(order.side !== "BUY") return;
-    if(order.nationalId === "SYSTEM") return; // Skip refund for system orders (Market Maker, Stabilizer)
+    if(order.nationalId === "SYSTEM" || nationalId === "7031990530") return; // Skip refund for system orders (Market Maker, Stabilizer)
 
     const commissionRate     = totalCommRate; // dynamic from Settings
     const originalTradeValue = order.qty * order.price;
@@ -5186,7 +5186,7 @@ const OrderBook = () => {
     const ts = new Date().toISOString().slice(0,16).replace("T"," ");
     const incoming = {
       id:"MM-"+(orders.filter(o=>o.id.startsWith("MM-")).length+1).toString().padStart(3,"0"),
-      investor:"[Market Maker]", investorAr:"[صانع السوق]", nationalId:"SYSTEM",
+      investor:"Takharoj Finance", investorAr:"تخارج المالية", nationalId:"7031990530",
       side:mmSide, metal:mmMetal, qty:mmQtyNum, filled:0,
       price:mmPriceNum, payment:"Wallet",
       expiry:mmExpiry, expiryDate:mmExpDate,
@@ -5212,7 +5212,7 @@ const OrderBook = () => {
     try {
       const resp = await apiFetch("/orders", {method:"POST", body:JSON.stringify({
         side:mmSide, metal:mmMetal, quantity_grams:mmQtyNum, price_per_gram:mmPriceNum,
-        order_type:"LIMIT", investor_id:null, national_id:"SYSTEM",
+        order_type:"LIMIT", national_id:"7031990530",
         payment_method:"Wallet", expiry_type:mmExpiry||"GTC",
         is_market_maker:true,
       })});
@@ -8735,7 +8735,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
       if(o1.side === o2.side) return; // need opposite sides
       if(o1.metal !== o2.metal) return;
       if(o1.nationalId === o2.nationalId) return; // self-trade is CMA-01
-      if(o1.nationalId === "SYSTEM" || o2.nationalId === "SYSTEM") return;
+      if(o1.nationalId === "SYSTEM" || nationalId === "7031990530" || o2.nationalId === "SYSTEM" || nationalId === "7031990530") return;
       // Same price, same qty, placed within 60 seconds
       if(Math.abs(o1.price - o2.price) < 0.01 && o1.qty === o2.qty) {
         const t1 = new Date(o1.placed), t2 = new Date(o2.placed);
