@@ -5735,14 +5735,14 @@ const UserManagement = () => {
   useEffect(()=>{
     apiFetch("/admin/users").then(r=>r&&r.ok?r.json():null).then(d=>{
       const items = d?.items || d?.users || (Array.isArray(d)?d:[]);
-      if(items.length) setUsers(items.map(u=>{
+      if(items.length) setUsers(items.filter(u=>u.role!=="deleted").map(u=>{
         const role = (u.role||"viewer").toUpperCase();
         return {
           id: u.display_id||u.id, name: u.name_en||u.name||"",
           nameAr: u.name_ar||"", email: u.email||"",
           role: role, status: u.status||(u.is_active===false?"SUSPENDED":"ACTIVE"),
           lastLogin: u.last_login||"", createdAt: u.created_at||"",
-          perms: ROLE_PERMS[role]||[], sessions: 0, twoFA: true,
+          perms: ROLE_PERMS[role]||[], sessions: 0, twoFA: u.two_fa_enabled||true,
         };
       }));
     }).catch(()=>{});
