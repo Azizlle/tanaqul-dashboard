@@ -6588,6 +6588,16 @@ const CommCenter = () => {
   const [toast, setToast] = useState("");
   const showToast = (m) => { setToast(m); setTimeout(()=>setToast(""),3000); };
 
+  // Load data from API on mount
+  useEffect(()=>{
+    (async()=>{
+      try{const r=await apiFetch("/messages");if(r&&r.ok){const d=await r.json();if(d.items)setSentMessages(d.items.filter(m=>m.status==="SENT"));}}catch(e){}
+      try{const r=await apiFetch("/messages/drafts");if(r&&r.ok){const d=await r.json();if(d.items)setDrafts(d.items);}}catch(e){}
+      try{const r=await apiFetch("/messages/scheduled");if(r&&r.ok){const d=await r.json();if(d.items)setScheduled(d.items);}}catch(e){}
+      try{const r=await apiFetch("/notification-templates");if(r&&r.ok){const d=await r.json();if(d.items&&d.items.length>0)setTemplates(d.items.map(t=>({id:t.id,cat:t.category||"General",name:t.name,nameAr:t.name_ar||"",body:t.body,bodyAr:t.body_ar||""})));}}catch(e){}
+    })();
+  },[]);
+
   // 44 notification templates
   const [templates, setTemplates] = useState([
     {id:"T01",cat:"Account",name:isAr?"ترحيب":"Welcome",nameAr:"ترحيب",body:"Welcome to Tanaqul Precious Metals. Your account is now active.",bodyAr:"مرحباً بك في منصة تنقل للمعادن الثمينة. حسابك مفعّل الآن."},
@@ -6652,13 +6662,24 @@ const CommCenter = () => {
   const markAllRead = () => setReadSet(new Set(notifications.map(n=>n.id)));
   const timeAgo = (ts) => { const d=(Date.now()-ts)/1000; if(d<60)return isAr?"الآن":"now"; if(d<3600)return`${Math.floor(d/60)}${isAr?" د":"m"}`; return`${Math.floor(d/3600)}${isAr?" س":"h"}`; };
 
-  const sendMessage = (to, body, channel, schedule) => {
-    const msg = {id:"MSG-"+Date.now(),to,body,channel,sentAt:schedule||new Date().toISOString(),status:schedule?"SCHEDULED":"SENT",subject:compSubject};
-    if(schedule){setScheduled(p=>[msg,...p]);showToast(isAr?"✅ تم جدولة الرسالة":"✅ Message scheduled");}
-    else{setSentMessages(p=>[msg,...p]);showToast(isAr?"✅ تم إرسال الرسالة":"✅ Message sent");}
-    setCompTo("");setCompBody("");setCompSubject("");setCompScheduleDate("");setComposeOpen(false);
+  const sendMessage = async (to, body, channel, schedule) => {
+    try {
+      const res = await apiFetch("/sms/send", {method:"POST", body:JSON.stringify({to, body, channel, subject:compSubject, schedule_at:schedule||null})});
+      if(res&&res.ok) {
+        const d = await res.json();
+        const msg = {id:d.message_id||"MSG-"+Date.now(),to,body,channel,sentAt:schedule||new Date().toISOString(),status:schedule?"SCHEDULED":"SENT",subject:compSubject};
+        if(schedule){setScheduled(p=>[msg,...p]);showToast(isAr?"✅ تم جدولة الرسالة":"✅ Message scheduled");}
+        else{setSentMessages(p=>[msg,...p]);showToast(isAr?"✅ تم إرسال الرسالة":"✅ Message sent"+(d.sms_gateway_active?"":" (simulated)"));}
+      } else { showToast(isAr?"⚠️ خطأ في الإرسال":"⚠️ Send failed — saved locally"); }
+    } catch(e) {
+      const msg = {id:"MSG-"+Date.now(),to,body,channel,sentAt:schedule||new Date().toISOString(),status:schedule?"SCHEDULED":"SENT",subject:compSubject};
+      if(schedule)setScheduled(p=>[msg,...p]); else setSentMessages(p=>[msg,...p]);
+      showToast(isAr?"✅ تم الحفظ محلياً":"✅ Saved locally (offline)");
+    }
+    setCompTo("");setCompBody("");setCompSubject("");setCompScheduleDate("");
   };
-  const saveDraft = () => {
+  const saveDraft = async () => {
+    try { await apiFetch("/messages/drafts",{method:"POST",body:JSON.stringify({to:compTo,body:compBody,subject:compSubject})}); } catch(e){}
     setDrafts(p=>[{id:"DRF-"+Date.now(),to:compTo,body:compBody,subject:compSubject,savedAt:new Date().toISOString()},...p]);
     showToast(isAr?"✅ تم حفظ المسودة":"✅ Draft saved");setComposeOpen(false);
   };
@@ -6847,8 +6868,8 @@ const CommCenter = () => {
         </div>
         <Btn variant="gold" onClick={()=>{if(!compBody){showToast("⚠️ Message is empty");return;}
           const count=bulkRecipients.length;
-          bulkRecipients.forEach(inv=>{setSentMessages(p=>[{id:"BULK-"+Date.now()+"-"+inv.id,to:inv.phone||inv.nationalId||inv.id,body:compBody,channel:"SMS",sentAt:new Date().toISOString(),status:"SENT",subject:"Bulk"},...p]);});
-          showToast(`✅ ${count} ${isAr?"رسالة أُرسلت":"messages sent"}`);setCompBody("");}}>{isAr?`إرسال إلى ${bulkRecipients.length} مستثمر`:`Send to ${bulkRecipients.length} investors`}</Btn>
+          try{const r=await apiFetch("/sms/bulk",{method:"POST",body:JSON.stringify({body:compBody,channel:"SMS",filter_status:bulkFilter,subject:"Bulk"})});if(r&&r.ok){const d=await r.json();showToast(`✅ ${d.sent||count} ${isAr?"رسالة أُرسلت":"messages sent"}`);} else {showToast(isAr?"⚠️ خطأ":"⚠️ Error");}}catch(e){showToast(isAr?"⚠️ خطأ":"⚠️ Error");}
+          setCompBody("");}}>{isAr?`إرسال إلى ${bulkRecipients.length} مستثمر`:`Send to ${bulkRecipients.length} investors`}</Btn>
         <p style={{fontSize:11,color:C.textMuted,marginTop:12}}>{isAr?"ملاحظة: يتطلب ربط بوابة SMS":"Note: Requires SMS gateway in Settings"}</p>
       </div>}
 
@@ -6872,7 +6893,7 @@ const CommCenter = () => {
         </div>
         <p style={{fontSize:11,color:C.textMuted,marginBottom:12}}>{isAr?"المتغيرات":"Variables"}: {"{OTP}"}, {"{DATE}"}, {"{GRAMS}"}, {"{METAL}"}, {"{AMOUNT}"}, {"{VAULT}"}, {"{DEVICE}"}, {"{REASON}"}, {"{PRICE}"}, {"{TOTAL}"}, {"{TYPE}"}, {"{NUMBER}"}, {"{TX_COUNT}"}, {"{METHOD}"}, {"{FILLED}"}</p>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(t=>t.id===editTpl.id?editTpl:t));setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ":"Save"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{setTemplates(p=>p.map(t=>t.id===editTpl.id?editTpl:t));try{await apiFetch("/notification-templates/"+editTpl.id,{method:"PUT",body:JSON.stringify({name:editTpl.name,name_ar:editTpl.nameAr,body:editTpl.body,body_ar:editTpl.bodyAr,category:editTpl.cat})});}catch(e){}setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ":"Save"}</Btn>
           <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
         </div>
       </Modal>}
