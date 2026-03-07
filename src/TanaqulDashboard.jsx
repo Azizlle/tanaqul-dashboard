@@ -2747,7 +2747,7 @@ const Blacklist = () => {
         action={<Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Ban User</span></Btn>} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.blacklist(22,"#C85C3E")} title={isAr?"إجمالي المحظورين":"Total Banned"} value={blacklist.length} />
-        <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المحظورون هذا الشهر":"Banned This Month"} value={blacklist.filter(b=>b.date?.startsWith("2026-03")).length} />
+        <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المحظورون هذا الشهر":"Banned This Month"} value={blacklist.filter(b=>b.date?.startsWith(new Date().toISOString().slice(0,7))).length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={isAr?"رُفع الحظر هذا الشهر":"Unbanned This Month"} value="0" />
       </div>
       <TTable cols={[
@@ -6342,8 +6342,11 @@ const AccountProfile = () => {
     }
   },[phoneOtp.timer]);
 
-  const sendOtp = (field) => {
+  const sendOtp = async (field) => {
+    const phone = field==="phone"?profile.phone:profile.recoveryPhone;
+    if(!phone){showToast(isAr?"⚠️ أدخل رقم الهاتف أولاً":"⚠️ Enter phone number first");return;}
     setPhoneOtp({show:true,field,code:"",sent:true,verified:false,timer:60});
+    try{await apiFetch("/auth/otp/request",{method:"POST",body:JSON.stringify({phone,field})});}catch(e){}
     showToast(isAr?"📱 تم إرسال رمز التحقق":"📱 OTP sent to phone");
   };
   const verifyOtp = async () => {
@@ -6428,7 +6431,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});}catch(e){}showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||"Failed to save"));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -6447,7 +6450,7 @@ const AccountProfile = () => {
           <p style={{fontSize:12,color:C.textMuted,marginBottom:12}}>
             {phoneOtp.timer>0
               ?<>{isAr?"إعادة الإرسال بعد":"Resend in"} <b>{phoneOtp.timer}s</b></>
-              :<button onClick={()=>{setPhoneOtp(p=>({...p,timer:60}));showToast(isAr?"📱 تم إعادة الإرسال":"📱 OTP resent");}} style={{color:C.gold,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال الرمز":"Resend Code"}</button>
+              :<button onClick={async()=>{setPhoneOtp(p=>({...p,timer:60}));try{const phone=phoneOtp.field==="phone"?profile.phone:profile.recoveryPhone;await apiFetch("/auth/otp/request",{method:"POST",body:JSON.stringify({phone,field:phoneOtp.field})});}catch(e){}showToast(isAr?"📱 تم إعادة الإرسال":"📱 OTP resent");}} style={{color:C.gold,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13}}>{isAr?"إعادة إرسال الرمز":"Resend Code"}</button>
             }
           </p>
           
@@ -6464,11 +6467,11 @@ const AccountProfile = () => {
           <Inp label={isAr?"تأكيد كلمة المرور":"Confirm Password"} value={pwForm.confirm} onChange={v=>setPwForm(p=>({...p,confirm:v}))} type="password" />
           {pwForm.newPw&&pwForm.newPw.length<8&&<p style={{fontSize:13,color:C.red,marginBottom:8}}>{isAr?"⚠️ كلمة المرور يجب أن تكون 8 أحرف على الأقل":"⚠️ Password must be at least 8 characters"}</p>}
           {pwForm.newPw&&pwForm.confirm&&pwForm.newPw!==pwForm.confirm&&<p style={{fontSize:13,color:C.red,marginBottom:8}}>{isAr?"⚠️ كلمات المرور غير متطابقة":"⚠️ Passwords do not match"}</p>}
-          <Btn variant="gold" onClick={()=>{
+          <Btn variant="gold" onClick={async()=>{
             if(!pwForm.current||!pwForm.newPw||!pwForm.confirm){showToast(isAr?"⚠️ أكمل جميع الحقول":"⚠️ Fill all fields");return;}
             if(pwForm.newPw.length<8){showToast(isAr?"⚠️ 8 أحرف على الأقل":"⚠️ Min 8 characters");return;}
             if(pwForm.newPw!==pwForm.confirm){showToast(isAr?"⚠️ غير متطابقة":"⚠️ Passwords don't match");return;}
-            setPwForm({current:"",newPw:"",confirm:""});showToast(isAr?"✅ تم تغيير كلمة المرور":"✅ Password changed successfully");
+            try{const r=await apiFetch("/auth/change-password",{method:"POST",body:JSON.stringify({current_password:pwForm.current,new_password:pwForm.newPw})});if(r&&r.ok){setPwForm({current:"",newPw:"",confirm:""});showToast(isAr?"✅ تم تغيير كلمة المرور":"✅ Password changed successfully");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||"Failed to change password"));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}
           }}>{isAr?"تحديث كلمة المرور":"Update Password"}</Btn>
         </div>
         <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:20,boxShadow:C.cardShadow}}>
@@ -6535,7 +6538,7 @@ const AccountProfile = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
   const { t, isAr } = useLang();
-  const { investors=[], appointments=[], bars=[], withdrawals=[], orders=[] } = useAppData();
+  const { investors=[], appointments=[], bars=[], withdrawals=[], orders=[], matches=[] } = useAppData();
   const [query, setQuery] = useState("");
   const [selIdx, setSelIdx] = useState(0);
   const inputRef = useRef(null);
@@ -6558,12 +6561,12 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
         action:()=>{setPage("investors");setPageHint({search:inv.nationalId});onClose();}
       });
     });
-    // Search transactions
-    transactions.forEach(tx => {
+    // Search matches (trades)
+    matches.forEach(tx => {
       if(results.length >= MAX) return;
-      const haystack = `${tx.id} ${tx.buyerNationalId} ${tx.sellerNationalId} ${tx.metal} ${tx.type} ${tx.method||""} ${tx.total}`.toLowerCase();
+      const haystack = `${tx.id||""} ${tx.buyerNationalId||""} ${tx.sellerNationalId||""} ${tx.metal||""} ${tx.totalSar||""}`.toLowerCase();
       if(haystack.includes(q)) results.push({
-        type:"transaction",icon:"💰",label:tx.id,sub:`${tx.type} · ${tx.metal} · SAR ${tx.total}`,
+        type:"transaction",icon:"💰",label:tx.id||"Trade",sub:`${tx.metal||""} · SAR ${tx.totalSar||0}`,
         action:()=>{setPage("txlog");onClose();}
       });
     });
@@ -9259,11 +9262,13 @@ const SystemHealth = () => {
   const sc = {ok:"#16A34A",degraded:"#E67E22",down:"#C85C3E",unknown:"#94A3B8",checking:"#94A3B8",disabled:"#D4943A",no_genesis:"#E67E22",error:"#C85C3E"};
   const sl = {ok:t("Operational","تشغيلي"),degraded:t("Degraded","متدهور"),down:t("Down","متوقف"),unknown:t("Unknown","غير معروف"),checking:t("Checking...","جاري الفحص..."),disabled:t("Disabled","معطّل"),no_genesis:t("No Genesis","لا جينيسيس"),error:t("Error","خطأ")};
 
-  const db = health?.database||{};
-  const bc = health?.blockchain||{};
-  const srv = health?.server||{};
-  const tables = health?.tables||{};
-  const api = health?.api||{};
+  // Map /health/full response: {status, total_latency_ms, checks:{database,entities,block_scheduler}, timestamp}
+  const checks = health?.checks||{};
+  const api = {status:health?.status==="healthy"?"ok":health?.status||"checking", version:"1.0", python:"3.11", platform:"Railway"};
+  const db = {status:checks.database?.status==="healthy"?"ok":checks.database?.status||"checking", latency_ms:checks.database?.latency_ms, tables:Object.keys(checks.entities||{}).length, size:checks.database?.latency_ms?checks.database.latency_ms+"ms":"—"};
+  const bc = {status:checks.block_scheduler?.status==="healthy"?"ok":checks.block_scheduler?.status==="no_blocks"?"no_genesis":checks.block_scheduler?.status||"checking", blocks:checks.entities?.blocks||0, latest_block:checks.block_scheduler?.latest_block||0, active_validators:checks.entities?.active_validators||0};
+  const srv = {pid:"—", python:"3.11", os:"Linux (Railway)", memory_kb:null, checked_at:health?.timestamp};
+  const tables = checks.entities||{};
 
   return (
     <div>
@@ -9475,8 +9480,8 @@ const TreasuryReconciliation = () => {
         action={<Btn variant="teal" onClick={runRecon}>{isAr?"تشغيل المطابقة":"Run Reconciliation"}</Btn>} />
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
-        <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"حجم التداول":"Trading Volume"} value={<SARAmount amount={fmt0(overview?.totalVolume||totalVol)}/>} gold />
-        <StatCard icon={Icons.commission(22,C.teal)} title={isAr?"عمولة المنصة":"Platform Commission"} value={<SARAmount amount={fmt0(overview?.totalCommission||totalComm)}/>} />
+        <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"حجم التداول":"Trading Volume"} value={<SARAmount amount={fmt0(overview?.trading?.total_volume_sar||totalVol)}/>} gold />
+        <StatCard icon={Icons.commission(22,C.teal)} title={isAr?"عمولة المنصة":"Platform Commission"} value={<SARAmount amount={fmt0(overview?.trading?.total_commission_sar||totalComm)}/>} />
         <StatCard icon={Icons.wallet(22,C.navy)} title={isAr?"محافظ المستثمرين":"Investor Wallets"} value={<SARAmount amount={fmt0(investorWallets)}/>} />
         <StatCard icon={Icons.pending(22,"#C85C3E")} title={isAr?"إجمالي السحوبات":"Total Withdrawals"} value={<SARAmount amount={fmt0(totalWd)}/>} />
       </div>
@@ -9811,6 +9816,7 @@ export default function App() {
             time: (a.scheduled_at || "").slice(11,16),
             status: a.status || "BOOKED", fee: String(a.fee || 0),
             paymentMethod: a.payment_method || "",
+            investorPhone: a.investor_phone || "",
             otp: a.otp_code || "", notes: a.notes || "",
           }));
         }},
