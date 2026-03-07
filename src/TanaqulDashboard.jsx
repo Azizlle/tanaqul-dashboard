@@ -5821,7 +5821,9 @@ const ROLE_PERMS = {
 
 const UserManagement = () => {
   const { isAr, t } = useLang();
+  const { auditLog } = useAppData();
   const [customRoles, setCustomRoles] = useState([]);
+  const [activeTab, setActiveTab] = useState("users");
   // Load custom roles from API
   useEffect(()=>{
     apiFetch("/settings/roles").then(r=>r&&r.ok?r.json():null).then(d=>{
@@ -5848,7 +5850,7 @@ const UserManagement = () => {
       }));
     }).catch(()=>{});
   },[]);
-  const [modal, setModal] = useState(null); // null | "add" | user object
+  const [modal, setModal] = useState(null);
   const [activityModal, setActivityModal] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
   const [newRole, setNewRole] = useState({label:"",labelAr:"",color:C.blueSolid,perms:[]});
@@ -5856,18 +5858,75 @@ const UserManagement = () => {
   const [editRole, setEditRole] = useState("VIEWER");
   const [newUser, setNewUser] = useState({name:"",nameAr:"",email:"",role:"VIEWER",password:""});
   const [logFilter, setLogFilter] = useState("ALL");
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditTypeFilter, setAuditTypeFilter] = useState("ALL");
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
 
   const roleOf = id => allRoles.find(r=>r.id===id)||ROLES[4];
 
+  // Check super_admin access
+  const isSuperAdmin = (() => {
+    try { const t=localStorage.getItem("tanaqul_token"); if(!t) return false;
+      const p=JSON.parse(atob(t.split(".")[1])); return p.role==="super_admin"||p.role==="SUPER_ADMIN";
+    } catch(e){ return false; }
+  })();
+
+  if(!isSuperAdmin) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:16}}>
+      <span style={{fontSize:48}}>🔒</span>
+      <p style={{fontSize:20,fontWeight:700,color:C.navy}}>{isAr?"غير مصرح":"Access Restricted"}</p>
+      <p style={{fontSize:14,color:C.textMuted}}>{isAr?"هذه الصفحة متاحة فقط للمسؤول الأعلى":"This page is only available for Super Admin users"}</p>
+    </div>
+  );
+
+  const ACTION_COLOR_MAP = {
+    "investor.create":C.greenSolid,"investor.suspend":"#D4943A","investor.ban":"#C85C3E","investor.activate":C.greenSolid,
+    "investor.update":C.blueSolid,"appointment.book":C.greenSolid,"appointment.cancel":"#C85C3E","appointment.complete":C.greenSolid,
+    "appointment.reschedule":C.purpleSolid,"appointment.no_show":"#D4943A","appointment.start":C.blueSolid,
+    "withdrawal.submit":C.blueSolid,"withdrawal.approve":C.greenSolid,"withdrawal.reject":"#C85C3E","withdrawal.process":C.greenSolid,
+    "blacklist.add":"#C85C3E","blacklist.unban":C.greenSolid,"bar.register":C.greenSolid,"bar.link":C.blueSolid,"bar.unlink":"#D4943A",
+    "bar.status_change":"#C4956A","BID_DISABLE":"#D4943A","BID_ENABLE":C.greenSolid,
+  };
+
+  // Audit log filtering
+  const auditActionTypes = [...new Set(auditLog.map(e=>e.action))];
+  const filteredAudit = auditLog.filter(e=>{
+    if(auditTypeFilter!=="ALL"&&e.action!==auditTypeFilter) return false;
+    if(auditSearch){
+      const q=auditSearch.toLowerCase();
+      return (e.action||"").toLowerCase().includes(q)||(e.entityId||"").toLowerCase().includes(q)||(e.detail||"").toLowerCase().includes(q)||(e.admin||"").toLowerCase().includes(q);
+    }
+    return true;
+  });
+
   return (
     <div>
-      <SectionHeader title={isAr?"إدارة المستخدمين":"User Management"} sub={isAr?"إدارة مستخدمي الإدارة والصلاحيات والجلسات":"Manage admin users, roles, permissions & sessions"}
-        action={<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",role:"VIEWER"});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>} />
+      <SectionHeader title={isAr?"إدارة المستخدمين":"User Management"} sub={isAr?"إدارة مستخدمي النظام والصلاحيات وسجل النشاط":"Manage system users, roles, permissions & activity audit"}
+        action={activeTab==="users"?<div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>{setNewRole({label:"",labelAr:"",color:C.blueSolid,perms:[]});setRoleModal(true);}}>{Icons.settings(14,C.gold)} {isAr?"إنشاء دور":"Create Role"}</Btn><Btn variant="gold" onClick={()=>{setNewUser({name:"",nameAr:"",email:"",role:"VIEWER",password:""});setModal("add");}}>{Icons.add(14,C.white)} {isAr?"إضافة مستخدم":"Add User"}</Btn></div>:null} />
 
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:C.cardShadow}}>{toast}</div>}
 
+      {/* Tab Bar */}
+      <div style={{display:"flex",gap:4,marginBottom:18}}>
+        {[
+          {id:"users",label:isAr?"المستخدمون":"Users",icon:"user",count:users.length},
+          {id:"activity",label:isAr?"سجل النشاط":"Activity Log",icon:"financials",count:auditLog.length},
+        ].map(tb=>(
+          <button key={tb.id} onClick={()=>setActiveTab(tb.id)} style={{
+            padding:"10px 20px",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",
+            border:`1.5px solid ${activeTab===tb.id?C.navy:C.border}`,
+            background:activeTab===tb.id?C.navy:C.white,color:activeTab===tb.id?C.white:C.textMuted,
+            display:"flex",alignItems:"center",gap:8,transition:"all 0.15s"}}>
+            {Icons[tb.icon]?.(16,activeTab===tb.id?"#FFF":C.textMuted)}
+            {tb.label}
+            <span style={{fontSize:12,opacity:0.7,background:activeTab===tb.id?"rgba(255,255,255,0.15)":"#F1F5F9",padding:"1px 8px",borderRadius:12,color:activeTab===tb.id?"#FFF":C.textMuted}}>{tb.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ═══ TAB 1: USERS ═══ */}
+      {activeTab==="users"&&<>
       {/* Role Legend */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
         {allRoles.map(r=>(
@@ -5905,7 +5964,7 @@ const UserManagement = () => {
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0,flexWrap:"wrap"}}>
                 <Btn small variant="outline" onClick={()=>{if(u.role==="super_admin"||u.role==="SUPER_ADMIN"){showToast(isAr?"⚠️ لا يمكن تعديل صلاحيات المسؤول الأعلى":"⚠️ Cannot edit Super Admin");return;}setModal(u);setEditRole(u.role);setEditPerms([...u.perms]);}}>{isAr?"تعديل":"Edit"}</Btn>
-                <Btn small variant="primary" onClick={()=>{setActivityModal(u);setLogFilter("ALL");}}>{isAr?"سجل النشاط":"Activity Log"}</Btn>
+                <Btn small variant="primary" onClick={()=>{setActivityModal(u);setLogFilter("ALL");}}>{isAr?"سجل النشاط":"Activity"}</Btn>
                 {u.status==="ACTIVE"&&u.role!=="SUPER_ADMIN"&&u.role!=="super_admin"&&<Btn small variant="danger" onClick={async ()=>{try{await apiFetch("/admin/users/"+u.id+"/suspend",{method:"POST"});}catch(e){}setUsers(p=>p.map(x=>x.id===u.id?{...x,status:"SUSPENDED",sessions:0,log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account suspended",actionAr:"إيقاف الحساب",detail:"Suspended by Super Admin",ip:"—"},...(x.log||[])]}:x));showToast(isAr?"تم إيقاف المستخدم":"User suspended");}}>{isAr?"إيقاف":"Suspend"}</Btn>}
                 {u.status==="SUSPENDED"&&<Btn small variant="teal" onClick={async ()=>{try{await apiFetch("/admin/users/"+u.id+"/activate",{method:"POST"});}catch(e){}setUsers(p=>p.map(x=>x.id===u.id?{...x,status:"ACTIVE",log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account reactivated",actionAr:"إعادة تفعيل الحساب",detail:"Reactivated by Super Admin",ip:"—"},...(x.log||[])]}:x));showToast(isAr?"تم تفعيل المستخدم":"User reactivated");}}>{isAr?"تفعيل":"Activate"}</Btn>}
                 {u.role!=="SUPER_ADMIN"&&u.role!=="super_admin"&&<Btn small variant="ghost" onClick={async ()=>{if(!confirm(isAr?`هل أنت متأكد من حذف ${u.name}؟`:`Delete ${u.name}?`))return;try{await apiFetch("/admin/users/"+u.id,{method:"DELETE"});}catch(e){}setUsers(p=>p.filter(x=>x.id!==u.id));showToast(isAr?"تم حذف المستخدم":"User deleted");}}>{isAr?"حذف":"Delete"}</Btn>}
@@ -5914,6 +5973,69 @@ const UserManagement = () => {
           );
         })}
       </div>
+      </>}
+
+      {/* ═══ TAB 2: ACTIVITY LOG ═══ */}
+      {activeTab==="activity"&&<div>
+        {/* Stats */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
+          <StatCard icon={Icons.financials(22,C.navy)} title={isAr?"إجمالي الإجراءات":"Total Actions"} value={auditLog.length} />
+          <StatCard icon={Icons.users(22,C.greenSolid)} title={isAr?"المستخدمون النشطون":"Active Users"} value={[...new Set(auditLog.map(e=>e.admin))].length} />
+          <StatCard icon={Icons.warning(22,"#D4943A")} title={isAr?"إجراءات حرجة":"Critical Actions"} value={auditLog.filter(e=>(e.action||"").includes("ban")||(e.action||"").includes("suspend")||(e.action||"").includes("reject")||(e.action||"").includes("delete")).length} />
+          <StatCard icon={Icons.check(22,C.blueSolid)} title={isAr?"اليوم":"Today"} value={auditLog.filter(e=>(e.time||"").startsWith(new Date().toISOString().slice(0,10))).length} />
+        </div>
+
+        {/* Filters */}
+        <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
+          <select value={auditTypeFilter} onChange={e=>setAuditTypeFilter(e.target.value)}
+            style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,fontWeight:600,color:C.navy,background:C.white,outline:"none",cursor:"pointer"}}>
+            <option value="ALL">{isAr?"جميع الإجراءات":"All Actions"}</option>
+            {auditActionTypes.slice(0,15).map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+          <div style={{flex:1}}/>
+          <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)} placeholder={isAr?"بحث في السجل...":"Search audit log..."}
+            style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:260,outline:"none"}}/>
+          <span style={{fontSize:12,color:C.textMuted,fontWeight:600}}>{filteredAudit.length} {isAr?"نتيجة":"results"}</span>
+        </div>
+
+        {/* Audit Table */}
+        {filteredAudit.length===0?(
+          <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"40px",textAlign:"center"}}>
+            <p style={{fontSize:38,marginBottom:12}}>📋</p>
+            <p style={{fontSize:16,color:C.textMuted}}>{isAr?"لا توجد إجراءات مسجلة بعد":"No actions recorded yet — they appear here as admins work"}</p>
+          </div>
+        ):(
+          <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+              <thead>
+                <tr style={{background:C.navyDark}}>
+                  {[isAr?"الوقت":"Time",isAr?"المستخدم":"Admin",isAr?"الإجراء":"Action",isAr?"النوع":"Type",isAr?"الكيان":"Entity",isAr?"التفاصيل":"Details"].map(h=>(
+                    <th key={h} style={{padding:"10px 12px",textAlign:"start",fontSize:12,fontWeight:700,color:"#A89880",letterSpacing:"0.04em"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAudit.slice(0,100).map((e,i)=>{
+                  const col = ACTION_COLOR_MAP[e.action]||C.navy;
+                  return (
+                    <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?C.white:"#FAF8F5"}}>
+                      <td style={{padding:"8px 12px",fontSize:12,fontFamily:"monospace",color:C.textMuted,whiteSpace:"nowrap"}}>{e.time?new Date(e.time).toLocaleString("en-SA",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—"}</td>
+                      <td style={{padding:"8px 12px",fontSize:13,fontWeight:600,color:C.navy}}>{e.admin||"—"}</td>
+                      <td style={{padding:"8px 12px"}}><span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:700,color:col,background:col+"15",border:`1px solid ${col}33`}}>{e.action||"—"}</span></td>
+                      <td style={{padding:"8px 12px",fontSize:13,color:C.textMuted,fontWeight:600}}>{e.entityType||"—"}</td>
+                      <td style={{padding:"8px 12px",fontWeight:600,color:C.navy,fontSize:12,fontFamily:"monospace"}}>{e.entityId?(e.entityId+"").slice(0,16):""}</td>
+                      <td style={{padding:"8px 12px",fontSize:12,color:C.textMuted,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.detail||"—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {filteredAudit.length>100&&<div style={{padding:"12px 16px",textAlign:"center",fontSize:13,color:C.textMuted,borderTop:`1px solid ${C.border}`}}>
+              {isAr?`عرض 100 من ${filteredAudit.length} إجراء`:`Showing 100 of ${filteredAudit.length} actions`}
+            </div>}
+          </div>
+        )}
+      </div>}
 
       {/* Add User Modal */}
       {modal==="add"&&<Modal title={isAr?"إضافة مستخدم إدارة":"Add Admin User"} onClose={()=>setModal(null)}>
