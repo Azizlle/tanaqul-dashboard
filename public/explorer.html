@@ -573,7 +573,7 @@ async function showBlock(n) {
           <tbody>${txs.map(tx => `
             <tr>
               <td><span class="badge b-${tx.tx_type || 'SYSTEM'}">${(tx.tx_type || 'SYSTEM').replace('_', ' ')}</span></td>
-              <td style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis">${tx.details || tx.metal || '—'}</td>
+              <td style="font-size:11px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${tx.details || ''}">${tx.details || '—'}</td>
               <td>${tx.grams ? tx.grams + 'g' : tx.sar_amount ? tx.sar_amount + ' SAR' : '—'}</td>
               <td><span class="badge b-${tx.status}">${tx.status}</span></td>
               <td style="color:var(--t2)">${ago(tx.created_at)}</td>
@@ -620,11 +620,11 @@ async function loadLedger(page) {
 
   tbody.innerHTML = items.map(x => {
     const tp = x.event_type || 'SYSTEM';
-    const detail = x.details || x.vault_key || x.metal || '—';
+    const detail = x.details || '—';
     const blockNum = x.block_number ? '#' + x.block_number : '—';
     return `<tr>
       <td><span class="badge b-${tp}">${tp.replace('_', ' ')}</span></td>
-      <td style="font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis">${detail}</td>
+      <td style="font-size:11px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${detail}">${detail}</td>
       <td style="font-weight:600">${x.grams || 0}g</td>
       <td style="color:var(--gold);font-size:11px">${blockNum}</td>
       <td><span class="badge b-${x.status}">${x.status}</span></td>
