@@ -10,12 +10,9 @@ const apiFetch = async (path, options = {}) => {
   const headers = { "Content-Type": "application/json", ...options.headers };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  if (resp.status === 403) {
-    window.dispatchEvent(new CustomEvent("tanaqul_forbidden", { detail: { path } }));
-    return resp;
-  }
-  if (resp.status === 401) {
-    // Try refresh
+  // Server returns 403 (not 401) for expired/missing tokens
+  if (resp.status === 401 || resp.status === 403) {
+    // Try refresh before giving up
     const refresh = localStorage.getItem("tanaqul_refresh");
     if (refresh) {
       const rr = await fetch(`${API_BASE}/auth/refresh`, {
@@ -25,14 +22,17 @@ const apiFetch = async (path, options = {}) => {
       if (rr.ok) {
         const rd = await rr.json();
         localStorage.setItem("tanaqul_token", rd.access_token);
-        localStorage.setItem("tanaqul_refresh", rd.refresh_token);
+        if (rd.refresh_token) localStorage.setItem("tanaqul_refresh", rd.refresh_token);
         headers["Authorization"] = `Bearer ${rd.access_token}`;
         return fetch(`${API_BASE}${path}`, { ...options, headers });
       }
     }
-    localStorage.removeItem("tanaqul_token");
-    localStorage.removeItem("tanaqul_refresh");
-    window.dispatchEvent(new Event("tanaqul_logout"));
+    // Refresh failed or no refresh token — log out
+    if (resp.status === 401) {
+      localStorage.removeItem("tanaqul_token");
+      localStorage.removeItem("tanaqul_refresh");
+      window.dispatchEvent(new Event("tanaqul_logout"));
+    }
   }
   return resp;
 };
@@ -1888,7 +1888,7 @@ const Appointments = () => {
         <div style={{textAlign:"center",padding:"8px 0"}}>
           <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>{Icons.warning(44,"#D4943A")}</div>
           <p style={{fontSize:20,fontWeight:600,color:C.navy,marginBottom:8}}>Are you sure you want to cancel this appointment?</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>Appointment: <b>{sel.id}</b> — {sel.investor}</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>Appointment: <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"}</p>
           <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Scheduled: {sel.date}</p>
           <div style={{background:"#FDF4EC",borderRadius:10,padding:"10px 16px",marginBottom:20,textAlign:"left"}}>
             <p style={{fontSize:14,fontWeight:600,color:"#8B6540"}}>💰 Refund Policy</p>
@@ -1906,13 +1906,13 @@ const Appointments = () => {
               if(refundAmt > 0) {
                 setWalletMovements(prev => [{
                   id: "WM-" + String(Date.now()).slice(-6) + String(Math.random()).slice(2,5),
-                  investor: sel.investor, nationalId: sel.nationalId, vaultKey: "—",
+                  investor: sel.nationalId||sel.investorId||"—", nationalId: sel.nationalId, vaultKey: "—",
                   type: "CREDIT", amount: refundAmt,
                   reason: "Appointment Cancellation Refund — " + sel.id + " (" + cfee + " SAR fee kept)",
                   date: new Date().toISOString().slice(0,16).replace("T"," "),
                 }, ...prev]);
               }
-              addAudit("CANCEL_APPOINTMENT", sel.id, sel.investor+" (NID: "+(sel.nationalId||"—")+") — "+sel.type+" — refund SAR "+refundAmt);
+              addAudit("CANCEL_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — refund SAR "+refundAmt);
               closeAll();
             }}>Yes, Cancel Appointment</Btn>
             <Btn variant="outline" onClick={closeAll}>No, Keep It</Btn>
@@ -1925,7 +1925,7 @@ const Appointments = () => {
         <div style={{textAlign:"center",padding:"8px 0"}}>
           <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>{Icons.cancel(44,"#C85C3E")}</div>
           <p style={{fontSize:20,fontWeight:600,color:C.navy,marginBottom:8}}>Are you sure you want to mark this as No Show?</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>Appointment: <b>{sel.id}</b> — {sel.investor}</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>Appointment: <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"}</p>
           <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Scheduled: {sel.date}</p>
           <div style={{background:C.redBg,borderRadius:10,padding:"10px 16px",marginBottom:20,textAlign:"left"}}>
             <p style={{fontSize:14,fontWeight:600,color:"#8B3520"}}>⛔ No Refund</p>
@@ -1941,7 +1941,7 @@ const Appointments = () => {
               setInvestors(prev=>prev.map(inv=>{
                 return inv.nationalId===sel.nationalId ? {...inv,noShowCount:(inv.noShowCount||0)+1} : inv;
               }));
-              addAudit("NO_SHOW", sel.id, sel.investor+" (NID: "+sel.nationalId+") — "+sel.date);
+              addAudit("NO_SHOW", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.date);
               closeAll();
             }}>Yes, Mark as No Show</Btn>
             <Btn variant="outline" onClick={closeAll}>No, Go Back</Btn>
@@ -1951,7 +1951,7 @@ const Appointments = () => {
 
       {/* RESCHEDULE */}
       {modal==="reschedule"&&sel&&<Modal title={isAr?"إعادة جدولة الموعد":"Reschedule Appointment"} onClose={closeAll}>
-        <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Appointment: <b>{sel.id}</b> — {sel.investor} — {sel.type} — {sel.metal}</p>
+        <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Appointment: <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"} — {sel.type} — {sel.metal}</p>
         <div style={{display:"grid",gap:12,marginBottom:20}}>
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"التاريخ الجديد":"NEW DATE"}</label>
@@ -1971,7 +1971,7 @@ const Appointments = () => {
             const newDate = reschedDate+" "+reschedTime;
             try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/reschedule", {method:"POST", body:JSON.stringify({scheduled_at:reschedDate+"T"+reschedTime+":00"})}); } catch(e) {}
             setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"RESCHEDULED",date:newDate}:a));
-            addAudit("RESCHEDULE", sel.id, sel.investor+" → "+newDate);
+            addAudit("RESCHEDULE", sel.id, (sel.nationalId||sel.investorId||"—")+" → "+newDate);
             closeAll();
           }} style={{opacity:reschedDate&&reschedTime?1:0.5}}><span style={{display:"flex",alignItems:"center",gap:6}}>{Icons.check(14,C.white)} Confirm Reschedule</span></Btn>
           <Btn variant="outline" onClick={closeAll}>{t("Cancel")}</Btn>
@@ -1983,11 +1983,11 @@ const Appointments = () => {
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,background:C.tealLight,borderRadius:10,padding:"10px 14px"}}>
           {Icons.user(24,C.teal)}
           <div>
-            <p style={{fontSize:19,fontWeight:700,color:C.navy}}>{sel.investor}</p>
-            <p style={{fontSize:13,color:C.textMuted}}>{sel.investorPhone} • {sel.type} • {sel.metal} • {sel.qty}</p>
+            <p style={{fontSize:19,fontWeight:700,color:C.navy}}>{sel.nationalId||sel.investorId||"—"}</p>
+            <p style={{fontSize:13,color:C.textMuted}}>{sel.investorPhone} • {sel.type} • {sel.metal} • {sel.quantity}</p>
           </div>
         </div>
-        {[["Appointment ID",sel.id],["Type",sel.type],["Metal",sel.metal],["Quantity",sel.qty],["Vault",sel.vault],["Scheduled",sel.date],["Fee Paid",sel.fee+" SAR"],["Payment",sel.paymentMethod]].map(([k,v])=>(
+        {[["Appointment ID",sel.id],["Type",sel.type],["Metal",sel.metal],["Quantity",sel.quantity],["Vault",sel.vault],["Scheduled",sel.date],["Fee Paid",sel.fee+" SAR"],["Payment",sel.paymentMethod]].map(([k,v])=>(
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontSize:14,color:C.textMuted}}>{k}</span>
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{v}</span>
@@ -2000,7 +2000,7 @@ const Appointments = () => {
 
       {/* START — Step 2: Bar Details */}
       {modal==="start"&&sel&&startStep===2&&<Modal title={sel.type==="DEPOSIT"?"Bar Deposit Details":"Bar Withdrawal Details"} onClose={()=>closeAll(true)}>
-        <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>{sel.investor} • {sel.metal} • {sel.qty}</p>
+        <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>{sel.nationalId||sel.investorId||"—"} • {sel.metal} • {sel.quantity}</p>
         <div style={{display:"grid",gap:12}}>
           {sel.type==="DEPOSIT"&&<>
             <div>
@@ -2028,7 +2028,7 @@ const Appointments = () => {
           </>}
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الوزن":"WEIGHT"}</label>
-            <input defaultValue={sel.qty} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none",background:"#f8f9fb"}} readOnly />
+            <input defaultValue={sel.quantity} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none",background:"#f8f9fb"}} readOnly />
           </div>
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>NOTES (optional)</label>
@@ -2081,7 +2081,7 @@ const Appointments = () => {
                   // Step 1: Open deposit appointment (may fail if already IN_PROGRESS — that's OK)
                   try{await apiFetch("/vault/deposit/open",{method:"POST",body:JSON.stringify({appointment_id:uid})});}catch(e){}
                   // Step 2: Register bar
-                  const regRes=await apiFetch("/vault/deposit/register-bar",{method:"POST",body:JSON.stringify({appointment_id:uid,barcode:startData.barcode?.trim()||"",metal:sel.metal||"Gold",weight_grams:parseFloat(sel.qty)||0,weight_label:sel.qty||"",manufacturer:manufacturer||"",vault_location:sel.vault||"Riyadh"})});
+                  const regRes=await apiFetch("/vault/deposit/register-bar",{method:"POST",body:JSON.stringify({appointment_id:uid,barcode:startData.barcode?.trim()||"",metal:sel.metal||"Gold",weight_grams:parseFloat(sel.quantity)||0,weight_label:sel.quantity||"",manufacturer:manufacturer||"",vault_location:sel.vault||"Riyadh"})});
                   const regData=regRes&&regRes.ok?await regRes.json():{};
                   // Step 3: Mint tokens
                   if(regData.bar_id){
@@ -2115,9 +2115,9 @@ const Appointments = () => {
               if(sel.type==="DEPOSIT"&&startData.barcode){
                 const existingBar = bars.find(b=>b.barcode===startData.barcode.trim());
                 if(existingBar&&existingBar.status==="LEFT"){
-                  setBars(prev=>prev.map(b=>b.barcode===startData.barcode.trim()?{...b,status:"LINKED",depositor:sel.nationalId||sel.investor,deposited:new Date().toISOString().slice(0,10),leftOn:undefined}:b));
+                  setBars(prev=>prev.map(b=>b.barcode===startData.barcode.trim()?{...b,status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10),leftOn:undefined}:b));
                 } else if(!existingBar){
-                  const newBar={id:"BAR-"+String(bars.length+1).padStart(3,"0"),metal:sel.metal,weight:sel.qty,barcode:startData.barcode.trim(),manufacturer,vault:sel.vault.replace(" Vault 1","").replace(" Vault",""),status:"LINKED",depositor:sel.nationalId||sel.investor,deposited:new Date().toISOString().slice(0,10)};
+                  const newBar={id:"BAR-"+String(bars.length+1).padStart(3,"0"),metal:sel.metal,weight:sel.quantity,barcode:startData.barcode.trim(),manufacturer,vault:sel.vault.replace(" Vault 1","").replace(" Vault",""),status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10)};
                   setBars(prev=>[...prev,newBar]);
                 }
               }
@@ -2126,7 +2126,7 @@ const Appointments = () => {
               }
               // Refresh vault data from API
               try{const vr=await apiFetch("/vault/bars");if(vr&&vr.ok){const vd=await vr.json();if(vd.items)setBars(vd.items.map(b=>({id:b.display_id||b.id,_uuid:String(b.id),metal:b.metal||"Gold",weight:b.weight||"",purity:b.purity||"999.9",barcode:b.barcode||"",serial:b.serial||"",manufacturer:b.manufacturer||"",vault:b.vault_location||"Riyadh",status:b.status||"FREE",depositor:b.depositor_id||"",depositedAt:b.deposited_at||""})));}}catch(e2){}
-              addAudit("COMPLETE_APPOINTMENT", sel.id, sel.investor+" — "+sel.type+" — "+sel.metal+" "+sel.qty);
+              addAudit("COMPLETE_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — "+sel.metal+" "+sel.quantity);
               closeAll();
             }} style={{opacity:otpVal.length===6&&!otpExpired?1:0.5}}>
               ✓ Verify & Complete {sel.type}
@@ -2143,7 +2143,7 @@ const Appointments = () => {
           <ApptBadge status={sel.status} />
           <span style={{fontSize:14,color:C.textMuted}}>{sel.type} • {sel.date}</span>
         </div>
-        {[["Appointment ID",sel.id],["Investor",sel.investor],["National ID",sel.nationalId||"—"],["Phone",sel.investorPhone],["Type",sel.type],["Metal",sel.metal],["Quantity",sel.qty],["Vault",sel.vault],["Scheduled",sel.date],["Fee",sel.fee+" SAR"],["Payment Method",sel.paymentMethod],["Status",sel.status.replace("_"," ")]].map(([k,v])=>(
+        {[["Appointment ID",sel.id],["National ID",sel.nationalId||"—"],["Phone",sel.investorPhone],["Type",sel.type],["Metal",sel.metal],["Quantity",sel.quantity],["Vault",sel.vault],["Scheduled",sel.date],["Fee",sel.fee+" SAR"],["Payment Method",sel.paymentMethod],["Status",sel.status.replace("_"," ")]].map(([k,v])=>(
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontSize:14,color:C.textMuted}}>{k}</span>
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{v}</span>
@@ -2224,7 +2224,7 @@ const Financials = () => {
     }));
     addAudit("WITHDRAWAL_"+type.toUpperCase(), row.id, (row.investor||"")+" — SAR "+row.amount);
     // Refresh withdrawals from API
-    try { const wr=await apiFetch("/withdrawals"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requestedAt:w.requested_at||"",processedAt:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
+    try { const wr=await apiFetch("/withdrawals"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),investor:w.investor_name||w.national_id||"",bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requestedAt:w.requested_at||"",processedAt:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
     const msgs = {approve:"✅ Withdrawal approved",reject:"✅ Withdrawal rejected",processed:"✅ Marked as processed",notify:"✅ Notification sent"};
     showFinToast(msgs[type]);
     setWModal(null);
@@ -2722,7 +2722,7 @@ const Blacklist = () => {
     };
     try {
       const res = await apiFetch("/blacklist", {method:"POST", body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})});
-      if(res?.id) newEntry._uuid = String(res.id);
+      if(res&&res.ok){const data=await res.json();if(data?.id) newEntry._uuid=String(data.id);}
     } catch(e) {}
     setBlacklist(prev=>[newEntry,...prev]);
     addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
@@ -2871,7 +2871,7 @@ const ValidatorsTab = () => {
             <Btn variant="teal" onClick={async ()=>{
               if(!vName||!vAddr){showBlkToast(isAr?"⚠️ الاسم والعنوان مطلوبان":"⚠️ Name and address required");return;}
               const newV={id:"VAL-"+(validators.length+1).toString().padStart(3,"0"),name:vName,address:vAddr,status:"ACTIVE",blocksValidated:0,weight:"0%",commissionEarned:"0",joined:new Date().toISOString().slice(0,10)};
-              try { const res = await apiFetch("/validators", {method:"POST", body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:""})}); if(res?.id) newV._uuid=String(res.id); } catch(e) {}
+              try { const res = await apiFetch("/validators", {method:"POST", body:JSON.stringify({name:vName,wallet_address:vAddr,endpoint_url:vEnd})}); if(res&&res.ok){const data=await res.json();if(data?.id) newV._uuid=String(data.id);} } catch(e) {}
               setValidators(p=>[...p,newV]);
               showBlkToast(isAr?"✅ تم إضافة المدقق":"✅ Validator added");
               setShowAdd(false);setVName("");setVAddr("");setVEnd("");
@@ -6563,9 +6563,9 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
     // Search bars
     bars.forEach(bar => {
       if(results.length >= MAX) return;
-      const haystack = `${bar.id} ${bar.metal} ${bar.refiner||""} ${bar.status} ${bar.serialNumber||bar.id}`.toLowerCase();
+      const haystack = `${bar.id} ${bar.metal} ${bar.manufacturer||""} ${bar.status} ${bar.serial||bar.id}`.toLowerCase();
       if(haystack.includes(q)) results.push({
-        type:"bar",icon:"🏦",label:`${bar.id} — ${bar.metal} ${bar.weightGrams||bar.weight}g`,sub:`${bar.refiner||"—"} · ${bar.status}`,
+        type:"bar",icon:"🏦",label:`${bar.id} — ${bar.metal} ${bar.weight||bar.weightGrams}g`,sub:`${bar.manufacturer||"—"} · ${bar.status}`,
         action:()=>{setPage("vault");onClose();}
       });
     });
@@ -9818,8 +9818,8 @@ export default function App() {
             nationalId: w.national_id || "", amount: String(w.amount || 0),
             investor: w.investor_name || w.national_id || "",
             bank: w.bank_info || "", iban: w.iban || "",
-            status: w.status || "PENDING", requested: w.requested_at || "",
-            processed: w.processed_at || "", rejectReason: w.reject_reason || "",
+            status: w.status || "PENDING", requestedAt: w.requested_at || "",
+            processedAt: w.processed_at || "", rejectReason: w.reject_reason || "",
           }));
         }},
         { path: "/wallet/movements", setter: setAppWalletMoves, transform: (data) => {
