@@ -2892,6 +2892,15 @@ const Blocks = () => {
   const [genesisLoading,setGenesisLoading]=useState(false);
   // Chain stats already available via appBlockStats from main fetchApiData
   const [tab,setTab]=useState("BLOCKS");
+  const [ledgerEvents,setLedgerEvents]=useState([]);
+
+  // Fetch blockchain events from ledger
+  useEffect(()=>{
+    fetch(API_BASE.replace("/api/v1","")+"/api/v1/public/explorer/ledger?page=1&limit=50")
+      .then(r=>r.ok?r.json():null)
+      .then(d=>{if(d&&d.ledger)setLedgerEvents(d.ledger)})
+      .catch(()=>{});
+  },[]);
 
   // Genesis Block creation
   const createGenesis = async () => {
@@ -2920,7 +2929,10 @@ const Blocks = () => {
   const validatorsPct = apiSplit ? apiSplit.validators_percent : (commSplit.validators||20);
   const triggerSettings = appBlockStats?.trigger_settings;
   const triggerText = triggerSettings ? `${triggerSettings.size_mb}MB or ${triggerSettings.hours}hrs` : "1MB or 24hrs";
-  const blockTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date})).concat(matches.length > 0 ? [] : []);
+  // Combine matches + blockchain events for TRANSACTIONS tab
+  const matchRows = matches.map(m=>({id:m.id,investor:m.filledFor||"—",type:"TRADE",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),status:"COMPLETED",date:m.date}));
+  const eventRows = ledgerEvents.map(e=>({id:e.tx_hash||e.id||"—",investor:e.vault_key||"—",type:e.event_type||"SYSTEM",metal:e.metal||"—",metalAmt:String(e.sar_amount||0),commission:"0",status:e.event_type==="ONBOARD"?"ACTIVE":(e.status||"PENDING"),date:e.created_at?(e.created_at+"").slice(0,16).replace("T"," "):"—"}));
+  const blockTxRows = [...matchRows,...eventRows];
   return (
     <div>
       <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
@@ -3510,16 +3522,17 @@ const AuditLog = () => {
           </div>
         ):(
           <TTable cols={[
-            {key:"id",label:"ID",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
-            {key:"timestamp",label:isAr?"الوقت":"Time"},
-            {key:"admin",label:isAr?"المشرف":"Admin",render:v=><span style={{fontSize:13,color:C.textMuted}}>{v}</span>},
-            {key:"ip",label:"IP",render:v=>v?<span style={{fontFamily:"monospace",fontSize:11,color:C.textMuted}}>{v}</span>:<span style={{color:C.textMuted}}>—</span>},
+            {key:"id",label:"ID",render:v=><span style={{fontFamily:"monospace",fontSize:10,color:C.teal}}>{(v||"").slice(0,8)}</span>},
+            {key:"time",label:isAr?"الوقت":"Time",render:v=>v?<span style={{fontSize:12,fontFamily:"monospace"}}>{new Date(v).toLocaleString()}</span>:<span>—</span>},
             {key:"action",label:isAr?"الإجراء":"Action",render:v=>{
+              const readableMap={"investor.create":"Investor Created","investor.create.market_maker":"Market Maker Created","investor.suspend":"Investor Suspended","investor.ban":"Investor Banned","investor.activate":"Investor Activated","investor.update":"Investor Updated","block.create":"Block Created","block.auto_create":"Auto Block","blacklist.add":"Blacklisted","blacklist.unban":"Unblacklisted","withdrawal.approve":"Withdrawal Approved","withdrawal.reject":"Withdrawal Rejected","appointment.cancel":"Appointment Cancelled","appointment.complete":"Appointment Completed","BID_DISABLE":"Bids Disabled","BID_ENABLE":"Bids Enabled","STABILIZER_INJECT":"Stabilizer Injection","MARKET_MAKER_ORDER":"MM Order"};
+              const label=readableMap[v]||v;
               const col=ACTION_COLOR[v]||C.navy;
-              return <span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:800,color:col,background:col+"18",border:`1px solid ${col}44`}}>{v.replace(/_/g," ")}</span>;
+              return <span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:800,color:col,background:col+"18",border:`1px solid ${col}44`}}>{label}</span>;
             }},
-            {key:"entity",label:isAr?"الكيان":"Entity",render:v=><span style={{fontWeight:600,color:C.navy,fontSize:14}}>{v}</span>},
-            {key:"details",label:isAr?"التفاصيل":"Details",render:v=><span style={{fontSize:13,color:C.textMuted}}>{v}</span>},
+            {key:"entityType",label:isAr?"النوع":"Type",render:v=><span style={{fontSize:13,color:C.textMuted,fontWeight:600}}>{v}</span>},
+            {key:"entityId",label:isAr?"الكيان":"Entity",render:v=><span style={{fontWeight:600,color:C.navy,fontSize:13}}>{v?(v+"").slice(0,16):""}</span>},
+            {key:"detail",label:isAr?"التفاصيل":"Details",render:v=><span style={{fontSize:12,color:C.textMuted,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",display:"inline-block"}}>{v}</span>},
           ]} rows={auditLog} />
         )}
       </div>}
@@ -4924,6 +4937,51 @@ const OrderBook = () => {
   const [stabEnabled, setStabEnabled]   = useState(true);
   const [maxSpreadPct, setMaxSpreadPct] = useState("2.0");
   const [stabCapSAR, setStabCapSAR]     = useState("500000");
+  const [stabSaving, setStabSaving]     = useState(false);
+
+  // ── Load stabilizer settings from backend on mount ──
+  useEffect(() => {
+    apiFetch("/settings/spread-stabilizer").then(r => r && r.ok ? r.json() : null).then(d => {
+      if (d) {
+        if (typeof d.enabled === "boolean") setStabEnabled(d.enabled);
+        if (d.max_spread_pct) setMaxSpreadPct(d.max_spread_pct);
+        if (d.exposure_cap_sar) setStabCapSAR(d.exposure_cap_sar);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // ── Save stabilizer settings to backend ──
+  const saveStabSettings = async (enabled, spreadPct, capSAR) => {
+    setStabSaving(true);
+    try {
+      await apiFetch("/settings/spread-stabilizer", {
+        method: "PUT",
+        body: JSON.stringify({ enabled, max_spread_pct: spreadPct, exposure_cap_sar: capSAR })
+      });
+      addAudit(enabled ? "STABILIZER_ON" : "STABILIZER_OFF", "SPREAD_STABILIZER",
+        enabled ? `Activated — max ${spreadPct}%, cap SAR ${capSAR}` : "Deactivated spread stabilizer");
+    } catch (e) { console.error("[STAB] Save failed:", e); }
+    finally { setStabSaving(false); }
+  };
+
+  const handleStabToggle = () => {
+    const next = !stabEnabled;
+    setStabEnabled(next);
+    saveStabSettings(next, maxSpreadPct, stabCapSAR);
+  };
+
+  // Debounced save when spread % or cap changes (saves 1s after last keystroke)
+  const stabSaveTimer = useRef(null);
+  const handleSpreadPctChange = (val) => {
+    setMaxSpreadPct(val);
+    clearTimeout(stabSaveTimer.current);
+    stabSaveTimer.current = setTimeout(() => saveStabSettings(stabEnabled, val, stabCapSAR), 1000);
+  };
+  const handleCapChange = (val) => {
+    setStabCapSAR(val);
+    clearTimeout(stabSaveTimer.current);
+    stabSaveTimer.current = setTimeout(() => saveStabSettings(stabEnabled, maxSpreadPct, val), 1000);
+  };
   // Market Maker state
   const [mmOpen, setMmOpen]         = useState(false);
   const [mmSide, setMmSide]         = useState("SELL");
@@ -5016,6 +5074,9 @@ const OrderBook = () => {
       toBeCancelled.forEach(o=>{
         const actualExec = matches.filter(m=>m.buyOrder===o.id||m.sellOrder===o.id).reduce((a,m)=>a+m.totalSAR,0);
         issueRefund(o, o.filled||0, actualExec, "Bid Orders Disabled — Refund");
+        // Cancel on backend too
+        const uid = o._uuid || o.id;
+        apiFetch("/orders/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Bid orders disabled by admin"})}).catch(()=>{});
       });
       setOrders(p=>p.map(o=>
         o.side==="BUY"&&(o.status==="OPEN"||o.status==="PARTIAL")
@@ -5490,19 +5551,19 @@ const OrderBook = () => {
                   <p style={{fontWeight:700,fontSize:16,color:C.navy}}>{isAr?"\u0645\u0648\u0627\u0632\u0646 \u0627\u0644\u0633\u0628\u0631\u064a\u062f":"Spread Stabilizer"}</p>
                   <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{isAr?"\u064a\u0636\u062e \u0623\u0648\u0627\u0645\u0631 \u0627\u0635\u0637\u0646\u0627\u0639\u064a\u0629 \u0639\u0646\u062f \u0627\u062a\u0633\u0627\u0639 \u0627\u0644\u0633\u0628\u0631\u064a\u062f":"Injects synthetic orders when spread widens"}</p>
                 </div>
-                <button onClick={()=>setStabEnabled(p=>!p)} disabled={!bidEnabled} style={{padding:"6px 16px",borderRadius:8,fontSize:14,fontWeight:700,cursor:bidEnabled?"pointer":"not-allowed",border:"none",background:!bidEnabled?"#94A3B8":stabEnabled?C.teal:C.textMuted,color:C.white}}>
-                  {!bidEnabled?(isAr?"06450639063706510644 2014 062706440634063106270621 0645063a06440642":"OFF 2014 Bids disabled"):stabEnabled?(isAr?"06450641063906510644":"ACTIVE"):(isAr?"06450639063706510644":"OFF")}
+                <button onClick={handleStabToggle} disabled={!bidEnabled||stabSaving} style={{padding:"6px 16px",borderRadius:8,fontSize:14,fontWeight:700,cursor:bidEnabled&&!stabSaving?"pointer":"not-allowed",border:"none",background:!bidEnabled?"#94A3B8":stabEnabled?C.teal:C.textMuted,color:C.white,opacity:stabSaving?0.6:1}}>
+                  {!bidEnabled?(isAr?"06450639063706510644 2014 062706440634063106270621 0645063a06440642":"OFF — Bids disabled"):stabSaving?"…":stabEnabled?(isAr?"06450641063906510644":"ACTIVE"):(isAr?"06450639063706510644":"OFF")}
                 </button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div>
                   <p style={{fontSize:13,color:C.textMuted,fontWeight:500,marginBottom:4}}>{isAr?"\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u0642\u0635\u0649 (%)":"Max Spread (%)"}</p>
-                  <input value={maxSpreadPct} onChange={e=>setMaxSpreadPct(e.target.value)} disabled={!stabEnabled}
+                  <input value={maxSpreadPct} onChange={e=>handleSpreadPctChange(e.target.value)} disabled={!stabEnabled}
                     style={{width:"100%",padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,fontWeight:600,color:C.navy,background:stabEnabled?C.white:C.bg,boxSizing:"border-box"}}/>
                 </div>
                 <div>
                   <p style={{fontSize:13,color:C.textMuted,fontWeight:500,marginBottom:4}}>{isAr?"\u062d\u062f \u0627\u0644\u062a\u0639\u0631\u0636 (\u0631\u064a\u0627\u0644)":"Exposure Cap (SAR)"}</p>
-                  <input value={stabCapSAR} onChange={e=>setStabCapSAR(e.target.value)} disabled={!stabEnabled}
+                  <input value={stabCapSAR} onChange={e=>handleCapChange(e.target.value)} disabled={!stabEnabled}
                     style={{width:"100%",padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,fontWeight:600,color:C.navy,background:stabEnabled?C.white:C.bg,boxSizing:"border-box"}}/>
                 </div>
               </div>
@@ -5647,10 +5708,37 @@ const BidTogglePanel = () => {
   const { isAr } = useLang();
   const { bidEnabled, setBidEnabled } = useBidEnabled();
   const { tradingOpen, setTradingOpen } = usePlatform();
+  const appData = useAppData();
+  const { orders, setOrders, addAudit } = appData;
+  const [saving, setSaving] = React.useState(false);
 
-  const handleToggle = (val) => {
-    setBidEnabled(val);
-    // Note: auto-cancel of open BIDs happens inside OrderBook via useEffect
+  const handleToggle = async (val) => {
+    setSaving(true);
+    try {
+      // 1. Persist to backend
+      const res = await apiFetch("/settings/bid-enabled", {method:"PUT", body:JSON.stringify({enabled:val})});
+      setBidEnabled(val);
+
+      if(!val){
+        // 2. Cancel all open BUY orders via backend API
+        const openBuys = orders.filter(o=>o.side==="BUY"&&(o.status==="OPEN"||o.status==="PARTIAL"));
+        for(const o of openBuys){
+          try {
+            const uid = o._uuid || o.id;
+            await apiFetch("/orders/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Bid orders disabled by admin"})});
+          } catch(e){ console.warn("[BID-OFF] Failed to cancel order via API:", o.id, e); }
+        }
+
+        // 3. Log audit
+        addAudit("BID_DISABLE", "ORDER_BOOK", `Disabled bid orders — cancelled ${openBuys.length} open BUY order(s)`);
+      } else {
+        addAudit("BID_ENABLE", "ORDER_BOOK", "Bid orders re-enabled");
+      }
+    } catch(e){
+      console.error("[BID-TOGGLE] API save failed:", e);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -5670,10 +5758,11 @@ const BidTogglePanel = () => {
           <div style={{flexShrink:0}}>
             <button
               onClick={()=>handleToggle(!bidEnabled)}
+              disabled={saving}
               style={{
-                width:52, height:28, borderRadius:14, border:"none", cursor:"pointer",
+                width:52, height:28, borderRadius:14, border:"none", cursor:saving?"wait":"pointer",
                 background:bidEnabled?C.greenSolid:"#CBD5E1", position:"relative",
-                transition:"background 0.2s", flexShrink:0
+                transition:"background 0.2s", flexShrink:0, opacity:saving?0.6:1
               }}>
               <div style={{
                 width:20, height:20, borderRadius:"50%", background:"white",
@@ -6150,24 +6239,94 @@ const AccountProfile = () => {
     if(token){
       try{
         const payload = JSON.parse(atob(token.split(".")[1]));
+        const ua = navigator.userAgent;
+        const browser = ua.includes("Chrome")?"Chrome":ua.includes("Firefox")?"Firefox":ua.includes("Safari")?"Safari":"Browser";
+        const os = ua.includes("Windows")?"Windows":ua.includes("Mac")?"macOS":ua.includes("Linux")?"Linux":ua.includes("Android")?"Android":ua.includes("iPhone")?"iOS":"Unknown";
         setSessions([{
           id:"current",current:true,
-          device:navigator.userAgent.includes("Chrome")?"Chrome":"Browser",
-          os:navigator.platform||"Unknown",
+          device:browser,
+          os:os,
           ip:"Current session",
           lastActive:"Now",
           loginAt: payload.iat ? new Date(payload.iat*1000).toLocaleString() : "—",
         }]);
+        // Get location from backend (resolves IP server-side, no CORS issues)
+        apiFetch("/auth/session-info").then(r=>r&&r.ok?r.json():null).then(d=>{
+          if(d&&d.location){
+            setSessions(prev=>prev.map(s=>s.current?{...s,ip:d.location,loginAt:d.login_at||s.loginAt}:s));
+          }
+        }).catch(()=>{});
       }catch(e){}
     }
-    // Activity log
-    apiFetch("/audit-logs?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
+    // Activity log — with human-readable descriptions
+    apiFetch("/audit-logs?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&d.items){
-        setActivityLog(d.items.map(a=>({
-          id:a.id, action:a.action||"",
-          detail:a.details||a.entity_type||"",
+        // Filter out noise — only show meaningful actions
+        const noiseActions = ["POST /api/v1/auth/refresh","GET /api/v1/","OPTIONS /api"];
+        const isNoise = (action) => {
+          if(!action) return true;
+          // Keep explicit named actions like "auth.login", "investor.create"
+          if(!action.startsWith("GET ") && !action.startsWith("POST /api/v1/auth/refresh") && !action.startsWith("OPTIONS")) return false;
+          // Filter out all GET requests (just viewing data)
+          if(action.startsWith("GET /api/v1/")) return true;
+          // Filter out token refreshes
+          if(action.includes("/auth/refresh")) return true;
+          if(action.startsWith("OPTIONS")) return true;
+          return false;
+        };
+        const descMap = {
+          "auth.login":"Logged in to admin dashboard",
+          "auth.refresh":"Session refreshed",
+          "auth.logout":"Logged out",
+          "investor.create":"New investor created",
+          "investor.create.market_maker":"Market Maker investor created",
+          "investor.update":"Investor profile updated",
+          "investor.suspend":"Investor suspended",
+          "investor.ban":"Investor banned",
+          "investor.activate":"Investor activated",
+          "block.create":"New block created on chain",
+          "block.auto_create":"Auto block created",
+          "block.split_updated":"Commission split updated",
+          "block.trigger_updated":"Block trigger settings updated",
+          "withdrawal.approve":"Withdrawal approved",
+          "withdrawal.reject":"Withdrawal rejected",
+          "withdrawal.process":"Withdrawal processed",
+          "blacklist.add":"Added to blacklist",
+          "blacklist.unban":"Removed from blacklist",
+          "appointment.cancel":"Appointment cancelled",
+          "appointment.complete":"Appointment completed",
+          "appointment.no_show":"No-show recorded",
+          "appointment.reschedule":"Appointment rescheduled",
+          "settings.update":"Platform settings updated",
+          "admin.create":"New admin user created",
+          "admin.suspend":"Admin user suspended",
+          "admin.activate":"Admin user activated",
+          "order.place":"Order placed",
+          "order.cancel":"Order cancelled",
+          "vault.deposit":"Vault deposit completed",
+          "vault.withdraw":"Vault withdrawal completed",
+          "token.mint":"Token minted",
+          "token.burn":"Token burned",
+        };
+        const getDesc = (action, details, entityType) => {
+          if(descMap[action]) return descMap[action];
+          for(const [k,v] of Object.entries(descMap)){if(action.includes(k)) return v;}
+          if(action.startsWith("POST /api/v1/auth/login")) return "Admin login";
+          if(action.startsWith("POST /api/v1/")) return "Action: " + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("PUT /api/v1/")) return "Updated: " + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("PATCH /api/v1/")) return "Modified: " + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("DELETE /api/v1/")) return "Deleted: " + action.split("/").pop().replace(/-/g," ");
+          return action.replace(/\./g," ").replace(/_/g," ").replace(/^(\w)/,m=>m.toUpperCase());
+        };
+        const meaningful = d.items.filter(a=>!isNoise(a.action||""));
+        setActivityLog(meaningful.map(a=>({
+          id:a.id,
+          action:getDesc(a.action||"", a.details||"", a.entity_type||""),
+          rawAction:a.action||"",
+          detail:a.details||"",
           entityType:a.entity_type||"",
           entityId:a.entity_id||"",
+          ip:a.ip_address||"",
           level:a.level||"INFO",
           time:a.created_at?new Date(a.created_at).toLocaleString():"",
         })));
@@ -6361,8 +6520,8 @@ const AccountProfile = () => {
             <div key={entry.id||i} style={{display:"flex",gap:12,padding:"10px 14px",borderRadius:8,background:i%2===0?C.bg:"transparent",alignItems:"center"}}>
               <span style={{fontSize:10,fontFamily:"monospace",color:C.textMuted,flexShrink:0,minWidth:130}}>{entry.time}</span>
               <span style={{fontSize:11,fontWeight:700,color:entry.level==="CRITICAL"?"#C85C3E":entry.level==="WARN"?"#D4943A":C.teal,padding:"2px 8px",borderRadius:4,background:entry.level==="CRITICAL"?"#C85C3E12":entry.level==="WARN"?"#D4943A12":C.tealLight,flexShrink:0}}>{entry.level}</span>
-              <span style={{fontSize:13,fontWeight:600,color:C.navy,minWidth:140}}>{entry.action}</span>
-              <span style={{fontSize:12,color:C.textMuted,flex:1}}>{entry.entityType} {entry.entityId?`#${entry.entityId.slice(0,8)}`:""}</span>
+              <span style={{fontSize:13,fontWeight:600,color:C.navy,flex:1}}>{entry.action}</span>
+              <span style={{fontSize:11,color:C.textMuted}}>{entry.entityType}{entry.entityId?` · ${entry.entityId.slice(0,12)}`:""}</span>
             </div>
           ))}
         </div>}
@@ -8300,7 +8459,7 @@ function LoginPage({ onLogin }) {
       minHeight:"100vh",
       background:`linear-gradient(160deg, #1E1810 0%, #2D2418 50%, #2A2015 100%)`,
       display:"flex", alignItems:"center", justifyContent:"center",
-      fontFamily:"'Cairo','STCForward',system-ui,sans-serif", padding:24,
+      fontFamily:"'Cairo','Inter',system-ui,sans-serif", padding:24,
     }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700;800&display=swap" />
       <div style={{width:"100%", maxWidth:520}}>
@@ -8314,7 +8473,7 @@ function LoginPage({ onLogin }) {
             background:"rgba(255,255,255,0.08)",
             color:"#CBD5E1", fontSize:15, fontWeight:700,
             cursor:"pointer",
-            fontFamily:"'Cairo','STCForward',system-ui,sans-serif",
+            fontFamily:"'Cairo','Inter',system-ui,sans-serif",
             letterSpacing:"0.02em",
             boxShadow:"0 2px 12px rgba(0,0,0,0.3)",
           }}>
@@ -8334,11 +8493,11 @@ function LoginPage({ onLogin }) {
           }}>
             <TanaqulLogo size={52} />
           </div>
-          <p style={{fontSize:40,fontWeight:800,color:"#F5F0E8",lineHeight:1,marginBottom:8,letterSpacing:"-0.02em",fontFamily:"'STCForward','DM Sans',system-ui,sans-serif"}}>
+          <p style={{fontSize:40,fontWeight:800,color:"#F5F0E8",lineHeight:1,marginBottom:8,letterSpacing:"-0.02em",fontFamily:"'Inter','DM Sans',system-ui,sans-serif"}}>
             Tanaqul
           </p>
           <p style={{fontSize:15, color:C.silverText, fontWeight:500, letterSpacing:"0.03em",
-            fontFamily:"'STCForward','DM Sans',system-ui,sans-serif"}}>
+            fontFamily:"'Inter','DM Sans',system-ui,sans-serif"}}>
             {isAr ? "لوحة إدارة المعادن الثمينة" : "Tanaqul Precious Admin"}
           </p>
         </div>
@@ -9070,15 +9229,22 @@ const SystemHealth = () => {
     // Full health from backend
     try {
       const t0 = Date.now();
-      const r = await fetch(API_BASE.replace("/api/v1","") + "/api/v1/health/full");
+      const r = await apiFetch("/health/full");
       setApiLatency(Date.now()-t0);
       if(r&&r.ok) { const d = await r.json(); setHealth(d); }
     } catch(e) { setHealth({api:{status:"down"},database:{status:"down"}}); }
-    // Price feed
+    // Price feed — check via backend prices endpoint (uses real API key)
     try {
       const t0 = Date.now();
-      const r = await fetch("https://api.metals.dev/v1/latest?api_key=demo&currency=SAR&unit=toz").catch(()=>null);
-      setPriceStatus({status:r&&r.ok?"ok":"degraded",latency:Date.now()-t0});
+      const r = await apiFetch("/prices");
+      const lat = Date.now()-t0;
+      if(r&&r.ok) {
+        const d = await r.json();
+        const provider = d?.prices?.Gold?.provider || "";
+        setPriceStatus({status:provider&&provider!=="static_fallback"?"ok":"degraded",latency:lat,provider});
+      } else {
+        setPriceStatus({status:"degraded",latency:lat});
+      }
     } catch(e) { setPriceStatus({status:"down",latency:null}); }
     // SMS — check from settings
     try {
@@ -9572,6 +9738,18 @@ export default function App() {
     } catch(e){}
   }, []);
 
+  // ── Load bid-enabled setting from backend ──────────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem("tanaqul_token");
+    if (!token) return;
+    apiFetch("/settings/bid-enabled").then(r => {
+      if (r && r.ok) return r.json();
+      return null;
+    }).then(d => {
+      if (d && typeof d.enabled === "boolean") setBidEnabled(d.enabled);
+    }).catch(() => {});
+  }, [loggedIn]);
+
   // ── Lifted shared state — initialized with MOCK as fallback until API responds ──
   const [appInvestors,    setAppInvestors]    = useState([]);
   const [appAppointments, setAppAppointments] = useState([]);
@@ -9792,10 +9970,42 @@ export default function App() {
       // Load audit logs from backend
       apiFetch("/audit-logs?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
         if(d&&d.items&&d.items.length>0){
-          setAuditLog(d.items.map(a=>({
+          // Only investor-related actions for the AML/Audit page
+          const investorActions = [
+            "investor.create","investor.update","investor.suspend","investor.ban","investor.activate",
+            "investor.create.market_maker",
+            "order.place","order.cancel","order.fill","order.match",
+            "withdrawal.request","withdrawal.approve","withdrawal.reject","withdrawal.process",
+            "deposit","DEPOSIT","WITHDRAWAL",
+            "appointment.book","appointment.cancel","appointment.complete","appointment.no_show","appointment.reschedule",
+            "vault.deposit","vault.withdraw","token.mint","token.burn",
+            "blacklist.add","blacklist.unban",
+            "block.create","block.auto_create",
+            "aml.alert","aml.dismiss","aml.escalate",
+            "STABILIZER_INJECT","BID_DISABLE","BID_ENABLE",
+            "MARKET_MAKER_ORDER",
+          ];
+          const isInvestorAction = (action) => {
+            if(!action) return false;
+            // Named actions (like "investor.create")
+            for(const ia of investorActions){ if(action.includes(ia)) return true; }
+            // HTTP actions — only POST/PUT/PATCH to investor-related endpoints
+            if(action.startsWith("POST /api/v1/orders")) return true;
+            if(action.startsWith("POST /api/v1/investors")) return true;
+            if(action.startsWith("PATCH /api/v1/investors")) return true;
+            if(action.startsWith("POST /api/v1/withdrawals")) return true;
+            if(action.startsWith("POST /api/v1/appointments")) return true;
+            if(action.startsWith("POST /api/v1/blacklist")) return true;
+            if(action.startsWith("POST /api/v1/blocks")) return true;
+            if(action.startsWith("POST /api/v1/vault")) return true;
+            return false;
+          };
+          const filtered = d.items.filter(a => isInvestorAction(a.action||""));
+          setAuditLog(filtered.map(a=>({
             id:a.id, action:a.action, entityType:a.entity_type||"",
             entityId:a.entity_id||"", detail:a.details||"",
             level:a.level||"INFO", time:a.created_at||"",
+            ip:a.ip_address||"",
           })));
         }
       }).catch(()=>{});
@@ -9952,21 +10162,10 @@ export default function App() {
     <AppDataContext.Provider value={appDataValue}>
     <ThemeContext.Provider value={{C:currentTheme,dark,toggleDark}}>
     <LangContext.Provider value={{ lang, t: tFn, isAr, switchLang, bidEnabled, setBidEnabled, tradingOpen, setTradingOpen, commSplit, setCommSplit, gatewaySettings, setGatewaySettings, commissionRates, setCommissionRates, cancelFee, setCancelFee, storageFeeSettings, setStorageFeeSettings, reportingConfig, setReportingConfig }}>
-      <div dir={isAr?"rtl":"ltr"} style={{display:"flex",height:"100vh",fontFamily:"'STCForward','DM Sans',system-ui,sans-serif",background:C.bg,overflow:"hidden",fontSize:isAr?undefined:"14px"}}>
+      <div dir={isAr?"rtl":"ltr"} style={{display:"flex",height:"100vh",fontFamily:"'Inter','DM Sans',system-ui,sans-serif",background:C.bg,overflow:"hidden",fontSize:isAr?undefined:"14px"}}>
         <style>{`
-          @font-face {
-            font-family: 'STCForward';
-            src: url('/STCForward-Regular.ttf') format('truetype');
-            font-weight: 400;
-            font-style: normal;
-          }
-          @font-face {
-            font-family: 'STCForward';
-            src: url('/STCForward-Regular.ttf') format('truetype');
-            font-weight: 700;
-            font-style: normal;
-            font-synthesis: weight;
-          }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
           @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
           @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700;800&display=swap');
           *{box-sizing:border-box;margin:0;padding:0}
@@ -9982,7 +10181,7 @@ export default function App() {
               <TanaqulLogo size={40} />
             </div>
             {open&&<div>
-              <p style={{fontSize:22,fontWeight:800,color:"#F5F0E8",lineHeight:1,letterSpacing:"-0.01em",fontFamily:"'STCForward','DM Sans',system-ui,sans-serif"}}>Tanaqul</p>
+              <p style={{fontSize:22,fontWeight:800,color:"#F5F0E8",lineHeight:1,letterSpacing:"-0.01em",fontFamily:"'Inter','DM Sans',system-ui,sans-serif"}}>Tanaqul</p>
               <p style={{fontSize:14,color:C.gold,marginTop:2,fontWeight:500}}>{tFn("Precious Admin")}</p>
             </div>}
           </div>
