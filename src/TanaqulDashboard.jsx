@@ -3482,7 +3482,7 @@ const AuditLog = () => {
 
       {/* TOP STATS */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:22}}>
-        <StatCard icon={Icons.users(22,C.navy)} title={isAr?"المستثمرون المراقبون":"Monitored Investors"} value={riskScores.length} sub={`${riskDistro.CRITICAL+riskDistro.HIGH} ${isAr?"عالي المخاطر":"high risk"}`} />
+        <StatCard icon={Icons.usersAdmin(22,C.navy)} title={isAr?"المستثمرون المراقبون":"Monitored Investors"} value={riskScores.length} sub={`${riskDistro.CRITICAL+riskDistro.HIGH} ${isAr?"عالي المخاطر":"high risk"}`} />
         <StatCard icon={Icons.warning(22,"#C85C3E")} title={isAr?"تنبيهات غسل الأموال":"AML Alerts"} value={amlAlerts.length} sub={critCount>0?`${critCount} ${isAr?"حرجة":"critical"}`:undefined} />
         <StatCard icon={Icons.shield(22,C.purpleSolid)} title={isAr?"تنبيهات التلاعب":"CMA Manipulation"} value={cmaAlerts.length} sub={cmaCritCount>0?`${cmaCritCount} ${isAr?"حرجة":"critical"}`:`${cmaHighCount} ${isAr?"مرتفعة":"high"}`} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={isAr?"مخاطر منخفضة":"Low Risk"} value={riskDistro.LOW} sub={`${Math.round(riskDistro.LOW/Math.max(1,riskScores.length)*100)}% ${isAr?"من المستثمرين":"of investors"}`} />
@@ -5980,7 +5980,7 @@ const UserManagement = () => {
         {/* Stats */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
           <StatCard icon={Icons.financials(22,C.navy)} title={isAr?"إجمالي الإجراءات":"Total Actions"} value={auditLog.length} />
-          <StatCard icon={Icons.users(22,C.greenSolid)} title={isAr?"المستخدمون النشطون":"Active Users"} value={[...new Set(auditLog.map(e=>e.admin))].length} />
+          <StatCard icon={Icons.usersAdmin(22,C.greenSolid)} title={isAr?"المستخدمون النشطون":"Active Users"} value={[...new Set(auditLog.map(e=>e.admin))].length} />
           <StatCard icon={Icons.warning(22,"#D4943A")} title={isAr?"إجراءات حرجة":"Critical Actions"} value={auditLog.filter(e=>(e.action||"").includes("ban")||(e.action||"").includes("suspend")||(e.action||"").includes("reject")||(e.action||"").includes("delete")).length} />
           <StatCard icon={Icons.check(22,C.blueSolid)} title={isAr?"اليوم":"Today"} value={auditLog.filter(e=>(e.time||"").startsWith(new Date().toISOString().slice(0,10))).length} />
         </div>
