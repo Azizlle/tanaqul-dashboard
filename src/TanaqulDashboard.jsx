@@ -7203,51 +7203,6 @@ const CommCenter = () => {
   );
 };
 
-const NotificationBell = ({notifications, unread, readSet, markRead, markAllRead, setPage, isAr}) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(()=>{
-    const h = (e)=>{ if(ref.current&&!ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown",h);
-    return ()=>document.removeEventListener("mousedown",h);
-  },[]);
-  const timeAgo = (ts) => {
-    const diff = (Date.now()-ts)/1000;
-    if(diff<60) return isAr?"الآن":"just now";
-    if(diff<3600) return `${Math.floor(diff/60)} ${isAr?"دقائق مضت":"min ago"}`;
-    return `${Math.floor(diff/3600)} ${isAr?"ساعات مضت":"hr ago"}`;
-  };
-  return (
-    <div ref={ref} style={{position:"relative"}}>
-      <button onClick={()=>setOpen(!open)} style={{position:"relative",background:"none",border:"none",cursor:"pointer",padding:6}}>
-        {Icons.bell(22,unread>0?C.gold:C.textMuted)}
-        {unread>0&&<span style={{position:"absolute",top:0,right:0,width:18,height:18,borderRadius:9,background:C.red,color:"#FFF",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid "+C.white}}>{unread>9?"9+":unread}</span>}
-      </button>
-      {open&&<div style={{position:"absolute",top:"100%",right:isAr?undefined:0,left:isAr?0:undefined,width:360,background:C.white,borderRadius:14,boxShadow:"0 12px 40px rgba(0,0,0,0.15)",border:`1px solid ${C.border}`,zIndex:9999,overflow:"hidden",marginTop:6}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",borderBottom:`1px solid ${C.border}`,background:C.bg}}>
-          <span style={{fontSize:15,fontWeight:700,color:C.navy}}>{isAr?"الإشعارات":"Notifications"} {unread>0&&<span style={{fontSize:12,color:C.red}}>({unread})</span>}</span>
-          {unread>0&&<button onClick={markAllRead} style={{fontSize:12,fontWeight:600,color:C.teal,background:"none",border:"none",cursor:"pointer"}}>{isAr?"تعليم الكل":"Mark all read"}</button>}
-        </div>
-        <div style={{maxHeight:320,overflowY:"auto"}}>
-          {notifications.length===0?<p style={{padding:20,textAlign:"center",color:C.textMuted,fontSize:14}}>{isAr?"لا توجد إشعارات":"No notifications"}</p>
-          :notifications.map(n=>(
-            <button key={n.id} onClick={()=>{markRead(n.id);setPage(n.page);setOpen(false);}}
-              style={{width:"100%",display:"flex",alignItems:"flex-start",gap:10,padding:"12px 16px",border:"none",borderBottom:`1px solid ${C.border}`,background:readSet.has(n.id)?"transparent":C.goldLight,cursor:"pointer",textAlign:"start",transition:"background 0.1s"}}
-              onMouseEnter={e=>e.currentTarget.style.background=C.bg}
-              onMouseLeave={e=>e.currentTarget.style.background=readSet.has(n.id)?"transparent":C.goldLight}>
-              <span style={{fontSize:18,flexShrink:0,marginTop:2}}>{n.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <p style={{fontSize:13,fontWeight:readSet.has(n.id)?500:700,color:C.navy,marginBottom:2}}>{n.title}</p>
-                <p style={{fontSize:12,color:C.textMuted}}>{n.detail}</p>
-              </div>
-              <span style={{fontSize:11,color:C.textMuted,flexShrink:0,marginTop:2}}>{timeAgo(n.time)}</span>
-            </button>
-          ))}
-        </div>
-      </div>}
-    </div>
-  );
-};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT ENGINE — Generate CSV/PDF-ready data exports from any page
@@ -9657,23 +9612,6 @@ const TreasuryReconciliation = () => {
     </div>
   );
 };
-const useNotifications = ({ amlAlerts=[], cmaAlerts=[], amlDismissed=new Set(), withdrawals=[], appointments=[], investors=[] }) => {
-  const critical = amlAlerts.filter(a => a.severity==="CRITICAL" && !amlDismissed.has(a.key||a.id)).length;
-  const high     = amlAlerts.filter(a => a.severity==="HIGH"     && !amlDismissed.has(a.key||a.id)).length;
-  const wdPend   = withdrawals.filter(w => w.status==="PENDING").length;
-  const apptToday= appointments.filter(a => {
-    const d = a.date||a.appointmentDate||"";
-    return d.startsWith(new Date().toISOString().slice(0,10));
-  }).length;
-  const kycExp   = investors.filter(i => i.kycExpiry && new Date(i.kycExpiry) < new Date()).length;
-  const total    = critical + high + wdPend + apptToday + kycExp;
-  return { total, critical, high, wdPending: wdPend, apptToday, kycExpired: kycExp,
-    items: [
-      ...amlAlerts.filter(a=>!amlDismissed.has(a.key||a.id)).slice(0,5).map(a=>({type:"aml",severity:a.severity,label:a.rule+" — "+a.name,id:a.key||a.id})),
-      ...withdrawals.filter(w=>w.status==="PENDING").slice(0,3).map(w=>({type:"withdrawal",severity:"MEDIUM",label:"Withdrawal pending — "+(w.investor||w.id),id:w.id})),
-    ]
-  };
-};
 
 
 export default function App() {
@@ -10053,9 +9991,6 @@ export default function App() {
 
   const dismissAmlAlert = (key) => setAmlDismissed(prev => new Set([...prev, key]));
 
-  // ═══ NOTIFICATION CENTER HOOK ═══
-  const notifData = useNotifications({amlAlerts, cmaAlerts, amlDismissed, withdrawals: appWithdrawals, appointments: appAppointments, investors: appInvestors});
-
   const addAudit = (action, entity, details) => {
     const entry = {
       id: "AUD-"+String(Date.now()).slice(-6),
@@ -10291,116 +10226,104 @@ export default function App() {
                 <kbd style={{fontSize:8,color:C.textMuted,background:C.white,border:`1px solid ${C.border}`,borderRadius:3,padding:"1px 4px",fontFamily:"monospace"}}>⌘K</kbd>
               </button>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
 
-              {/* 1️⃣ User Requests Bell — pending withdrawals, new investors, KYC issues */}
-              {(()=>{
-                const pendW = appWithdrawals.filter(w=>w.status==="PENDING").length;
-                const newInv = appInvestors.filter(i=>{const d=new Date(i.joined);const now=new Date();return (now-d)<7*86400000;}).length;
-                const suspended = appInvestors.filter(i=>i.status==="SUSPENDED").length;
-                const total = pendW + newInv + suspended;
-                const hasUrgent = pendW > 0;
-                return (
-                  <button onClick={()=>setPage("financials")} title={isAr?`${total} طلبات مستخدمين`:`${total} user requests`}
-                    style={{position:"relative",background:hasUrgent?"#FDF4EC":total>0?C.purpleBg:"#F5F0E8",
-                      border:`1.5px solid ${hasUrgent?"#E8D5B8":total>0?"#C8D6E8":"#E8E0D4"}`,
-                      borderRadius:10,padding:"7px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    {Icons.wallet(16,hasUrgent?"#D4943A":total>0?"#6B8AAD":"#A89880")}
-                    <span style={{fontSize:11,fontWeight:700,color:hasUrgent?"#D4943A":total>0?"#6B8AAD":"#A89880"}}>
-                      {pendW>0?(isAr?`${pendW} سحب`:`${pendW} Withdraw`):total>0?(isAr?`${total} طلبات`:`${total} Requests`):(isAr?"لا يوجد":"Clear")}
-                    </span>
-                    {total>0&&<span style={{position:"absolute",top:-5,[isAr?"left":"right"]:-5,background:hasUrgent?"#D4943A":"#6B8AAD",color:"#FFF",fontSize:9,fontWeight:900,borderRadius:20,padding:"1px 5px",minWidth:16,textAlign:"center"}}>{total}</span>}
-                  </button>
-                );
-              })()}
-
-              {/* 2️⃣ Appointments Bell — upcoming, today, no-shows */}
+              {/* 1. Appointments */}
               {(()=>{
                 const today = new Date().toISOString().slice(0,10);
                 const booked = appAppointments.filter(a=>a.status==="BOOKED"||a.status==="RESCHEDULED");
-                const todayAppts = booked.filter(a=>a.date===today).length;
-                const noShows = appAppointments.filter(a=>a.status==="NO_SHOW").length;
-                const total = booked.length;
-                const hasToday = todayAppts > 0;
+                const todayAppts = booked.filter(a=>(a.date||"").startsWith(today)).length;
+                const inProgress = appAppointments.filter(a=>a.status==="IN_PROGRESS").length;
+                const total = todayAppts + inProgress;
+                const active = todayAppts > 0;
                 return (
-                  <button onClick={()=>setPage("appointments")} title={isAr?`${total} مواعيد (${todayAppts} اليوم)`:`${total} appointments (${todayAppts} today)`}
-                    style={{position:"relative",background:hasToday?"#ECFDF5":total>0?C.purpleBg:"#F5F0E8",
-                      border:`1.5px solid ${hasToday?"#C0DBC8":total>0?"#C8D6E8":"#E8E0D4"}`,
-                      borderRadius:10,padding:"7px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    {Icons.calendar(16,hasToday?C.greenSolid:total>0?"#6B8AAD":"#A89880")}
-                    <span style={{fontSize:11,fontWeight:700,color:hasToday?C.greenSolid:total>0?"#6B8AAD":"#A89880"}}>
-                      {hasToday?(isAr?`${todayAppts} اليوم`:`${todayAppts} Today`):total>0?(isAr?`${total} مواعيد`:`${total} Appts`):(isAr?"لا يوجد":"Clear")}
+                  <button onClick={()=>setPage("appointments")} title={isAr?`${todayAppts} موعد اليوم · ${booked.length} مجدول`:`${todayAppts} today · ${booked.length} scheduled`}
+                    style={{position:"relative",height:36,padding:"0 12px",borderRadius:8,border:`1px solid ${active?"#10B981":"#E2E8F0"}`,
+                      background:active?"#ECFDF5":"#F8FAFC",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=active?"#059669":"#CBD5E1";e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.06)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=active?"#10B981":"#E2E8F0";e.currentTarget.style.boxShadow="none";}}>
+                    {Icons.calendar(14,active?"#059669":"#94A3B8")}
+                    <span style={{fontSize:11,fontWeight:600,color:active?"#059669":"#64748B",letterSpacing:"0.01em"}}>
+                      {active?(isAr?`${todayAppts} اليوم`:`${todayAppts} Today`):(isAr?"المواعيد":"Appointments")}
                     </span>
-                    {total>0&&<span style={{position:"absolute",top:-5,[isAr?"left":"right"]:-5,background:hasToday?C.greenSolid:"#6B8AAD",color:"#FFF",fontSize:9,fontWeight:900,borderRadius:20,padding:"1px 5px",minWidth:16,textAlign:"center"}}>{total}</span>}
+                    {total>0&&<span style={{position:"absolute",top:-6,[isAr?"left":"right"]:-6,minWidth:16,height:16,borderRadius:8,background:active?"#059669":"#94A3B8",color:"#FFF",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",border:"2px solid #FFF"}}>{total}</span>}
                   </button>
                 );
               })()}
 
-              {/* 3️⃣ AML + CMA Notification Bell */}
+              {/* 2. AML & Audit */}
               {(()=>{
                 const allUnacked = [...amlAlerts, ...cmaAlerts].filter(a=>!amlDismissed.has(a.key));
                 const critHigh = allUnacked.filter(a=>a.level==="CRITICAL"||a.level==="HIGH");
+                const hasCrit = critHigh.length > 0;
+                const hasAlerts = allUnacked.length > 0;
                 return (
                   <button onClick={()=>setPage("auditlog")} title={`${allUnacked.length} alerts (${critHigh.length} critical/high)`}
-                    style={{position:"relative",background:critHigh.length>0?"#FBF0EC":allUnacked.length>0?"#FDF4EC":"#F5F0E8",
-                      border:`1.5px solid ${critHigh.length>0?"#E8C5BA":allUnacked.length>0?"#E8D5B8":"#E8E0D4"}`,
-                      borderRadius:10,padding:"7px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    {Icons.shield(16,critHigh.length>0?"#C85C3E":allUnacked.length>0?"#D4943A":"#A89880")}
-                    <span style={{fontSize:11,fontWeight:700,color:critHigh.length>0?"#C85C3E":allUnacked.length>0?"#D4943A":C.greenSolid}}>
-                      {critHigh.length>0?(isAr?`${critHigh.length} حرج`:`${critHigh.length} Critical`):allUnacked.length>0?(isAr?`${allUnacked.length} تنبيه`:`${allUnacked.length} AML`):(isAr?"آمن":"Clear")}
+                    style={{position:"relative",height:36,padding:"0 12px",borderRadius:8,border:`1px solid ${hasCrit?"#EF4444":hasAlerts?"#F59E0B":"#E2E8F0"}`,
+                      background:hasCrit?"#FEF2F2":hasAlerts?"#FFFBEB":"#F8FAFC",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.06)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}>
+                    {Icons.shield(14,hasCrit?"#DC2626":hasAlerts?"#D97706":"#94A3B8")}
+                    <span style={{fontSize:11,fontWeight:600,color:hasCrit?"#DC2626":hasAlerts?"#D97706":"#64748B",letterSpacing:"0.01em"}}>
+                      {hasCrit?(isAr?`${critHigh.length} حرج`:`${critHigh.length} Critical`):hasAlerts?(isAr?`${allUnacked.length} تنبيه`:`${allUnacked.length} Alerts`):(isAr?"AML آمن":"AML Clear")}
                     </span>
-                    {allUnacked.length>0&&<span style={{position:"absolute",top:-5,[isAr?"left":"right"]:-5,background:"#C85C3E",color:"#FFF",fontSize:9,fontWeight:900,borderRadius:20,padding:"1px 5px",minWidth:16,textAlign:"center",animation:"pulse 2s infinite"}}>{allUnacked.length}</span>}
+                    {hasAlerts&&<span style={{position:"absolute",top:-6,[isAr?"left":"right"]:-6,minWidth:16,height:16,borderRadius:8,background:hasCrit?"#DC2626":"#D97706",color:"#FFF",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",border:"2px solid #FFF",animation:hasCrit?"pulse 2s infinite":"none"}}>{allUnacked.length}</span>}
                   </button>
                 );
               })()}
 
-              {/* 3½ NOTIFICATION CENTER BELL — integrated feed */}
+              {/* 3. User Requests */}
               {(()=>{
-                return <NotificationBell
-                  notifications={notifData.notifications}
-                  unread={notifData.unread}
-                  readSet={notifData.readSet}
-                  markRead={notifData.markRead}
-                  markAllRead={notifData.markAllRead}
-                  setPage={setPage}
-                  isAr={isAr}
-                />;
-              })()}
-
-              {/* 4️⃣ System Alerts Bell — KYC expiry, trading hours, blockchain, compliance overdue */}
-              {(()=>{
-                const sysAlerts = [];
-                // KYC expiring within 30 days
-                const kycExpiring = appInvestors.filter(i=>{if(!i.kycExpiry)return false;const d=(new Date(i.kycExpiry)-new Date())/(86400000);return d>0&&d<30;}).length;
-                const kycExpired = appInvestors.filter(i=>{if(!i.kycExpiry)return false;return new Date(i.kycExpiry)<new Date();}).length;
-                if(kycExpired>0) sysAlerts.push({msg:isAr?`${kycExpired} هوية منتهية`:`${kycExpired} KYC expired`,level:"CRITICAL"});
-                if(kycExpiring>0) sysAlerts.push({msg:isAr?`${kycExpiring} هوية تنتهي قريباً`:`${kycExpiring} KYC expiring soon`,level:"WARN"});
-                // Trading hours
-                const hr = new Date().getHours();
-                const tradingHrs = hr >= 10 && hr < 15;
-                if(!tradingHrs) sysAlerts.push({msg:isAr?"السوق مغلق":"Market closed",level:"INFO"});
-                // Blacklist size
-                const blk = appInvestors.filter(i=>i.status==="BANNED").length;
-                if(blk>0) sysAlerts.push({msg:isAr?`${blk} محظور`:`${blk} banned users`,level:"INFO"});
-                // No-show rate
-                const noShowRate = appAppointments.length>0?(Number(appAppointments.filter(a=>a.status==="NO_SHOW").length/(appAppointments.length||1)*100)||0).toFixed(0):0;
-                if(parseFloat(noShowRate)>15) sysAlerts.push({msg:isAr?`معدل عدم الحضور ${noShowRate}%`:`No-show rate ${noShowRate}%`,level:"WARN"});
-                const hasCrit = sysAlerts.some(a=>a.level==="CRITICAL");
-                const hasWarn = sysAlerts.some(a=>a.level==="WARN");
-                const total = sysAlerts.length;
+                const pendW = appWithdrawals.filter(w=>w.status==="PENDING").length;
+                const suspended = appInvestors.filter(i=>i.status==="SUSPENDED").length;
+                const total = pendW + suspended;
+                const hasUrgent = pendW > 0;
                 return (
-                  <button onClick={()=>setPage("settings")} title={sysAlerts.map(a=>a.msg).join(", ")||"All systems normal"}
-                    style={{position:"relative",background:hasCrit?"#FBF0EC":hasWarn?"#FDF4EC":total>0?C.purpleBg:"#F5F0E8",
-                      border:`1.5px solid ${hasCrit?"#E8C5BA":hasWarn?"#E8D5B8":total>0?"#C8D6E8":"#E8E0D4"}`,
-                      borderRadius:10,padding:"7px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    {Icons.settings(16,hasCrit?"#C85C3E":hasWarn?"#D4943A":total>0?"#6B8AAD":"#A89880")}
-                    <span style={{fontSize:11,fontWeight:700,color:hasCrit?"#C85C3E":hasWarn?"#D4943A":total>0?"#6B8AAD":C.greenSolid}}>
-                      {hasCrit?(isAr?"تحذير نظام":"System Alert"):hasWarn?(isAr?`${total} تنبيه`:`${total} Notices`):total>0?(isAr?`${total} معلومات`:`${total} Info`):(isAr?"طبيعي":"Normal")}
+                  <button onClick={()=>setPage("financials")} title={isAr?`${pendW} سحب معلق · ${suspended} معلق`:`${pendW} pending withdrawals · ${suspended} suspended`}
+                    style={{position:"relative",height:36,padding:"0 12px",borderRadius:8,border:`1px solid ${hasUrgent?"#F59E0B":"#E2E8F0"}`,
+                      background:hasUrgent?"#FFFBEB":"#F8FAFC",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.06)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}>
+                    {Icons.wallet(14,hasUrgent?"#D97706":"#94A3B8")}
+                    <span style={{fontSize:11,fontWeight:600,color:hasUrgent?"#D97706":"#64748B",letterSpacing:"0.01em"}}>
+                      {pendW>0?(isAr?`${pendW} سحب معلق`:`${pendW} Pending`):total>0?(isAr?`${total} طلبات`:`${total} Requests`):(isAr?"الطلبات":"Requests")}
                     </span>
-                    {(hasCrit||hasWarn)&&<span style={{position:"absolute",top:-5,[isAr?"left":"right"]:-5,background:hasCrit?"#C85C3E":"#D4943A",color:"#FFF",fontSize:9,fontWeight:900,borderRadius:20,padding:"1px 5px",minWidth:16,textAlign:"center"}}>{total}</span>}
+                    {total>0&&<span style={{position:"absolute",top:-6,[isAr?"left":"right"]:-6,minWidth:16,height:16,borderRadius:8,background:hasUrgent?"#D97706":"#94A3B8",color:"#FFF",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",border:"2px solid #FFF"}}>{total}</span>}
                   </button>
                 );
               })()}
+
+              {/* 4. System General */}
+              {(()=>{
+                const sysItems = [];
+                const kycExpired = appInvestors.filter(i=>i.kycExpiry&&new Date(i.kycExpiry)<new Date()).length;
+                const kycExpiring = appInvestors.filter(i=>{if(!i.kycExpiry)return false;const d=(new Date(i.kycExpiry)-new Date())/(86400000);return d>0&&d<30;}).length;
+                if(kycExpired>0) sysItems.push({msg:isAr?`${kycExpired} هوية منتهية`:`${kycExpired} KYC expired`,lvl:"CRITICAL"});
+                if(kycExpiring>0) sysItems.push({msg:isAr?`${kycExpiring} هوية تنتهي قريباً`:`${kycExpiring} KYC expiring`,lvl:"WARN"});
+                const riyadhHr = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"})).getHours();
+                const marketOpen = riyadhHr >= 10 && riyadhHr < 15;
+                if(!marketOpen) sysItems.push({msg:isAr?"السوق مغلق (تداول)":"Market closed (Tadawul)",lvl:"INFO"});
+                const banned = appInvestors.filter(i=>i.status==="BANNED").length;
+                if(banned>0) sysItems.push({msg:isAr?`${banned} محظور`:`${banned} banned`,lvl:"INFO"});
+                const hasCrit = sysItems.some(s=>s.lvl==="CRITICAL");
+                const hasWarn = sysItems.some(s=>s.lvl==="WARN");
+                const total = sysItems.length;
+                return (
+                  <button onClick={()=>setPage("settings")} title={sysItems.map(s=>s.msg).join(" · ")||(isAr?"النظام طبيعي":"All systems normal")}
+                    style={{position:"relative",height:36,padding:"0 12px",borderRadius:8,border:`1px solid ${hasCrit?"#EF4444":hasWarn?"#F59E0B":"#E2E8F0"}`,
+                      background:hasCrit?"#FEF2F2":hasWarn?"#FFFBEB":"#F8FAFC",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.06)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}>
+                    {Icons.settings(14,hasCrit?"#DC2626":hasWarn?"#D97706":total>0?"#6366F1":"#94A3B8")}
+                    <span style={{fontSize:11,fontWeight:600,color:hasCrit?"#DC2626":hasWarn?"#D97706":total>0?"#6366F1":"#64748B",letterSpacing:"0.01em"}}>
+                      {hasCrit?(isAr?"تحذير":"Alert"):hasWarn?(isAr?`${total} ملاحظات`:`${total} Notices`):total>0?(isAr?"النظام":"System"):(isAr?"طبيعي":"Normal")}
+                    </span>
+                    {(hasCrit||hasWarn)&&<span style={{position:"absolute",top:-6,[isAr?"left":"right"]:-6,minWidth:16,height:16,borderRadius:8,background:hasCrit?"#DC2626":"#D97706",color:"#FFF",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",border:"2px solid #FFF"}}>{total}</span>}
+                  </button>
+                );
+              })()}
+
+              <div style={{width:1,height:24,background:"#E2E8F0",margin:"0 2px"}}/>
               <HeaderPills />
             </div>
           </div>
