@@ -3017,7 +3017,7 @@ const Sparkline = ({data,color="#C4956A",w=80,h=24}) => {
 const AuditLog = () => {
   const { isAr, t, reportingConfig } = useLang();
   const { auditLog, investors, matches, orders, walletMovements, withdrawals, appointments, bars, blacklist, amlAlerts: globalAmlAlerts=[], cmaAlerts: globalCmaAlerts=[], amlDismissed=new Set(), dismissAmlAlert=()=>{}, amlLastRun=null, pageHint, setPageHint } = useAppData();
-  const [tab, setTab] = useState("trail");
+  const [tab, setTab] = useState("aml");
 
   // Auto-switch tab from action center hint
   useEffect(()=>{
@@ -3445,7 +3445,6 @@ const AuditLog = () => {
   const cmaHighCount = cmaAlerts.filter(a=>a.level==="HIGH").length;
 
   const tabs = [
-    {id:"trail",label:isAr?"سجل المراجعة":"Audit Trail",icon:"amlComply",count:auditLog.length},
     {id:"aml",label:isAr?"تنبيهات غسل الأموال":"AML Alerts",icon:"amlEnforce",count:amlAlerts.length,badge:critCount+highCount},
     {id:"cma",label:isAr?"مراقبة التلاعب بالسوق":"Market Manipulation",icon:"cmaScale",count:cmaAlerts.length,badge:cmaCritCount+cmaHighCount},
     {id:"risk",label:isAr?"تقييم المخاطر":"Risk Scoring",icon:"amlVolume",count:riskScores.length},
@@ -3463,7 +3462,7 @@ const AuditLog = () => {
     <div>
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{toast}</div>}
 
-      <SectionHeader title={isAr?"مركز التدقيق والامتثال":"Audit & AML Intelligence Center"} sub={isAr?"أدوات التدقيق والذكاء الاصطناعي لكشف الأنشطة المشبوهة":"AI-powered auditing tools, AML detection, risk scoring & compliance monitoring"} />
+      <SectionHeader title={isAr?"مركز مكافحة غسل الأموال والامتثال":"AML & Compliance Center"} sub={isAr?"مراقبة نشاط المستثمرين وكشف المخالفات المحتملة":"Investor activity monitoring, violation detection & regulatory compliance"} />
 
       {/* LIVE MONITORING STATUS */}
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,padding:"10px 16px",borderRadius:10,background:"linear-gradient(90deg,#1E1810,#2A2015)",border:"1px solid #3D3225"}}>
@@ -3483,7 +3482,7 @@ const AuditLog = () => {
 
       {/* TOP STATS */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:22}}>
-        <StatCard icon={Icons.financials(22,C.navy)} title={isAr?"أحداث التدقيق":"Audit Events"} value={auditLog.length} />
+        <StatCard icon={Icons.users(22,C.navy)} title={isAr?"المستثمرون المراقبون":"Monitored Investors"} value={riskScores.length} sub={`${riskDistro.CRITICAL+riskDistro.HIGH} ${isAr?"عالي المخاطر":"high risk"}`} />
         <StatCard icon={Icons.warning(22,"#C85C3E")} title={isAr?"تنبيهات غسل الأموال":"AML Alerts"} value={amlAlerts.length} sub={critCount>0?`${critCount} ${isAr?"حرجة":"critical"}`:undefined} />
         <StatCard icon={Icons.shield(22,C.purpleSolid)} title={isAr?"تنبيهات التلاعب":"CMA Manipulation"} value={cmaAlerts.length} sub={cmaCritCount>0?`${cmaCritCount} ${isAr?"حرجة":"critical"}`:`${cmaHighCount} ${isAr?"مرتفعة":"high"}`} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={isAr?"مخاطر منخفضة":"Low Risk"} value={riskDistro.LOW} sub={`${Math.round(riskDistro.LOW/Math.max(1,riskScores.length)*100)}% ${isAr?"من المستثمرين":"of investors"}`} />
@@ -3513,31 +3512,7 @@ const AuditLog = () => {
         ))}
       </div>
 
-      {/* ═══ TAB 1: AUDIT TRAIL ═══ */}
-      {tab==="trail"&&<div>
-        {auditLog.length===0?(
-          <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"40px",textAlign:"center"}}>
-            <p style={{fontSize:38,marginBottom:12}}>📋</p>
-            <p style={{fontSize:16,color:C.textMuted}}>{isAr?"لا توجد إجراءات مسجلة بعد":"No actions recorded yet — they appear here as you work"}</p>
-          </div>
-        ):(
-          <TTable cols={[
-            {key:"id",label:"ID",render:v=><span style={{fontFamily:"monospace",fontSize:10,color:C.teal}}>{(v||"").slice(0,8)}</span>},
-            {key:"time",label:isAr?"الوقت":"Time",render:v=>v?<span style={{fontSize:12,fontFamily:"monospace"}}>{new Date(v).toLocaleString()}</span>:<span>—</span>},
-            {key:"action",label:isAr?"الإجراء":"Action",render:v=>{
-              const readableMap={"investor.create":"Investor Created","investor.create.market_maker":"Market Maker Created","investor.suspend":"Investor Suspended","investor.ban":"Investor Banned","investor.activate":"Investor Activated","investor.update":"Investor Updated","block.create":"Block Created","block.auto_create":"Auto Block","blacklist.add":"Blacklisted","blacklist.unban":"Unblacklisted","withdrawal.approve":"Withdrawal Approved","withdrawal.reject":"Withdrawal Rejected","appointment.cancel":"Appointment Cancelled","appointment.complete":"Appointment Completed","BID_DISABLE":"Bids Disabled","BID_ENABLE":"Bids Enabled","STABILIZER_INJECT":"Stabilizer Injection","MARKET_MAKER_ORDER":"MM Order"};
-              const label=readableMap[v]||v;
-              const col=ACTION_COLOR[v]||C.navy;
-              return <span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:800,color:col,background:col+"18",border:`1px solid ${col}44`}}>{label}</span>;
-            }},
-            {key:"entityType",label:isAr?"النوع":"Type",render:v=><span style={{fontSize:13,color:C.textMuted,fontWeight:600}}>{v}</span>},
-            {key:"entityId",label:isAr?"الكيان":"Entity",render:v=><span style={{fontWeight:600,color:C.navy,fontSize:13}}>{v?(v+"").slice(0,16):""}</span>},
-            {key:"detail",label:isAr?"التفاصيل":"Details",render:v=><span style={{fontSize:12,color:C.textMuted,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",display:"inline-block"}}>{v}</span>},
-          ]} rows={auditLog} />
-        )}
-      </div>}
-
-      {/* ═══ TAB 2: AML ALERTS ═══ */}
+      {/* ═══ AML ALERTS ═══ */}
       {tab==="aml"&&<div>
         {/* Filters */}
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
@@ -5829,7 +5804,7 @@ const MODULES = [
   {id:"reports",label:"Reports",labelAr:"التقارير"},
   {id:"blacklist",label:"Blacklist",labelAr:"القائمة السوداء"},
   {id:"blocks",label:"Blocks",labelAr:"البلوكات"},
-  {id:"auditlog",label:"Audit & AML",labelAr:"التدقيق ومكافحة غسل الأموال"},
+  {id:"auditlog",label:"AML & Compliance",labelAr:"مكافحة غسل الأموال والامتثال"},
   {id:"commcenter",label:"Communication",labelAr:"مركز الاتصالات"},
   {id:"settings",label:"Settings",labelAr:"الإعدادات"},
   {id:"health",label:"System Health",labelAr:"حالة النظام"},
@@ -8249,7 +8224,7 @@ const PAGES = [
   {id:"reports",      icon:"reports",      label:"Reports"},
   {id:"blacklist",    icon:"blacklist",    label:"Blacklist"},
   {id:"blocks",       icon:"blocks",       label:"Blocks"},
-  {id:"auditlog",     icon:"auditlog",     label:"Audit & AML"},
+  {id:"auditlog",     icon:"auditlog",     label:"AML & Compliance"},
   {id:"commcenter",   icon:"envelope",     label:"Communication"},
   {id:"usermgmt",     icon:"usersAdmin",   label:"User Management"},
   {id:"settings",     icon:"settings",     label:"Settings"},
