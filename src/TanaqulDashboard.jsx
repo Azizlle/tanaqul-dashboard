@@ -6191,33 +6191,23 @@ const AccountProfile = () => {
   useEffect(()=>{
     (async()=>{
       try{
-        // Get current admin from token
-        const token = localStorage.getItem("tanaqul_token");
-        if(token){
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          const adminId = payload.sub || payload.id;
-          // Fetch admin users list and find current
-          const r = await apiFetch("/admin/users");
-          if(r&&r.ok){
-            const d = await r.json();
-            const items = d.items||d.users||[];
-            const me = items.find(u=>String(u.id)===String(adminId)) || items.find(u=>u.email===payload.email) || items[0];
-            if(me){
-              setProfile(p=>({...p,
-                name: me.name_en||me.name||payload.email?.split("@")[0]||"Admin",
-                nameAr: me.name_ar||"",
-                email: me.email||payload.email||"",
-                role: (me.role||"viewer").replace("_"," ").replace(/\b\w/g,l=>l.toUpperCase()),
-                joined: me.created_at?me.created_at.slice(0,10):"",
-                lastLogin: me.last_login?me.last_login.slice(0,16).replace("T"," "):"",
-                phone: me.phone||"",
-                recoveryPhone: me.recovery_phone||"",
-                recoveryEmail: me.recovery_email||"",
-                twoFA: me.two_fa_enabled||false,
-                phoneVerified: !!me.phone,
-              }));
-            }
-          }
+        const r = await apiFetch("/profile");
+        if(r&&r.ok){
+          const me = await r.json();
+          setProfile(p=>({...p,
+            name: me.name_en||me.name||"Admin",
+            nameAr: me.name_ar||"",
+            email: me.email||"",
+            role: (me.role||"viewer").replace("_"," ").replace(/\b\w/g,l=>l.toUpperCase()),
+            roleAr: (me.role||"viewer")==="super_admin"?"مدير أعلى":(me.role||"viewer")==="admin"?"مدير":"مشاهد",
+            joined: me.created_at?(me.created_at+"").slice(0,10):"",
+            lastLogin: me.last_login?(me.last_login+"").slice(0,16).replace("T"," "):"",
+            phone: me.phone||me.recovery_phone||"",
+            recoveryPhone: me.recovery_phone||"",
+            recoveryEmail: me.recovery_email||"",
+            twoFA: me.two_fa_enabled||false,
+            phoneVerified: !!(me.phone||me.recovery_phone),
+          }));
         }
       }catch(e){}
       setLoading(false);
