@@ -174,7 +174,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="pt"><div class="ptt" data-en="⛓ Block Progress" data-ar="⛓ تقدم البلوك">⛓ Block Progress</div><div class="nb"><div class="nd"></div><span data-en="Active" data-ar="نشط">Active</span></div></div>
       <div class="pr">
         <div class="pi"><label data-en="SIZE" data-ar="الحجم">SIZE</label><div class="pv"><span id="pS" class="m">0</span> MB <span>/ 1 MB</span></div><div class="bb"><div class="bf bsz" id="pSB" style="width:0%"></div></div></div>
-        <div class="pi"><label data-en="TIME" data-ar="الوقت">TIME</label><div class="pv"><span id="pT" class="m">0</span>h <span>/ 24h</span></div><div class="bb"><div class="bf btm" id="pTB" style="width:0%"></div></div></div>
+        <div class="pi"><label data-en="NEXT BLOCK" data-ar="البلوك التالي">NEXT BLOCK</label><div class="pv"><span id="pT" class="m">0</span>h <span data-en="to midnight AST" data-ar="حتى منتصف الليل">to midnight AST</span></div><div class="bb"><div class="bf btm" id="pTB" style="width:0%"></div></div></div>
       </div>
       <div class="pf"><span><span id="pP" class="m">0</span> <span data-en="pending" data-ar="معلقة">pending</span></span><span class="sts sts-waiting" id="pSt">WAITING</span></div>
     </div>
@@ -264,25 +264,21 @@ async function loadStats(){
 
 async function loadProg(){
   const d=await api('/progress');if(!d)return;
-  // Handle both old format (size_mb/hours/pending) and new format (pending_size_mb/hours_since_last_block/pending_transactions)
-  const sizeMb=d.size_mb||d.pending_size_mb||0;
-  const hours=d.hours||d.hours_since_last_block||0;
-  const pending=d.pending||d.pending_transactions||d.total_pending||0;
-  const maxSize=d.max_size_mb||d.trigger_settings?.size_mb||1;
-  const maxHours=d.max_hours||d.trigger_settings?.hours||24;
-  
+  const sizeMb=d.pending_size_mb||0;
+  const hoursTo=d.hours_to_next_trigger||0;
+  const pending=d.pending_transactions||0;
+  const maxSize=d.trigger_settings?.size_mb||1;
+
   document.getElementById('pS').textContent=sizeMb;
-  document.getElementById('pT').textContent=hours;
+  document.getElementById('pT').textContent=hoursTo;
   document.getElementById('pP').textContent=pending;
   document.getElementById('pSB').style.width=Math.min(100,(sizeMb/maxSize)*100)+'%';
-  document.getElementById('pTB').style.width=Math.min(100,(hours/maxHours)*100)+'%';
-  
-  let status=d.status||'waiting';
-  if(!d.status){
-    if(d.should_trigger)status='ready';
-    else if(pending>0)status='accumulating';
-    else status='waiting';
-  }
+  // Time bar: fills up as midnight approaches (24h - hoursTo) / 24
+  document.getElementById('pTB').style.width=Math.min(100,((24-hoursTo)/24)*100)+'%';
+
+  let status='waiting';
+  if(d.should_trigger)status='ready';
+  else if(pending>0)status='accumulating';
   const s=document.getElementById('pSt');
   s.textContent=status.toUpperCase();
   s.className='sts sts-'+status;
