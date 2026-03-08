@@ -5897,6 +5897,17 @@ const UserManagement = () => {
     "bar.status_change":"#C4956A","BID_DISABLE":"#D4943A","BID_ENABLE":C.greenSolid,
     "auth.login":C.blueSolid,"auth.logout":"#8C7E6F","auth.2fa_setup":C.purpleSolid,
     "appointment.otp_generate":C.blueSolid,"appointment.otp_verified":C.greenSolid,"appointment.otp_fail":"#C85C3E",
+    // Frontend local audit codes
+    "SUSPEND":"#D4943A","BAN":"#C85C3E","ACTIVATE":C.greenSolid,"UNBAN":C.greenSolid,
+    "CANCEL_APPOINTMENT":"#C85C3E","NO_SHOW":"#D4943A","RESCHEDULE":C.purpleSolid,
+    "COMPLETE_APPOINTMENT":C.greenSolid,"START_APPOINTMENT":C.blueSolid,
+    "WITHDRAWAL_APPROVE":C.greenSolid,"WITHDRAWAL_REJECT":"#C85C3E","WITHDRAWAL_PROCESSED":C.greenSolid,"WITHDRAWAL_NOTIFY":C.blueSolid,
+    "BLACKLIST_ADD":"#C85C3E","BLACKLIST_REMOVE":C.greenSolid,
+    "STABILIZER_ON":C.greenSolid,"STABILIZER_OFF":"#D4943A","STABILIZER_INJECT":C.blueSolid,
+    "MARKET_MAKER_ORDER":C.blueSolid,
+    "block.create":C.greenSolid,"block.auto_create":C.greenSolid,
+    "aml.scan":C.purpleSolid,"aml.cma_report":C.purpleSolid,
+    "token.mint":C.greenSolid,"token.burn":"#C85C3E",
   };
   const ACTION_LABELS = {
     "auth.login":{en:"Login",ar:"تسجيل دخول"},
@@ -5940,6 +5951,34 @@ const UserManagement = () => {
     "admin.delete":{en:"Delete Admin",ar:"حذف مسؤول"},
     "admin.role_change":{en:"Change Role",ar:"تغيير الدور"},
     "settings.update":{en:"Update Settings",ar:"تحديث الإعدادات"},
+    // Frontend local audit codes (UPPER_CASE)
+    "SUSPEND":{en:"Suspend Investor",ar:"تعليق مستثمر"},
+    "BAN":{en:"Ban Investor",ar:"حظر مستثمر"},
+    "ACTIVATE":{en:"Activate Investor",ar:"تفعيل مستثمر"},
+    "UNBAN":{en:"Unban Investor",ar:"رفع حظر مستثمر"},
+    "CANCEL_APPOINTMENT":{en:"Cancel Appointment",ar:"إلغاء موعد"},
+    "NO_SHOW":{en:"No Show",ar:"عدم حضور"},
+    "RESCHEDULE":{en:"Reschedule",ar:"إعادة جدولة"},
+    "COMPLETE_APPOINTMENT":{en:"Complete Appointment",ar:"إتمام موعد"},
+    "START_APPOINTMENT":{en:"Start Appointment",ar:"بدء موعد"},
+    "WITHDRAWAL_APPROVE":{en:"Approve Withdrawal",ar:"موافقة سحب"},
+    "WITHDRAWAL_REJECT":{en:"Reject Withdrawal",ar:"رفض سحب"},
+    "WITHDRAWAL_PROCESSED":{en:"Process Withdrawal",ar:"معالجة سحب"},
+    "WITHDRAWAL_NOTIFY":{en:"Notify Withdrawal",ar:"إشعار سحب"},
+    "BLACKLIST_ADD":{en:"Add to Blacklist",ar:"إضافة للقائمة السوداء"},
+    "BLACKLIST_REMOVE":{en:"Remove from Blacklist",ar:"إزالة من القائمة السوداء"},
+    "STABILIZER_ON":{en:"Stabilizer Enabled",ar:"تفعيل المثبّت"},
+    "STABILIZER_OFF":{en:"Stabilizer Disabled",ar:"تعطيل المثبّت"},
+    "STABILIZER_INJECT":{en:"Stabilizer Inject",ar:"حقن المثبّت"},
+    "MARKET_MAKER_ORDER":{en:"Market Maker Order",ar:"أمر صانع السوق"},
+    "block.create":{en:"Create Block",ar:"إنشاء بلوك"},
+    "block.auto_create":{en:"Auto Create Block",ar:"إنشاء بلوك تلقائي"},
+    "block.split_updated":{en:"Update Commission Split",ar:"تحديث توزيع العمولة"},
+    "block.trigger_updated":{en:"Update Trigger Settings",ar:"تحديث إعدادات التشغيل"},
+    "aml.scan":{en:"AML Scan",ar:"فحص مكافحة غسل الأموال"},
+    "aml.cma_report":{en:"CMA Report",ar:"تقرير هيئة السوق المالية"},
+    "token.mint":{en:"Mint Tokens",ar:"سكّ رموز"},
+    "token.burn":{en:"Burn Tokens",ar:"حرق رموز"},
   };
   const actionLabel = (code) => {
     const l = ACTION_LABELS[code];
@@ -6236,11 +6275,15 @@ const UserManagement = () => {
           u._apiLogLoaded = true;
           apiFetch("/audit-logs?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
             if(d&&d.items){
-              const userLogs = d.items.filter(a=>a.admin_id===u.id||a.entity_id===u.id).map(a=>({
-                date:a.created_at?a.created_at.slice(0,16).replace("T"," "):"",
-                action:a.action||"", actionAr:a.action||"",
-                detail:a.details||a.entity_type||"", ip:"—",
-              }));
+              const userLogs = d.items.filter(a=>a.admin_id===u.id||a.entity_id===u.id).map(a=>{
+                const lbl = ACTION_LABELS[a.action];
+                return {
+                  date:a.created_at?a.created_at.slice(0,16).replace("T"," "):"",
+                  action:lbl?lbl.en:(a.action||"").replace(/[._]/g," ").replace(/\b\w/g,c=>c.toUpperCase()),
+                  actionAr:lbl?lbl.ar:(a.action||"").replace(/[._]/g," ").replace(/\b\w/g,c=>c.toUpperCase()),
+                  detail:a.details||a.entity_type||"", ip:"—",
+                };
+              });
               if(userLogs.length>0){
                 u._apiLog = [...userLogs,...(u.log||[])];
                 setActivityModal({...u});
@@ -6278,7 +6321,7 @@ const UserManagement = () => {
                       border:`1px solid ${logFilter===f?C.gold:C.border}`,
                       background:logFilter===f?C.goldLight:C.white,
                       color:logFilter===f?C.goldDim:C.textMuted}}>
-                    {f==="ALL"?(isAr?"الكل":"All"):f}
+                    {f==="ALL"?(isAr?"الكل":"All"):(isAr?(ACTION_LABELS[f]?.ar||f):( ACTION_LABELS[f]?.en||f))}
                   </button>
                 ))}
               </div>
