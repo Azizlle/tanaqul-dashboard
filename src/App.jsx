@@ -52,7 +52,8 @@ const apiLogin = async (email, password, totp_code) => {
       return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
     }
     localStorage.setItem("tanaqul_token", data.access_token);
-      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "super_admin"}));
+      const adm = data.admin || {};
+      localStorage.setItem("tanaqul_admin", JSON.stringify({name: adm.name_en || adm.email || data.email || "Admin", email: adm.email || data.email || "", role: adm.role || data.role || "super_admin"}));
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
   }

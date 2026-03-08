@@ -52,7 +52,8 @@ const apiLogin = async (email, password, totp_code) => {
       return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
     }
     localStorage.setItem("tanaqul_token", data.access_token);
-      localStorage.setItem("tanaqul_admin", JSON.stringify({name: data.name || data.email || "Admin", email: data.email || "", role: data.role || "super_admin"}));
+      const adm = data.admin || {};
+      localStorage.setItem("tanaqul_admin", JSON.stringify({name: adm.name_en || adm.email || data.email || "Admin", email: adm.email || data.email || "", role: adm.role || data.role || "super_admin"}));
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
   }
@@ -2939,7 +2940,7 @@ const Blocks = () => {
   const triggerText = triggerSettings ? `${triggerSettings.size_mb}MB or ${triggerSettings.hours}hrs` : "1MB or 24hrs";
   // Combine matches + blockchain events for TRANSACTIONS tab
   const matchRows = matches.map(m=>({id:m.id,investor:m.filledFor||"—",type:"TRADE",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),status:"COMPLETED",date:m.date}));
-  const eventRows = ledgerEvents.map(e=>({id:e.tx_hash||e.id||"—",investor:e.vault_key||"—",type:e.event_type||"SYSTEM",metal:e.metal||"—",metalAmt:String(e.sar_amount||0),commission:"0",status:e.event_type==="ONBOARD"?"ACTIVE":(e.status||"PENDING"),date:e.created_at?(e.created_at+"").slice(0,16).replace("T"," "):"—"}));
+  const eventRows = ledgerEvents.map(e=>({id:e.tx_hash||e.id||"—",investor:e.vault_key||"—",type:e.tx_type||e.event_type||"SYSTEM",metal:e.metal||"—",metalAmt:String(e.sar_amount||0),commission:"0",status:e.tx_type==="ONBOARD"||e.event_type==="ONBOARD"?"ACTIVE":(e.status||"PENDING"),date:e.created_at?(e.created_at+"").slice(0,16).replace("T"," "):"—"}));
   const blockTxRows = [...matchRows,...eventRows];
   return (
     <div>

@@ -619,7 +619,7 @@ async function loadLedger(page) {
   if (!items.length) { tbody.innerHTML = empty('📋', 'No events recorded yet', 6); return; }
 
   tbody.innerHTML = items.map(x => {
-    const tp = x.event_type || 'SYSTEM';
+    const tp = x.tx_type || 'SYSTEM';
     const detail = x.details || '—';
     const blockNum = x.block_number ? '#' + x.block_number : '—';
     return `<tr>

@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/explorer", "destination": "/explorer.html" },
-    { "source": "/((?!explorer\\.html).*)", "destination": "/index.html" }
+    { "source": "/explorer-ar", "destination": "/explorer-ar.html" },
+    { "source": "/((?!explorer).*)", "destination": "/index.html" }
   ]
 }
