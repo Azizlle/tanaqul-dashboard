@@ -698,6 +698,7 @@ async function loadTokenSupply() {
 // — Navigation
 function showTab(tab) {
   currentTab = tab;
+  window.location.hash = tab;
   ["blocks","transactions","validators","tokens"].forEach(t => {
     document.getElementById("tab-"+t).style.display = t===tab?"block":"none";
     const nav = document.getElementById("nav-"+t);
@@ -725,6 +726,14 @@ loadBlocks(1);
 loadProgress();
 setInterval(loadStats, 30000);
 setInterval(loadProgress, 30000);
+
+// Restore tab from URL hash on load
+(function() {
+  const hash = window.location.hash.replace('#', '');
+  if (hash && ["blocks","transactions","validators","tokens"].includes(hash)) {
+    showTab(hash);
+  }
+})();
 </script>
 </body>
 </html>

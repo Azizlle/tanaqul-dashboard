@@ -458,7 +458,9 @@ function go(view, el) {
   document.querySelectorAll('[id^="v-"]').forEach(e => e.style.display = 'none');
   document.getElementById('v-' + view).style.display = '';
   document.querySelectorAll('.tb').forEach(t => t.classList.remove('on'));
-  el.classList.add('on');
+  if (el) el.classList.add('on');
+
+  window.location.hash = view;
 
   if (view === 'blocks') loadAllBlocks();
   if (view === 'tx') loadLedger();
@@ -753,6 +755,15 @@ loadStats();
 loadProgress();
 loadRecentBlocks();
 setInterval(() => { loadStats(); loadProgress(); }, 30000);
+
+// Restore tab from URL hash on load
+(function() {
+  const hash = window.location.hash.replace('#', '');
+  const tabMap = { main: 't0', blocks: 't1', tx: 't2', validators: 't3' };
+  if (hash && tabMap[hash]) {
+    go(hash, document.getElementById(tabMap[hash]));
+  }
+})();
 </script>
 </body>
 </html>
