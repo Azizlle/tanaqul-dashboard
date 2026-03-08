@@ -3123,6 +3123,34 @@ const AuditLog = () => {
       log:[],
     },
   ]);
+  // Persist compTasks to localStorage
+  useEffect(()=>{
+    try{localStorage.setItem("tanaqul_comp_tasks",JSON.stringify(compTasks));}catch(e){}
+  },[compTasks]);
+  // Restore compTasks from localStorage on mount
+  useEffect(()=>{
+    try{
+      const saved=JSON.parse(localStorage.getItem("tanaqul_comp_tasks")||"null");
+      if(saved&&Array.isArray(saved)&&saved.length){
+        setCompTasks(prev=>prev.map(defaultTask=>{
+          const s=saved.find(x=>x.id===defaultTask.id);
+          if(!s) return defaultTask;
+          return {...defaultTask, status:s.status, dueDate:s.dueDate, steps:s.steps||defaultTask.steps, log:s.log||[], completedAt:s.completedAt||null};
+        }));
+      }
+    }catch(e){}
+  },[]);
+  // Auto-reset expired cycles to PENDING
+  useEffect(()=>{
+    const now=new Date();
+    setCompTasks(prev=>prev.map(t=>{
+      if(t.status==="COMPLETED"&&t.completedAt&&new Date(t.dueDate)<now){
+        return {...t, status:"PENDING", completedAt:null, steps:t.steps.map(s=>({...s,done:false})),
+          log:[...t.log,{date:now.toISOString(),action:"Cycle expired — auto-reset to PENDING",by:"System"}]};
+      }
+      return t;
+    }));
+  },[]);
   const [wfModal, setWfModal] = useState(null); // task id
   const [wfNote, setWfNote] = useState("");
   const [sendConfirm, setSendConfirm] = useState(null); // {type:"SAR"|"CMA", data:{...}}
@@ -3860,10 +3888,10 @@ const AuditLog = () => {
             </div>
             <div style={{display:"flex",gap:8}}>
               {[
-                {label:isAr?"معلقة":"Pending",count:compTasks.filter(t=>t.status==="PENDING").length,color:"#D4943A",bg:"#6B4D2D"},
-                {label:isAr?"جاري":"In Progress",count:compTasks.filter(t=>t.status==="IN_PROGRESS").length,color:"#C4956A",bg:"#6B4D2D"},
-                {label:isAr?"متأخرة":"Overdue",count:compTasks.filter(t=>t.status==="OVERDUE").length,color:"#C85C3E",bg:"#6B2D1E"},
-                {label:isAr?"مكتملة":"Completed",count:compTasks.filter(t=>t.status==="COMPLETED").length,color:"#6B9080",bg:"#2D5443"},
+                {label:isAr?"معلقة":"Pending",count:compTasks.filter(t=>t.status==="PENDING"||t.status==="IN_PROGRESS").length,color:"#D4943A",bg:"#6B4D2D"},
+                {label:isAr?"نشطة ✓":"Active ✓",count:compTasks.filter(t=>t.status==="COMPLETED"&&t.completedAt&&new Date(t.dueDate)>new Date()).length,color:"#6B9080",bg:"#2D5443"},
+                {label:isAr?"متأخرة":"Overdue",count:compTasks.filter(t=>(t.status!=="COMPLETED"&&new Date(t.dueDate)<new Date())||(t.status==="COMPLETED"&&t.completedAt&&new Date(t.dueDate)<new Date())).length,color:"#C85C3E",bg:"#6B2D1E"},
+                {label:isAr?"مكتملة":"Done",count:compTasks.filter(t=>t.status==="COMPLETED").length,color:"#6B9080",bg:"#2D5443"},
               ].map((s,i)=>(
                 <div key={i} style={{background:s.bg,borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:60}}>
                   <p style={{fontSize:20,fontWeight:900,color:s.color}}>{s.count}</p>
@@ -3880,13 +3908,27 @@ const AuditLog = () => {
             const stepsTotal = task.steps.length;
             const stepsDone = task.steps.filter(s=>s.done).length;
             const pct = stepsTotal>0?Math.round(stepsDone/stepsTotal*100):0;
-            const overdue = new Date(task.dueDate) < new Date() && task.status!=="COMPLETED";
+            const now = new Date();
+            const dueDate = new Date(task.dueDate);
+            const daysLeft = Math.ceil((dueDate - now) / 86400000);
+            const overdue = dueDate < now && task.status!=="COMPLETED";
+            // Completed tasks with future due date: stay green (cycle active)
+            const cycleActive = task.status==="COMPLETED" && task.completedAt && daysLeft > 0;
+            // Completed cycle approaching due: warn 30 days before
+            const cycleWarning = cycleActive && daysLeft <= 30;
+            const effectiveStatus = cycleWarning ? "CYCLE_DUE_SOON" :
+              cycleActive ? "CYCLE_ACTIVE" :
+              (task.status==="COMPLETED" && dueDate < now && task.completedAt) ? "PENDING" :
+              overdue ? "OVERDUE" : task.status;
+            // Auto-transition: if cycle expired, reset to PENDING
             const statusCfg = {
               PENDING:{color:"#D4943A",bg:"#FDF4EC",label:isAr?"معلق":"PENDING",icon:"⏳"},
               IN_PROGRESS:{color:"#C4956A",bg:"#FDF4EC",label:isAr?"جاري":"IN PROGRESS",icon:"🔄"},
               COMPLETED:{color:C.greenSolid,bg:"#EFF5F2",label:isAr?"مكتمل":"COMPLETED",icon:"✅"},
+              CYCLE_ACTIVE:{color:C.greenSolid,bg:"#EFF5F2",label:isAr?"دورة نشطة ✓":"CYCLE ACTIVE ✓",icon:"🟢"},
+              CYCLE_DUE_SOON:{color:"#D4943A",bg:"#FDF4EC",label:isAr?`مستحق خلال ${daysLeft} يوم`:`DUE IN ${daysLeft}d`,icon:"⚠️"},
               OVERDUE:{color:"#C85C3E",bg:C.redBg,label:isAr?"متأخر":"OVERDUE",icon:"🚨"},
-            }[overdue&&task.status!=="COMPLETED"?"OVERDUE":task.status];
+            }[effectiveStatus];
 
             return (
               <div key={task.id} style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",
@@ -3905,8 +3947,9 @@ const AuditLog = () => {
                     <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{isAr?task.detailAr:task.detail}</p>
                   </div>
                   <div style={{textAlign:"end",flexShrink:0}}>
-                    <p style={{fontSize:11,fontWeight:600,color:C.textMuted}}>{isAr?"الموعد النهائي":"DUE DATE"}</p>
-                    <p style={{fontSize:15,fontWeight:700,color:overdue&&task.status!=="COMPLETED"?"#C85C3E":C.navy}}>{task.dueDate}</p>
+                    <p style={{fontSize:11,fontWeight:600,color:C.textMuted}}>{cycleActive?(isAr?"الدورة القادمة":"NEXT CYCLE"):(isAr?"الموعد النهائي":"DUE DATE")}</p>
+                    <p style={{fontSize:15,fontWeight:700,color:effectiveStatus==="OVERDUE"?"#C85C3E":effectiveStatus==="CYCLE_DUE_SOON"?"#D4943A":cycleActive?C.greenSolid:C.navy}}>{task.dueDate}</p>
+                    {cycleActive&&<p style={{fontSize:11,fontWeight:700,color:cycleWarning?"#D4943A":C.greenSolid,marginTop:2}}>{daysLeft} {isAr?"يوم متبقي":"days left"}</p>}
                     <p style={{fontSize:11,color:C.textMuted,marginTop:2}}>{isAr?"المسؤول":"Assignee"}: <b>{task.assignee}</b></p>
                   </div>
                 </div>
@@ -3925,8 +3968,9 @@ const AuditLog = () => {
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
                     <p style={{fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:2}}>{isAr?"خطوات سير العمل":"WORKFLOW STEPS"} ({isAr?task.frequencyAr:task.frequency})</p>
                     {task.steps.map(step=>(
-                      <div key={step.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",cursor:"pointer"}}
+                      <div key={step.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",cursor:cycleActive?"default":"pointer"}}
                         onClick={()=>{
+                          if(cycleActive) return;
                           if(task.status==="COMPLETED") return;
                           setCompTasks(prev=>prev.map(t=>t.id===task.id?{...t,
                             steps:t.steps.map(s=>s.id===step.id?{...s,done:!s.done}:s),
@@ -3950,18 +3994,27 @@ const AuditLog = () => {
                     {task.status!=="COMPLETED"&&<Btn small variant="teal" onClick={()=>{
                       const allDone = task.steps.every(s=>s.done);
                       if(!allDone){showToast(isAr?"⚠️ أكمل جميع الخطوات أولاً":"⚠️ Complete all steps first");return;}
+                      const cycleMonths = parseInt(reportingConfig?.complianceCycle||"6");
+                      const nextDue = new Date();
+                      nextDue.setMonth(nextDue.getMonth() + cycleMonths);
                       setCompTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:"COMPLETED",
-                        log:[...t.log,{date:new Date().toISOString(),action:"Task marked COMPLETED",by:"Admin"}]
+                        completedAt:new Date().toISOString(),
+                        dueDate:nextDue.toISOString().slice(0,10),
+                        log:[...t.log,{date:new Date().toISOString(),action:`Task completed — next cycle due ${nextDue.toISOString().slice(0,10)} (${cycleMonths} months)`,by:"Admin"}]
                       }:t));
-                      showToast(isAr?"✅ تم إكمال المهمة":"✅ Task completed");
+                      showToast(isAr?`✅ تم إكمال المهمة — الدورة القادمة بعد ${cycleMonths} أشهر`:`✅ Task completed — next cycle in ${cycleMonths} months`);
                     }}>{isAr?"تأكيد الإكمال":"Mark Complete"}</Btn>}
                     {task.status==="COMPLETED"&&<Btn small variant="outline" onClick={()=>{
-                      setCompTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:"PENDING",
+                      const cycleMonths = parseInt(reportingConfig?.complianceCycle||"6");
+                      const nextDue = new Date();
+                      nextDue.setMonth(nextDue.getMonth() + cycleMonths);
+                      setCompTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:"COMPLETED",
                         steps:t.steps.map(s=>({...s,done:false})),
-                        dueDate:new Date(Date.now()+(task.id==="SANC-01"?1:task.id==="CMA-NOTIFY"?3:task.id==="PEP-01"?7:30)*86400000).toISOString().slice(0,10),
-                        log:[...t.log,{date:new Date().toISOString(),action:"Task reset — new cycle started",by:"Admin"}]
+                        completedAt:new Date().toISOString(),
+                        dueDate:nextDue.toISOString().slice(0,10),
+                        log:[...t.log,{date:new Date().toISOString(),action:`New cycle started — due in ${cycleMonths} months (${nextDue.toISOString().slice(0,10)})`,by:"Admin"}]
                       }:t));
-                      showToast(isAr?"🔄 تم إعادة تعيين الدورة":"🔄 Cycle reset — new due date set");
+                      showToast(isAr?`🔄 دورة جديدة — الموعد النهائي بعد ${cycleMonths} أشهر`:`🔄 New cycle — due in ${cycleMonths} months`);
                     }}>{isAr?"بدء دورة جديدة":"Start New Cycle"}</Btn>}
                     <Btn small variant="outline" onClick={()=>setWfModal(wfModal===task.id?null:task.id)}>
                       {isAr?"السجل والملاحظات":"Log & Notes"} ({task.log.length})
@@ -8241,6 +8294,24 @@ const Settings = ({ onLangChange }) => {
       {tab==="NOTIFICATIONS"&&<NotificationSettings />}
 
       {tab==="REPORTING"&&<div>
+        {/* Compliance Review Cycle */}
+        <G title={isAr?"دورة المراجعة الدورية للامتثال":"Compliance Review Cycle"}>
+          <div style={{background:"#EFF5F2",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
+            {Icons.shield(16,C.greenSolid)}<p style={{fontSize:13,color:"#3D6B56",fontWeight:500}}>{isAr?"حدد فترة دورة المراجعة للمهام اليدوية. عند بدء دورة جديدة، يُحتسب الموعد النهائي تلقائياً.":"Set the review cycle period for manual compliance tasks. When starting a new cycle, the due date is calculated automatically."}</p>
+          </div>
+          <Sel label={isAr?"فترة الدورة":"Cycle Period"} value={reportingConfig.complianceCycle||"6"} onChange={v=>setReportingConfig(p=>({...p,complianceCycle:v}))} options={[{value:"3",label:isAr?"3 أشهر":"3 Months"},{value:"6",label:isAr?"6 أشهر":"6 Months"},{value:"12",label:isAr?"12 شهراً":"12 Months"}]} />
+          <div style={{display:"flex",gap:10,marginTop:8,flexWrap:"wrap"}}>
+            {[{v:"3",l:isAr?"ربع سنوي":"Quarterly"},{v:"6",l:isAr?"نصف سنوي":"Semi-Annual"},{v:"12",l:isAr?"سنوي":"Annual"}].map(o=>(
+              <div key={o.v} onClick={()=>setReportingConfig(p=>({...p,complianceCycle:o.v}))}
+                style={{flex:1,minWidth:100,padding:"14px 16px",borderRadius:12,border:`2px solid ${reportingConfig.complianceCycle===o.v?C.greenSolid:C.border}`,
+                  background:reportingConfig.complianceCycle===o.v?C.greenBg:C.white,cursor:"pointer",textAlign:"center",transition:"all 0.15s"}}>
+                <p style={{fontSize:20,fontWeight:900,color:reportingConfig.complianceCycle===o.v?C.greenSolid:C.textMuted}}>{o.v}</p>
+                <p style={{fontSize:12,fontWeight:600,color:reportingConfig.complianceCycle===o.v?C.greenSolid:C.textMuted}}>{o.l}</p>
+              </div>
+            ))}
+          </div>
+        </G>
+
         {/* SAR Reporting Config */}
         <G title={isAr?"إعدادات بلاغات النشاط المشبوه — ساما":"SAR Reporting — SAMA GoAML"}>
           <div style={{background:"#FDF4EC",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
@@ -9864,7 +9935,19 @@ export default function App() {
     companyName:"Tanaqul Precious Metals Trading Co.", companyNameAr:"شركة تناقل لتجارة المعادن الثمينة",
     companyLicense:"SAMA License No. 12345", companyLicenseAr:"ترخيص ساما رقم ١٢٣٤٥",
     companyAddress:"King Fahd Road, Riyadh 12345, Saudi Arabia", companyAddressAr:"طريق الملك فهد، الرياض ١٢٣٤٥، المملكة العربية السعودية",
+    complianceCycle:"6",
   });
+  // Persist reportingConfig to localStorage
+  useEffect(()=>{
+    try{localStorage.setItem("tanaqul_reporting_config",JSON.stringify(reportingConfig));}catch(e){}
+  },[reportingConfig]);
+  // Restore reportingConfig on mount
+  useEffect(()=>{
+    try{
+      const saved=JSON.parse(localStorage.getItem("tanaqul_reporting_config")||"null");
+      if(saved) setReportingConfig(p=>({...p,...saved}));
+    }catch(e){}
+  },[]);
 
   // ── Restore persisted settings on mount ──────────────────────────────────
   // ── Dark Mode — sync C object and persist ──────────────────────────────
