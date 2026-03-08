@@ -884,9 +884,9 @@ async function fetchFromProvider(providerId, apiKey) {
     // Bloomberg B-PIPE: uses BLPAPI SDK / WebSocket — not a simple REST call.
     // In production, route through your backend: POST /api/market/prices
     // Backend holds Bloomberg credentials securely.
-    const r = await fetch("/api/market/prices", {
+    const r = await apiFetch("/api/market/prices", {
       method: "POST",
-      headers: { "Content-Type":"application/json", "x-bloomberg-key": apiKey },
+      headers: { "x-bloomberg-key": apiKey },
       body: JSON.stringify({ symbols: ["XAU","XAG","XPT"], currency:"SAR" })
     });
     if (!r.ok) throw new Error(`Bloomberg backend HTTP ${r.status}`);
@@ -1902,7 +1902,7 @@ const Appointments = () => {
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
             <Btn variant="danger" onClick={async ()=>{
-              try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Cancelled by admin"})}); } catch(e) {}
+              try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Cancelled by admin"})}); } catch(e) { console.error("Cancel appointment failed:", e); }
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Refresh appointments and investors from API
               try { const ar=await apiFetch("/appointments"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
@@ -2211,15 +2211,15 @@ const Financials = () => {
 
   const confirmWithdrawal = async () => {
     const {type,row} = wModal;
-    if(type==="approve" && (!row.iban || row.iban==="—")) { showFinToast("⚠️ IBAN is required before approving a withdrawal"); return; }
-    if(type==="approve" && !/^SA\d{22}$/.test(row.iban.replace(/\s/g,""))) { showFinToast("⚠️ Invalid IBAN format — Saudi IBAN must start with SA followed by 22 digits"); return; }
+    if(type==="approve" && (!row.iban || row.iban==="—")) { showFinToast(isAr?"⚠️ مطلوب رقم الآيبان قبل الموافقة على السحب":"⚠️ IBAN is required before approving a withdrawal"); return; }
+    if(type==="approve" && !/^SA\d{22}$/.test(row.iban.replace(/\s/g,""))) { showFinToast(isAr?"⚠️ صيغة الآيبان غير صحيحة — يجب أن يبدأ بـ SA يليه 22 رقماً":"⚠️ Invalid IBAN format — Saudi IBAN must start with SA followed by 22 digits"); return; }
     try {
       const actionMap = {approve:"approve",reject:"reject",processed:"process"};
       if(actionMap[type]) {
         const uid = row._uuid || row.id;
         await apiFetch("/withdrawals/"+uid+"/action", {method:"POST", body:JSON.stringify({action:actionMap[type], reason:wReason||undefined})});
       }
-    } catch(e) { showFinToast("⚠️ Backend error — changes saved locally only"); }
+    } catch(e) { showFinToast(isAr?"⚠️ خطأ في الخادم — تم حفظ التغييرات محلياً فقط":"⚠️ Backend error — changes saved locally only"); }
     setWithdrawals(prev=>prev.map(w=>{
       if(w.id!==row.id) return w;
       if(type==="approve")   return {...w,status:"APPROVED",processed:new Date().toISOString().slice(0,10)};
@@ -2230,7 +2230,7 @@ const Financials = () => {
     addAudit("WITHDRAWAL_"+type.toUpperCase(), row.id, (row.investor||"")+" — SAR "+row.amount);
     // Refresh withdrawals from API
     try { const wr=await apiFetch("/withdrawals"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),investor:w.investor_name||w.national_id||"",bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requestedAt:w.requested_at||"",processedAt:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
-    const msgs = {approve:"✅ Withdrawal approved",reject:"✅ Withdrawal rejected",processed:"✅ Marked as processed",notify:"✅ Notification sent"};
+    const msgs = isAr?{approve:"✅ تمت الموافقة على السحب",reject:"✅ تم رفض السحب",processed:"✅ تم تحديده كمعالج",notify:"✅ تم إرسال الإشعار"}:{approve:"✅ Withdrawal approved",reject:"✅ Withdrawal rejected",processed:"✅ Marked as processed",notify:"✅ Notification sent"};
     showFinToast(msgs[type]);
     setWModal(null);
   };
@@ -3165,7 +3165,7 @@ const AuditLog = () => {
       `المخالفة المشتبه بها:\n`+
       `قام الشخص المعني ${alert.name} (رقم الهوية: ${alert.nid}) بسلوك تداولي يتوافق مع التلاعب بالسوق. `+
       (p ? `ملف التداول: ${(p.totalVolume||0).toLocaleString()} ريال سعودي إجمالي حجم التداول، ${p.ordCount} أمر، ${p.txCount} معاملة منفذة. `:"") +
-      `الخطورة: ${alert.level}.\n\n`+
+      `الخطورة: ${{CRITICAL:"حرج",HIGH:"مرتفع",MEDIUM:"متوسط",LOW:"منخفض"}[alert.level]||alert.level}.\n\n`+
       `النظام المُخالف:\n`+
       `${reg.ar}\n\n`+
       `الإجراء المتخذ:\n`+
@@ -6701,7 +6701,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
     // Search investors
     investors.forEach(inv => {
       if(results.length >= MAX) return;
-      const haystack = `${inv.nameEn} ${inv.nameAr||""} ${inv.nationalId} ${inv.vaultKey} ${inv.status} ${inv.email||""}`.toLowerCase();
+      const haystack = `${inv.nameEn||""} ${inv.nameAr||""} ${inv.nationalId||""} ${inv.vaultKey||""} ${inv.status||""} ${inv.email||""}`.toLowerCase();
       if(haystack.includes(q)) results.push({
         type:"investor",icon:"👤",label:inv.nameEn,sub:`${inv.nationalId} · ${statusText(inv.status,isAr)} · SAR ${(inv.holdingsValue||0)?.toLocaleString()||0}`,
         action:()=>{setPage("investors");setPageHint({search:inv.nationalId});onClose();}
@@ -6719,7 +6719,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
     // Search bars
     bars.forEach(bar => {
       if(results.length >= MAX) return;
-      const haystack = `${bar.id} ${bar.metal} ${bar.manufacturer||""} ${bar.status} ${bar.serial||bar.id}`.toLowerCase();
+      const haystack = `${bar.id||""} ${bar.metal||""} ${bar.manufacturer||""} ${bar.status||""} ${bar.serial||bar.id||""}`.toLowerCase();
       if(haystack.includes(q)) results.push({
         type:"bar",icon:"🏦",label:`${bar.id} — ${bar.metal} ${bar.weight||bar.weightGrams}g`,sub:`${bar.manufacturer||"—"} · ${statusText(bar.status,isAr)}`,
         action:()=>{setPage("vault");onClose();}
@@ -6728,7 +6728,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
     // Search orders
     orders.forEach(ord => {
       if(results.length >= MAX) return;
-      const haystack = `${ord.id} ${ord.side} ${ord.metal} ${ord.nationalId} ${ord.status}`.toLowerCase();
+      const haystack = `${ord.id||""} ${ord.side||""} ${ord.metal||""} ${ord.nationalId||""} ${ord.status||""}`.toLowerCase();
       if(haystack.includes(q)) results.push({
         type:"order",icon:"📋",label:`${ord.id} — ${statusText(ord.side,isAr)} ${ord.metal}`,sub:`${ord.qty}g @ SAR ${ord.price} · ${statusText(ord.status,isAr)}`,
         action:()=>{setPage("orderbook");onClose();}
@@ -6737,7 +6737,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
     // Search appointments
     appointments.forEach(apt => {
       if(results.length >= MAX) return;
-      const haystack = `${apt.id} ${apt.investorName||""} ${apt.metal||""} ${apt.type||""} ${apt.status} ${apt.date}`.toLowerCase();
+      const haystack = `${apt.id||""} ${apt.investorName||""} ${apt.metal||""} ${apt.type||""} ${apt.status||""} ${apt.date||""}`.toLowerCase();
       if(haystack.includes(q)) results.push({
         type:"appointment",icon:"📅",label:`${apt.id} — ${apt.investorName||apt.nationalId}`,sub:`${statusText(apt.type,isAr)||""} ${apt.metal||""} · ${apt.date} · ${statusText(apt.status,isAr)}`,
         action:()=>{setPage("appointments");onClose();}
@@ -9159,7 +9159,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
     if(time && time >= "23:50" && o.status !== "CANCELLED") {
       push("CMA-08","MEDIUM",o.nationalId,o.investor,
         "Near-Close Order (Art 3.b.6 Review)",
-        `Order ${o.id} placed at ${time} — ${o.side} ${o.qty}g ${o.metal} @ SAR ${o.price}. Late orders may affect closing price. Review under Art 3(b)(6).`,
+        isAr?`أمر ${o.id} تم وضعه في ${time} — ${statusText(o.side,true)} ${o.qty}غ ${o.metal} @ ${o.price} ريال. قد تؤثر الطلبات المتأخرة على سعر الإغلاق.`:`Order ${o.id} placed at ${time} — ${o.side} ${o.qty}g ${o.metal} @ SAR ${o.price}. Late orders may affect closing price. Review under Art 3(b)(6).`,
         "Art 3(b)(6)","CLOSING_MANIP");
     }
   });
@@ -9226,7 +9226,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
         const totalQty = sameSide.reduce((a,o)=>a+o.qty,0);
         push("CMA-11","HIGH",nid,inv.nameEn,
           "Momentum Ignition (Art 3.b.4)",
-          `${sameSide.length} ${sameSide[0].side} orders in last hour for total ${totalQty}g. Aggressive same-direction ordering may be intended to ignite a price trend.`,
+          isAr?`${sameSide.length} أمر ${statusText(sameSide[0].side,true)} في الساعة الأخيرة بإجمالي ${totalQty}غ. قد يهدف التداول العدواني في اتجاه واحد إلى إشعال اتجاه سعري.`:`${sameSide.length} ${sameSide[0].side} orders in last hour for total ${totalQty}g. Aggressive same-direction ordering may be intended to ignite a price trend.`,
           "Art 3(b)(4)","MOMENTUM");
       }
     }
