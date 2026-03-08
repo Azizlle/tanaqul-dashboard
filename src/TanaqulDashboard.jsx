@@ -5804,9 +5804,9 @@ const BidTogglePanel = () => {
 // ─── User Management Module ─────────────────────────────────────────────────
 const ROLES = [
   {id:"SUPER_ADMIN",label:"Super Admin",labelAr:"مسؤول أعلى",color:"#C85C3E",desc:"Full platform access — all modules, settings, and user management",descAr:"صلاحيات كاملة — جميع الوحدات والإعدادات وإدارة المستخدمين"},
-  {id:"COMPLIANCE",label:"Compliance Officer",labelAr:"مسؤول الامتثال",color:C.purpleSolid,desc:"AML/CMA monitoring, SAR filing, risk scoring, audit trail",descAr:"مراقبة غسل الأموال/هيئة السوق، تقديم البلاغات، تقييم المخاطر"},
-  {id:"VAULT_MGR",label:"Vault Manager",labelAr:"مدير الخزينة",color:"#C4956A",desc:"Vault operations, appointments, bar management, OTP verification",descAr:"عمليات الخزينة، المواعيد، إدارة السبائك، التحقق بالرمز"},
-  {id:"FINANCIAL",label:"Financial Controller",labelAr:"المراقب المالي",color:"#6B9080",desc:"Orders, wallet movements, withdrawals, commission management",descAr:"الأوامر، حركات المحفظة، عمليات السحب، إدارة العمولات"},
+  {id:"COMPLIANCE_OFFICER",label:"Compliance Officer",labelAr:"مسؤول الامتثال",color:C.purpleSolid,desc:"AML/CMA monitoring, SAR filing, risk scoring, audit trail",descAr:"مراقبة غسل الأموال/هيئة السوق، تقديم البلاغات، تقييم المخاطر"},
+  {id:"VAULT_MANAGER",label:"Vault Manager",labelAr:"مدير الخزينة",color:"#C4956A",desc:"Vault operations, appointments, bar management, OTP verification",descAr:"عمليات الخزينة، المواعيد، إدارة السبائك، التحقق بالرمز"},
+  {id:"FINANCIAL_CONTROLLER",label:"Financial Controller",labelAr:"المراقب المالي",color:"#6B9080",desc:"Orders, wallet movements, withdrawals, commission management",descAr:"الأوامر، حركات المحفظة، عمليات السحب، إدارة العمولات"},
   {id:"VIEWER",label:"Viewer",labelAr:"مشاهد فقط",color:"#8C7E6F",desc:"Read-only access to dashboard and reports — no actions",descAr:"صلاحية قراءة فقط — لوحة التحكم والتقارير بدون إجراءات"},
   {id:"CUSTOM",label:"Custom",labelAr:"مخصص",color:C.blueSolid,desc:"Custom permissions — select individual modules",descAr:"صلاحيات مخصصة — اختر الوحدات"},
 ];
@@ -5829,9 +5829,9 @@ const MODULES = [
 ];
 const ROLE_PERMS = {
   SUPER_ADMIN:MODULES.map(m=>m.id),
-  COMPLIANCE:["dashboard","investors","auditlog","reports","blacklist"],
-  VAULT_MGR:["dashboard","vault","appointments","investors"],
-  FINANCIAL:["dashboard","financials","orderbook","txlog","reports"],
+  COMPLIANCE_OFFICER:["dashboard","investors","auditlog","reports","blacklist"],
+  VAULT_MANAGER:["dashboard","vault","appointments","investors"],
+  FINANCIAL_CONTROLLER:["dashboard","financials","orderbook","txlog","reports"],
   VIEWER:["dashboard","reports","health"],
   CUSTOM:[],
 };
@@ -6188,14 +6188,16 @@ const UserManagement = () => {
           <Btn variant="gold" onClick={async ()=>{
             if(!newUser.name||!newUser.nameAr||!newUser.email){showToast(isAr?"⚠️ أكمل جميع الحقول بالعربية والإنجليزية":"⚠️ Fill all fields in both languages");return;}
             if(!newUser.password||newUser.password.length<8){showToast(isAr?"⚠️ كلمة المرور يجب أن تكون 8 أحرف على الأقل":"⚠️ Password must be at least 8 characters");return;}
-            const id="USR-"+String(Date.now()).slice(-3);
-            let apiUser = null;
-            try{const r=await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role.toLowerCase(),password:newUser.password})});if(r&&r.ok)apiUser=await r.json();}catch(e){}
-            const realId = apiUser?.id||id;
-            setUsers(p=>[...p,{id:realId,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
-            setModal(null);
-            if(apiUser?.temp_password){showToast(isAr?`✅ تم إنشاء المستخدم — كلمة المرور المؤقتة: ${apiUser.temp_password}`:`✅ User created — Temp password: ${apiUser.temp_password}`);}
-            else{showToast(isAr?"✅ تم إضافة المستخدم":"✅ User added");}
+            try{
+              const r=await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role.toLowerCase(),password:newUser.password})});
+              if(r&&r.ok){
+                const apiUser=await r.json();
+                const realId=apiUser?.id||("USR-"+String(Date.now()).slice(-3));
+                setUsers(p=>[...p,{id:realId,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
+                setModal(null);
+                showToast(apiUser?.temp_password?(isAr?`✅ تم إنشاء المستخدم — كلمة المرور المؤقتة: ${apiUser.temp_password}`:`✅ User created — Temp password: ${apiUser.temp_password}`):(isAr?"✅ تم إضافة المستخدم":"✅ User added"));
+              }else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل إنشاء المستخدم":"Failed to create user")));}
+            }catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}
           }}>{isAr?"إنشاء المستخدم":"Create User"}</Btn>
         </div>
       </Modal>}
@@ -6224,9 +6226,9 @@ const UserManagement = () => {
           </div>
           <div style={{display:"flex",gap:8}}>
             <Btn variant="gold" onClick={async ()=>{
-              setUsers(p=>p.map(x=>x.id===modal.id?{...x,role:editRole,perms:editRole==="CUSTOM"?editPerms:ROLE_PERMS[editRole]}:x));
-              try{await apiFetch("/admin/users/"+modal.id+"/role",{method:"POST",body:JSON.stringify({role:editRole.toLowerCase()})});}catch(e){}
-              setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");
+              try{const r=await apiFetch("/admin/users/"+modal.id+"/role",{method:"POST",body:JSON.stringify({role:editRole.toLowerCase()})});
+              if(r&&r.ok){setUsers(p=>p.map(x=>x.id===modal.id?{...x,role:editRole,perms:editRole==="CUSTOM"?editPerms:ROLE_PERMS[editRole]}:x));setModal(null);showToast(isAr?"✅ تم تحديث الصلاحيات":"✅ Permissions updated");}
+              else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل التحديث":"Update failed")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}
             }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
             {!modal.twoFA&&<Btn variant="teal" onClick={async ()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,twoFA:true}:x));try{await apiFetch("/admin/users/"+modal.id+"/2fa",{method:"POST"});}catch(e){}showToast(isAr?"🔒 تم تفعيل المصادقة الثنائية":"🔒 2FA enabled");setModal(null);}}>{isAr?"تفعيل 2FA":"Enable 2FA"}</Btn>}
             {modal.sessions>0&&<Btn variant="danger" onClick={async ()=>{setUsers(p=>p.map(x=>x.id===modal.id?{...x,sessions:0}:x));try{await apiFetch("/admin/users/"+modal.id+"/revoke-sessions",{method:"POST"});}catch(e){}showToast(isAr?"تم إلغاء جميع الجلسات":"All sessions revoked");}}>{isAr?"إلغاء الجلسات":"Revoke Sessions"}</Btn>}
