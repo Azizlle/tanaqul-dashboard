@@ -979,12 +979,12 @@ const PriceTicker = () => {
   }, [prices]);
 
   const ST = {
-    LIVE:        { dot:"#4ADE80", label:"Live",        bg:"#052e16" },
-    DEMO:        { dot:"#D4943A", label:"Demo",        bg:"#1c1407" },
-    LOADING:     { dot:"#C4956A", label:"Loading...",  bg:"#0c1a2e" },
-    ERROR:       { dot:"#C85C3E", label:"Error",       bg:"#2d0a0a" },
-    INVALID_KEY: { dot:"#C85C3E", label:"Bad Key",     bg:"#2d0a0a" },
-    QUOTA:       { dot:"#D4943A", label:"Quota Full",  bg:"#1c1407" },
+    LIVE:        { dot:"#4ADE80", label:isAr?"مباشر":"Live",        bg:"#052e16" },
+    DEMO:        { dot:"#D4943A", label:isAr?"تجريبي":"Demo",        bg:"#1c1407" },
+    LOADING:     { dot:"#C4956A", label:isAr?"جاري التحميل...":"Loading...",  bg:"#0c1a2e" },
+    ERROR:       { dot:"#C85C3E", label:isAr?"خطأ":"Error",       bg:"#2d0a0a" },
+    INVALID_KEY: { dot:"#C85C3E", label:isAr?"مفتاح خاطئ":"Bad Key",     bg:"#2d0a0a" },
+    QUOTA:       { dot:"#D4943A", label:isAr?"الحصة ممتلئة":"Quota Full",  bg:"#1c1407" },
   }[status] || { dot:"#A89880", label:"...", bg:C.navyDark };
 
   return (
@@ -992,14 +992,14 @@ const PriceTicker = () => {
       {status === "DEMO" && (
         <div style={{background:"#1c1407",border:"1px solid #D4943A",borderRadius:10,padding:"8px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
           {Icons.warning(15,"#D4943A")}
-          <span style={{fontSize:13,color:"#D4943A"}}>Demo prices — Go to <strong>Settings → Price Feed</strong> and enter your <strong>metals.dev</strong> API key to activate live prices.</span>
+          <span style={{fontSize:13,color:"#D4943A"}}>{isAr?<>أسعار تجريبية — اذهب إلى <strong>الإعدادات ← تغذية الأسعار</strong> وأدخل مفتاح API الخاص بـ <strong>metals.dev</strong> لتفعيل الأسعار الحية.</>:<>Demo prices — Go to <strong>Settings → Price Feed</strong> and enter your <strong>metals.dev</strong> API key to activate live prices.</>}</span>
         </div>
       )}
       {(status === "INVALID_KEY" || status === "QUOTA") && (
         <div style={{background:"#2d0a0a",border:"1px solid #C85C3E",borderRadius:10,padding:"8px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
           {Icons.warning(15,"#C85C3E")}
           <span style={{fontSize:13,color:"#C85C3E"}}>
-            {status === "INVALID_KEY" ? "Invalid API key — check Settings → Price Feed" : "API quota exceeded — upgrade your metals.dev plan"}
+            {status === "INVALID_KEY" ? (isAr?"مفتاح API غير صالح — تحقق من الإعدادات ← تغذية الأسعار":"Invalid API key — check Settings → Price Feed") : (isAr?"تم تجاوز حصة API — قم بترقية خطة metals.dev":"API quota exceeded — upgrade your metals.dev plan")}
           </span>
         </div>
       )}
@@ -1045,11 +1045,11 @@ const PriceTicker = () => {
               <span style={{fontSize:14,fontWeight:700,color:ST.dot}}>{ST.label}</span>
             </div>
             <p style={{fontSize:11,color:C.textMuted,marginBottom:2}}>{PROVIDERS[_provider]?.name||_provider}</p>
-            {_lastFetch>0&&<p style={{fontSize:11,color:C.textMuted}}>Updated: {new Date(_lastFetch).toLocaleTimeString()}</p>}
-            {_interval&&<p style={{fontSize:11,color:C.textMuted}}>Every {_interval}s</p>}
+            {_lastFetch>0&&<p style={{fontSize:11,color:C.textMuted}}>{isAr?"آخر تحديث:":"Updated:"} {new Date(_lastFetch).toLocaleTimeString()}</p>}
+            {_interval&&<p style={{fontSize:11,color:C.textMuted}}>{isAr?`كل ${_interval} ثانية`:`Every ${_interval}s`}</p>}
           </div>
           <button onClick={fetchPrices} title={isAr?"تحديث الآن":"Refresh now"}
-            style={{marginTop:8,background:"rgba(255,255,255,0.07)",border:`1px solid ${ST.dot}44`,borderRadius:7,color:"#A89880",fontSize:13,cursor:"pointer",padding:"5px 0",fontWeight:600}}>↻ Refresh</button>
+            style={{marginTop:8,background:"rgba(255,255,255,0.07)",border:`1px solid ${ST.dot}44`,borderRadius:7,color:"#A89880",fontSize:13,cursor:"pointer",padding:"5px 0",fontWeight:600}}>{isAr?"↻ تحديث":"↻ Refresh"}</button>
         </div>
       </div>
     </div>
@@ -1211,12 +1211,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <SectionHeader title={isAr?"نظرة عامة على لوحة التحكم":"Dashboard Overview"} sub="Live platform snapshot" />
+      <SectionHeader title={isAr?"نظرة عامة على لوحة التحكم":"Dashboard Overview"} sub={isAr?"لقطة حية للمنصة":"Live platform snapshot"} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:14}}>
         <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"إجمالي الأصول المُدارة":"Total AUM"} value={<SARAmount amount={liveAUMStr}/>} sub={isAr?"الأصول تحت الإدارة":"Assets under management"} gold />
-        <StatCard icon={Icons.volume(22,C.teal)} title="Volume Today" value={<SARAmount amount={fmtK(volumeToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(volumeAll)} />
-        <StatCard icon={Icons.commission(22,C.gold)} title="Commission Today" value={<SARAmount amount={fmtK(commToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(commAll)} gold />
-        <StatCard icon={Icons.settings(22,C.textMuted)} title="Admin Fees Today" value={<SARAmount amount={fmtK(adminToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(adminAll)} />
+        <StatCard icon={Icons.volume(22,C.teal)} title={isAr?"حجم التداول اليوم":"Volume Today"} value={<SARAmount amount={fmtK(volumeToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(volumeAll)} />
+        <StatCard icon={Icons.commission(22,C.gold)} title={isAr?"العمولة اليوم":"Commission Today"} value={<SARAmount amount={fmtK(commToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(commAll)} gold />
+        <StatCard icon={Icons.settings(22,C.textMuted)} title={isAr?"رسوم الإدارة اليوم":"Admin Fees Today"} value={<SARAmount amount={fmtK(adminToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(adminAll)} />
       </div>
 
       {/* ═══ Sparkline + Activity Row ═══ */}
@@ -1348,7 +1348,7 @@ const Investors = () => {
   return (
     <div>
       {toast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{toast}</div>}
-      <SectionHeader title={isAr?"المستثمرون":"Investors"} sub={investors.length+" total — Suspended: can login, no actions | Banned: blocked by National ID"}
+      <SectionHeader title={isAr?"المستثمرون":"Investors"} sub={isAr?investors.length+" إجمالي — موقوف: يمكنه تسجيل الدخول بدون إجراءات | محظور: محظور برقم الهوية":investors.length+" total — Suspended: can login, no actions | Banned: blocked by National ID"}
         action={<ExportMenu isAr={isAr}
           onCSV={()=>downloadCSV("investors_"+new Date().toISOString().slice(0,10),
             ["ID","Name","National ID","Wallet","Holdings (SAR)","Gold (g)","Silver (g)","Platinum (g)","Status","Joined","KYC Expiry"],
@@ -1375,7 +1375,7 @@ const Investors = () => {
         ))}
       </div>
       <TTable cols={[
-        {key:"id",label:"ID"},{key:"nameEn",label:"Name",render:(v,row)=>{
+        {key:"id",label:isAr?"المعرف":"ID"},{key:"nameEn",label:isAr?"الاسم":"Name",render:(v,row)=>{
           const todayStr = new Date().toISOString().slice(0,10);
           const kycExpired = row.kycExpiry && row.kycExpiry < todayStr;
           const soonExpiry = !kycExpired && row.kycExpiry && row.kycExpiry < new Date(Date.now()+30*24*60*60*1000).toISOString().slice(0,10);
@@ -1385,20 +1385,20 @@ const Investors = () => {
             <div style={{textAlign:"start"}}>
               <div style={{fontWeight:600,color:C.navy}}>{isAr&&row.nameAr?row.nameAr:v}</div>
               <div style={{display:"flex",gap:4,marginTop:2,flexWrap:"wrap"}}>
-                                {kycExpired&&<span style={{fontSize:11,fontWeight:700,color:"#C85C3E",background:C.redBg,borderRadius:4,padding:"1px 5px"}}>⛔ KYC EXPIRED</span>}
-                {soonExpiry&&<span style={{fontSize:11,fontWeight:700,color:"#D4943A",background:"#FDF4EC",borderRadius:4,padding:"1px 5px"}}>⚠ KYC expiring</span>}
-                {noShowWarn&&<span style={{fontSize:11,fontWeight:700,color:"#C85C3E",background:C.redBg,borderRadius:4,padding:"1px 5px"}}>🚫 {row.noShowCount} no-shows</span>}
-                {isBlacklisted&&<span style={{fontSize:11,fontWeight:700,color:C.purpleSolid,background:C.purpleBg,borderRadius:4,padding:"1px 5px"}}>🚫 Blacklisted</span>}
+                                {kycExpired&&<span style={{fontSize:11,fontWeight:700,color:"#C85C3E",background:C.redBg,borderRadius:4,padding:"1px 5px"}}>{isAr?"⛔ KYC منتهي":"⛔ KYC EXPIRED"}</span>}
+                {soonExpiry&&<span style={{fontSize:11,fontWeight:700,color:"#D4943A",background:"#FDF4EC",borderRadius:4,padding:"1px 5px"}}>{isAr?"⚠ KYC قارب الانتهاء":"⚠ KYC expiring"}</span>}
+                {noShowWarn&&<span style={{fontSize:11,fontWeight:700,color:"#C85C3E",background:C.redBg,borderRadius:4,padding:"1px 5px"}}>{isAr?`🚫 ${row.noShowCount} عدم حضور`:`🚫 ${row.noShowCount} no-shows`}</span>}
+                {isBlacklisted&&<span style={{fontSize:11,fontWeight:700,color:C.purpleSolid,background:C.purpleBg,borderRadius:4,padding:"1px 5px"}}>{isAr?"🚫 محظور":"🚫 Blacklisted"}</span>}
               </div>
             </div>
           );
         }},
-        {key:"vaultKey",label:"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:13,color:C.teal}}>{v}</span>},
-        {key:"holdingsValue",label:"Holdings",render:v=><SARAmount amount={v}/>},
-        {key:"gold",label:"Gold(g)"},{key:"silver",label:"Silver(g)"},{key:"platinum",label:"Pt(g)"},
-        {key:"status",label:"Status",render:v=><Badge label={v}/>},
-        {key:"joined",label:"Joined"},
-        {key:"id",label:"Actions",render:(_,row)=>(
+        {key:"vaultKey",label:isAr?"مفتاح الخزنة":"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:13,color:C.teal}}>{v}</span>},
+        {key:"holdingsValue",label:isAr?"الممتلكات":"Holdings",render:v=><SARAmount amount={v}/>},
+        {key:"gold",label:isAr?"ذهب(غ)":"Gold(g)"},{key:"silver",label:isAr?"فضة(غ)":"Silver(g)"},{key:"platinum",label:isAr?"بلا(غ)":"Pt(g)"},
+        {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+        {key:"joined",label:isAr?"تاريخ الانضمام":"Joined"},
+        {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=>(
           <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"center"}}>
             <Btn small variant="outline" onClick={()=>doAction(row,"view")}>{isAr?"عرض":"View"}</Btn>
             {row.status==="ACTIVE"&&<><Btn small variant="ghost" onClick={()=>doAction(row,"suspend")}>{t("Suspend")}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"ban")}>{t("Ban")}</Btn></>}
@@ -1411,11 +1411,11 @@ const Investors = () => {
       ]} rows={rows} />
 
       {/* View Modal */}
-      {action==="view"&&sel&&<Modal title={"Investor — "+sel.nameEn} onClose={()=>{setSel(null);setAction(null);}}>
+      {action==="view"&&sel&&<Modal title={(isAr?"مستثمر — ":"Investor — ")+sel.nameEn} onClose={()=>{setSel(null);setAction(null);}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>
-          {[["ID",sel.id],["Arabic Name",sel.nameAr],["Vault Key",sel.vaultKey],["Status",sel.status],
-            ["Joined",sel.joined],["Gold",sel.gold+"g"],["Silver",sel.silver+"g"],["Platinum",sel.platinum+"g"],
-            ["Holdings",sel.holdingsValue],["National ID",sel.nationalId||"—"],["Wallet",sel.wallet]].map(([k,v])=>(
+          {[[isAr?"المعرف":"ID",sel.id],[isAr?"الاسم العربي":"Arabic Name",sel.nameAr],[isAr?"مفتاح الخزنة":"Vault Key",sel.vaultKey],[isAr?"الحالة":"Status",sel.status],
+            [isAr?"تاريخ الانضمام":"Joined",sel.joined],[isAr?"ذهب":"Gold",sel.gold+"g"],[isAr?"فضة":"Silver",sel.silver+"g"],[isAr?"بلاتين":"Platinum",sel.platinum+"g"],
+            [isAr?"الممتلكات":"Holdings",sel.holdingsValue],[isAr?"رقم الهوية":"National ID",sel.nationalId||"—"],[isAr?"المحفظة":"Wallet",sel.wallet]].map(([k,v])=>(
             <div key={k} style={{display:"flex",flexDirection:"column",padding:"9px 10px",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:12,color:C.textMuted,fontWeight:600,textTransform:"uppercase"}}>{k}</span>
               <span style={{fontSize:16,fontWeight:600,color:C.navy,marginTop:2,wordBreak:"break-all"}}>{v}</span>
@@ -1423,7 +1423,7 @@ const Investors = () => {
           ))}
         </div>
         <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>
-          {sel.status!=="BANNED"&&<Btn variant="danger" onClick={()=>setAction("ban")}>Ban</Btn>}
+          {sel.status!=="BANNED"&&<Btn variant="danger" onClick={()=>setAction("ban")}>{isAr?"حظر":"Ban"}</Btn>}
           {sel.status==="BANNED"&&<Btn variant="teal" onClick={()=>setAction("unban")}>{t("Unban")}</Btn>}
           {sel.status==="ACTIVE"&&<Btn variant="ghost" onClick={()=>setAction("suspend")}>{t("Suspend")}</Btn>}
           {sel.status==="SUSPENDED"&&<Btn variant="teal" onClick={()=>setAction("activate")}>{t("Activate")}</Btn>}
@@ -1434,46 +1434,46 @@ const Investors = () => {
 
       {/* Confirm Action Modals */}
       {["suspend","ban","unban","activate"].includes(action)&&sel&&<Modal
-        title={{suspend:"Suspend Investor",ban:"Ban Investor",unban:"Unban Investor",activate:"Reactivate Investor"}[action]}
+        title={{suspend:isAr?"تعليق المستثمر":"Suspend Investor",ban:isAr?"حظر المستثمر":"Ban Investor",unban:isAr?"رفع الحظر عن المستثمر":"Unban Investor",activate:isAr?"إعادة تفعيل المستثمر":"Reactivate Investor"}[action]}
         onClose={()=>{setSel(null);setAction(null);}}>
         <div style={{background:{suspend:"#FDF4EC",ban:C.redBg,unban:"#EFF5F2",activate:"#EFF5F2"}[action],borderRadius:10,padding:"10px 14px",marginBottom:14}}>
           <p style={{fontSize:15,color:{suspend:"#8B6540",ban:"#C85C3E",unban:C.greenSolid,activate:C.greenSolid}[action],fontWeight:600}}>
-            {action==="suspend"&&<>Investor can still login but cannot buy, sell or take actions. <br/><span style={{fontSize:13,color:"#8B6540"}}>⚠️ Note: Any open orders will remain in the Order Book — cancel them manually in Order Book.</span></>}
-            {action==="ban"&&"Ban is tied to National ID. Investor cannot login or re-register."}
-            {action==="unban"&&"Investor will be restored to ACTIVE status."}
-            {action==="activate"&&"Investor will be fully reactivated."}
+            {action==="suspend"&&<>{isAr?"المستثمر يمكنه تسجيل الدخول لكن لا يمكنه الشراء أو البيع أو اتخاذ إجراءات.":"Investor can still login but cannot buy, sell or take actions."} <br/><span style={{fontSize:13,color:"#8B6540"}}>{isAr?"⚠️ ملاحظة: الأوامر المفتوحة ستبقى في دفتر الأوامر — قم بإلغائها يدوياً.":"⚠️ Note: Any open orders will remain in the Order Book — cancel them manually in Order Book."}</span></>}
+            {action==="ban"&&(isAr?"الحظر مرتبط برقم الهوية. لا يمكنه تسجيل الدخول أو إعادة التسجيل.":"Ban is tied to National ID. Investor cannot login or re-register.")}
+            {action==="unban"&&(isAr?"سيتم استعادة حالة المستثمر إلى نشط.":"Investor will be restored to ACTIVE status.")}
+            {action==="activate"&&(isAr?"سيتم إعادة تفعيل المستثمر بالكامل.":"Investor will be fully reactivated.")}
           </p>
         </div>
-        <p style={{fontSize:15,color:C.navy,fontWeight:600,marginBottom:6}}>Investor: <span style={{color:C.teal}}>{sel.nameEn}</span> ({sel.id})</p>
+        <p style={{fontSize:15,color:C.navy,fontWeight:600,marginBottom:6}}>{isAr?"المستثمر:":"Investor:"} <span style={{color:C.teal}}>{sel.nameEn}</span> ({sel.id})</p>
         {(action==="suspend"||action==="ban")&&(
           <div style={{marginBottom:14}}>
-            <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>REASON (required)</label>
-            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Enter reason..."
+            <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"السبب (مطلوب)":"REASON (required)"}</label>
+            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder={isAr?"أدخل السبب...":"Enter reason..."}
               style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:70,boxSizing:"border-box",fontFamily:"inherit"}}/>
           </div>
         )}
         <div style={{display:"flex",gap:8}}>
           <Btn variant={{suspend:"ghost",ban:"danger",unban:"teal",activate:"teal"}[action]}
             onClick={()=>{if((action==="suspend"||action==="ban")&&!reason.trim()){showToast("⚠️ Please enter a reason");return;}confirmAction();}}>
-            Confirm {action.charAt(0).toUpperCase()+action.slice(1)}
+            {isAr?"تأكيد":"Confirm"} {action.charAt(0).toUpperCase()+action.slice(1)}
           </Btn>
           <Btn variant="outline" onClick={()=>{setSel(null);setAction(null);}}>{t("Cancel")}</Btn>
         </div>
       </Modal>}
 
       {/* Notify Modal */}
-      {action==="notify"&&sel&&<Modal title={"Notify — "+sel.nameEn} onClose={()=>{setSel(null);setAction(null);}}>
-        <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>Send SMS + push notification to investor.</p>
+      {action==="notify"&&sel&&<Modal title={(isAr?"إشعار — ":"Notify — ")+sel.nameEn} onClose={()=>{setSel(null);setAction(null);}}>
+        <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>{isAr?"إرسال رسالة نصية وإشعار فوري للمستثمر.":"Send SMS + push notification to investor."}</p>
         <Sel label={isAr?"القالب":"Template"} value="" onChange={v=>setNotifyMsg(v)} options={[
-          {value:"",label:"— Select template or write custom —"},
-          {value:"Your account has been reviewed.",label:"Account review notice"},
-          {value:"Please complete your KYC verification.",label:"KYC reminder"},
-          {value:"Your appointment is confirmed.",label:"Appointment confirmed"},
-          {value:"Action required on your account.",label:"Action required"},
+          {value:"",label:isAr?"— اختر قالب أو اكتب رسالة مخصصة —":"— Select template or write custom —"},
+          {value:"Your account has been reviewed.",label:isAr?"إشعار مراجعة الحساب":"Account review notice"},
+          {value:"Please complete your KYC verification.",label:isAr?"تذكير KYC":"KYC reminder"},
+          {value:"Your appointment is confirmed.",label:isAr?"تأكيد الموعد":"Appointment confirmed"},
+          {value:"Action required on your account.",label:isAr?"إجراء مطلوب":"Action required"},
         ]} />
         <div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"الرسالة":"MESSAGE"}</label>
-          <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} placeholder="Type custom message..."
+          <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} placeholder={isAr?"اكتب رسالة مخصصة...":"Type custom message..."}
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}>
@@ -1638,7 +1638,7 @@ const TransactionLog = () => {
             <div>
               <div style={{fontWeight:600,color:"#C85C3E"}}>{v}</div>
               <div style={{fontSize:12,color:C.textMuted,fontFamily:"monospace"}}>{isAr?"هوية:":"ID:"} {row.sellerNationalId}</div>
-              {washTrade&&<div style={{fontSize:11,fontWeight:700,color:C.purpleSolid,background:C.purpleBg,borderRadius:4,padding:"1px 5px",marginTop:2}}>⚠ Wash Trade</div>}
+              {washTrade&&<div style={{fontSize:11,fontWeight:700,color:C.purpleSolid,background:C.purpleBg,borderRadius:4,padding:"1px 5px",marginTop:2}}>{isAr?"⚠ تداول ذاتي":"⚠ Wash Trade"}</div>}
             </div>
           );
         }},
@@ -1690,7 +1690,7 @@ const Vault = () => {
   const integrityOk=vaultIntegrity?vaultIntegrity.valid:bars.filter(b=>b.status==="DAMAGED").length===0;
   return (
     <div>
-      <SectionHeader title="Main Vault" sub={isAr?"سجل السبائك الفيزيائية — القيد والخروج يتم عبر المواعيد فقط":"Physical bar registry — linking and unlinking only through appointments"} />
+      <SectionHeader title={isAr?"الخزينة الرئيسية":"Main Vault"} sub={isAr?"سجل السبائك الفيزيائية — القيد والخروج يتم عبر المواعيد فقط":"Physical bar registry — linking and unlinking only through appointments"} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.vault(22,C.navy)} title={isAr?"إجمالي السبائك":"Total Bars"} value={bars.length} />
         <StatCard icon={Icons.block(22,C.teal)} title={t("Linked")} value={bars.filter(b=>b.status==="LINKED").length} />
@@ -1706,27 +1706,27 @@ const Vault = () => {
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:16}}>{[["ALL","الكل"],["LINKED","مرتبط"],["FREE","حر"]].map(([s,sAr])=><button key={s} onClick={()=>setStatus(s)} style={{padding:"6px 14px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${status===s?C.navy:C.border}`,background:status===s?C.navy:C.white,color:status===s?C.white:C.textMuted}}>{isAr?sAr:s}</button>)}</div>
       </div>
       <TTable cols={[
-        {key:"id",label:"Bar ID"},{key:"metal",label:"Metal"},{key:"weight",label:"Weight"},
-        {key:"barcode",label:"Barcode",render:v=><span style={{fontFamily:"monospace",fontSize:12}}>{v}</span>},
-        {key:"manufacturer",label:"Manufacturer"},{key:"vault",label:"Vault"},
-        {key:"status",label:"Status",render:v=><Badge label={v}/>},
-        {key:"depositor",label:"Depositor"},{key:"deposited",label:"Date In"},{key:"leftOn",label:"Date Out",render:v=>v?<span style={{color:"#8C7E6F",fontStyle:"italic"}}>{v}</span>:<span style={{color:C.textMuted}}>—</span>},
-        {key:"id",label:"Actions",render:(_,row)=><div style={{display:"flex",gap:5,justifyContent:"center"}}>
+        {key:"id",label:isAr?"رقم السبيكة":"Bar ID"},{key:"metal",label:isAr?"المعدن":"Metal"},{key:"weight",label:isAr?"الوزن":"Weight"},
+        {key:"barcode",label:isAr?"الباركود":"Barcode",render:v=><span style={{fontFamily:"monospace",fontSize:12}}>{v}</span>},
+        {key:"manufacturer",label:isAr?"الشركة المصنعة":"Manufacturer"},{key:"vault",label:isAr?"الخزينة":"Vault"},
+        {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+        {key:"depositor",label:isAr?"المودِع":"Depositor"},{key:"deposited",label:isAr?"تاريخ الإيداع":"Date In"},{key:"leftOn",label:isAr?"تاريخ الخروج":"Date Out",render:v=>v?<span style={{color:"#8C7E6F",fontStyle:"italic"}}>{v}</span>:<span style={{color:C.textMuted}}>—</span>},
+        {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=><div style={{display:"flex",gap:5,justifyContent:"center"}}>
           <Btn small variant="outline" onClick={()=>{setBarsModal({type:"cert",bar:row});}}>{t("Certificate")}</Btn>
         </div>},
       ]} rows={rows} />
       {vaultToast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{vaultToast}</div>}
 
       {/* Certificate Modal */}
-      {barsModal?.type==="cert"&&<Modal title={"Bar Certificate — "+barsModal.bar.id} onClose={()=>setBarsModal(null)}>
+      {barsModal?.type==="cert"&&<Modal title={(isAr?"شهادة السبيكة — ":"Bar Certificate — ")+barsModal.bar.id} onClose={()=>setBarsModal(null)}>
         <div style={{background:C.goldLight,borderRadius:12,padding:16,border:`2px solid ${C.gold}55`,marginBottom:14}}>
           <div style={{textAlign:"center",marginBottom:12}}>
-            <p style={{fontSize:13,color:C.goldDim,fontWeight:700,letterSpacing:"0.1em"}}>TANAQUL PRECIOUS — BAR CERTIFICATE</p>
+            <p style={{fontSize:13,color:C.goldDim,fontWeight:700,letterSpacing:"0.1em"}}>{isAr?"تنقّل للمعادن الثمينة — شهادة السبيكة":"TANAQUL PRECIOUS — BAR CERTIFICATE"}</p>
             <p style={{fontSize:24,fontWeight:800,color:C.gold,fontFamily:"monospace"}}>{barsModal.bar.id}</p>
           </div>
-          {[["Metal",barsModal.bar.metal],["Weight",barsModal.bar.weight],["Barcode",barsModal.bar.barcode],
-            ["Manufacturer",barsModal.bar.manufacturer],["Vault",barsModal.bar.vault+" Vault"],
-            ["Status",barsModal.bar.status],["Depositor",barsModal.bar.depositor],["Date In",barsModal.bar.deposited]
+          {[[isAr?"المعدن":"Metal",barsModal.bar.metal],[isAr?"الوزن":"Weight",barsModal.bar.weight],[isAr?"الباركود":"Barcode",barsModal.bar.barcode],
+            [isAr?"الشركة المصنعة":"Manufacturer",barsModal.bar.manufacturer],[isAr?"الخزينة":"Vault",barsModal.bar.vault+(isAr?" خزينة":" Vault")],
+            [isAr?"الحالة":"Status",barsModal.bar.status],[isAr?"المودِع":"Depositor",barsModal.bar.depositor],[isAr?"تاريخ الإيداع":"Date In",barsModal.bar.deposited]
           ].map(([k,v])=>(
             <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.gold}33`}}>
               <span style={{fontSize:13,color:C.textMuted,fontWeight:600}}>{k}</span>
@@ -1734,7 +1734,7 @@ const Vault = () => {
             </div>
           ))}
         </div>
-        <div style={{display:"flex",gap:8}}><Btn variant="gold" onClick={()=>{showVaultToast("✅ Certificate downloaded");setBarsModal(null);}}>⬇ Download PDF</Btn><Btn variant="outline" onClick={()=>setBarsModal(null)}>{isAr?"إغلاق":"Close"}</Btn></div>
+        <div style={{display:"flex",gap:8}}><Btn variant="gold" onClick={()=>{showVaultToast(isAr?"✅ تم تحميل الشهادة":"✅ Certificate downloaded");setBarsModal(null);}}>{isAr?"⬇ تحميل PDF":"⬇ Download PDF"}</Btn><Btn variant="outline" onClick={()=>setBarsModal(null)}>{isAr?"إغلاق":"Close"}</Btn></div>
       </Modal>}
 
 
@@ -1763,7 +1763,8 @@ const STATUS_COLORS = {
 
 const ApptBadge = ({status}) => {
   const s = STATUS_COLORS[status] || {bg:"#F3F4F6",color:"#6B7280"};
-  const labels = {BOOKED:"Booked",EXPIRED:"Expired",COMPLETED:"Completed",NO_SHOW:"No Show",CANCELED:"Canceled",RESCHEDULED:"Rescheduled"};
+  const { isAr: apptIsAr } = useLang();
+  const labels = apptIsAr?{BOOKED:"محجوز",EXPIRED:"منتهٍ",COMPLETED:"مكتمل",NO_SHOW:"لم يحضر",CANCELED:"ملغى",RESCHEDULED:"أُعيد جدولته"}:{BOOKED:"Booked",EXPIRED:"Expired",COMPLETED:"Completed",NO_SHOW:"No Show",CANCELED:"Canceled",RESCHEDULED:"Rescheduled"};
   return <span style={{padding:"3px 10px",borderRadius:20,fontSize:13,fontWeight:700,background:s.bg,color:s.color}}>{labels[status]||status}</span>;
 };
 
@@ -1859,7 +1860,7 @@ const Appointments = () => {
   return (
     <div>
       {apptToast&&<div style={{position:"fixed",top:24,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#2D2418",color:"#FFF",padding:"12px 24px",borderRadius:12,fontSize:14,fontWeight:600,boxShadow:"0 8px 32px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",gap:8}}><span>⚠️</span>{apptToast}</div>}
-      <SectionHeader title={isAr?"المواعيد":"Appointments"} sub="Vault deposit & withdrawal scheduling" />
+      <SectionHeader title={isAr?"المواعيد":"Appointments"} sub={isAr?"جدولة إيداع وسحب الخزينة":"Vault deposit & withdrawal scheduling"} />
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.calendar(22,C.teal)} title={t("Booked")} value={appointments.filter(a=>a.status==="BOOKED").length} />
@@ -1875,25 +1876,25 @@ const Appointments = () => {
         {[["ALL","الكل"],["BOOKED","محجوز"],["IN_PROGRESS","قيد التنفيذ"],["EXPIRED","منتهٍ"],["COMPLETED","مكتمل"],["NO_SHOW","لم يحضر"],["CANCELED","ملغى"],["RESCHEDULED","أُعيد جدولته"]].map(([f,fAr])=><button key={f} onClick={()=>setStatusFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",border:`1px solid ${statusFilter===f?C.navy:C.border}`,background:statusFilter===f?C.navy:C.white,color:statusFilter===f?C.white:C.textMuted}}>{isAr?fAr:f}</button>)}
       </div>
       <TTable cols={[
-        {key:"id",label:"ID"},{key:"investor",label:"Investor"},
-        {key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},{key:"qty",label:"Qty"},
-        {key:"vault",label:"Vault"},{key:"date",label:"Scheduled"},
-        {key:"fee",label:"Fee",render:v=><SARAmount amount={v}/>},
-        {key:"status",label:"Status",render:v=><ApptBadge status={v}/>},
-        {key:"id",label:"Actions",render:(_,row)=>actionBtns(row)},
+        {key:"id",label:isAr?"المعرف":"ID"},{key:"investor",label:isAr?"المستثمر":"Investor"},
+        {key:"type",label:isAr?"النوع":"Type",render:v=><Badge label={v}/>},{key:"metal",label:isAr?"المعدن":"Metal"},{key:"qty",label:isAr?"الكمية":"Qty"},
+        {key:"vault",label:isAr?"الخزينة":"Vault"},{key:"date",label:isAr?"المجدول":"Scheduled"},
+        {key:"fee",label:isAr?"الرسوم":"Fee",render:v=><SARAmount amount={v}/>},
+        {key:"status",label:isAr?"الحالة":"Status",render:v=><ApptBadge status={v}/>},
+        {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=>actionBtns(row)},
       ]} rows={rows} />
 
       {/* CANCEL CONFIRMATION */}
       {modal==="cancel"&&sel&&<Modal title={isAr?"إلغاء الموعد":"Cancel Appointment"} onClose={closeAll}>
         <div style={{textAlign:"center",padding:"8px 0"}}>
           <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>{Icons.warning(44,"#D4943A")}</div>
-          <p style={{fontSize:20,fontWeight:600,color:C.navy,marginBottom:8}}>Are you sure you want to cancel this appointment?</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>Appointment: <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"}</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Scheduled: {sel.date}</p>
+          <p style={{fontSize:20,fontWeight:600,color:C.navy,marginBottom:8}}>{isAr?"هل أنت متأكد من إلغاء هذا الموعد؟":"Are you sure you want to cancel this appointment?"}</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>{isAr?"الموعد:":"Appointment:"} <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"}</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>{isAr?"المجدول:":"Scheduled:"} {sel.date}</p>
           <div style={{background:"#FDF4EC",borderRadius:10,padding:"10px 16px",marginBottom:20,textAlign:"left"}}>
-            <p style={{fontSize:14,fontWeight:600,color:"#8B6540"}}>💰 Refund Policy</p>
-            <p style={{fontSize:13,color:"#8B6540",marginTop:4}}>The appointment fee of <b>{sel.fee} SAR</b> will be refunded minus a <b>{cfee} SAR</b> cancellation fee.</p>
-            <p style={{fontSize:13,color:"#8B6540",marginTop:2}}>Investor receives: <b>{sel.fee - cfee} SAR</b> back to their wallet.</p>
+            <p style={{fontSize:14,fontWeight:600,color:"#8B6540"}}>{isAr?"💰 سياسة الاسترداد":"💰 Refund Policy"}</p>
+            <p style={{fontSize:13,color:"#8B6540",marginTop:4}}>{isAr?<>رسوم الموعد <b>{sel.fee} ريال</b> ستُسترد بعد خصم <b>{cfee} ريال</b> رسوم إلغاء.</>:<>The appointment fee of <b>{sel.fee} SAR</b> will be refunded minus a <b>{cfee} SAR</b> cancellation fee.</>}</p>
+            <p style={{fontSize:13,color:"#8B6540",marginTop:2}}>{isAr?<>المستثمر يستلم: <b>{sel.fee - cfee} ريال</b> في محفظته.</>:<>Investor receives: <b>{sel.fee - cfee} SAR</b> back to their wallet.</>}</p>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
             <Btn variant="danger" onClick={async ()=>{
@@ -1914,8 +1915,8 @@ const Appointments = () => {
               }
               addAudit("CANCEL_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — refund SAR "+refundAmt);
               closeAll();
-            }}>Yes, Cancel Appointment</Btn>
-            <Btn variant="outline" onClick={closeAll}>No, Keep It</Btn>
+            }}>{isAr?"نعم، إلغاء الموعد":"Yes, Cancel Appointment"}</Btn>
+            <Btn variant="outline" onClick={closeAll}>{isAr?"لا، أبقه":"No, Keep It"}</Btn>
           </div>
         </div>
       </Modal>}
@@ -1924,13 +1925,13 @@ const Appointments = () => {
       {modal==="noshow"&&sel&&<Modal title={isAr?"تسجيل عدم حضور":"Mark as No Show"} onClose={closeAll}>
         <div style={{textAlign:"center",padding:"8px 0"}}>
           <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>{Icons.cancel(44,"#C85C3E")}</div>
-          <p style={{fontSize:20,fontWeight:600,color:C.navy,marginBottom:8}}>Are you sure you want to mark this as No Show?</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>Appointment: <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"}</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Scheduled: {sel.date}</p>
+          <p style={{fontSize:20,fontWeight:600,color:C.navy,marginBottom:8}}>{isAr?"هل أنت متأكد من تسجيل عدم الحضور؟":"Are you sure you want to mark this as No Show?"}</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:6}}>{isAr?"الموعد:":"Appointment:"} <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"}</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>{isAr?"المجدول:":"Scheduled:"} {sel.date}</p>
           <div style={{background:C.redBg,borderRadius:10,padding:"10px 16px",marginBottom:20,textAlign:"left"}}>
-            <p style={{fontSize:14,fontWeight:600,color:"#8B3520"}}>⛔ No Refund</p>
-            <p style={{fontSize:13,color:"#8B3520",marginTop:4}}>The appointment fee of <b>{sel.fee} SAR</b> will NOT be refunded for no-shows.</p>
-            <p style={{fontSize:13,color:"#8B3520",marginTop:4}}>⚠️ Investors with 2+ no-shows are flagged and require a security deposit for future bookings.</p>
+            <p style={{fontSize:14,fontWeight:600,color:"#8B3520"}}>{isAr?"⛔ بدون استرداد":"⛔ No Refund"}</p>
+            <p style={{fontSize:13,color:"#8B3520",marginTop:4}}>{isAr?<>رسوم الموعد <b>{sel.fee} ريال</b> لن تُسترد في حالات عدم الحضور.</>:<>The appointment fee of <b>{sel.fee} SAR</b> will NOT be refunded for no-shows.</>}</p>
+            <p style={{fontSize:13,color:"#8B3520",marginTop:4}}>{isAr?"⚠️ المستثمرون بـ 2+ حالات عدم حضور يتم تنبيههم ويُطلب منهم تأمين لحجوزات مستقبلية.":"⚠️ Investors with 2+ no-shows are flagged and require a security deposit for future bookings."}</p>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"center"}}>
             <Btn variant="danger" onClick={async ()=>{
@@ -1943,15 +1944,15 @@ const Appointments = () => {
               }));
               addAudit("NO_SHOW", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.date);
               closeAll();
-            }}>Yes, Mark as No Show</Btn>
-            <Btn variant="outline" onClick={closeAll}>No, Go Back</Btn>
+            }}>{isAr?"نعم، تسجيل عدم حضور":"Yes, Mark as No Show"}</Btn>
+            <Btn variant="outline" onClick={closeAll}>{isAr?"لا، رجوع":"No, Go Back"}</Btn>
           </div>
         </div>
       </Modal>}
 
       {/* RESCHEDULE */}
       {modal==="reschedule"&&sel&&<Modal title={isAr?"إعادة جدولة الموعد":"Reschedule Appointment"} onClose={closeAll}>
-        <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>Appointment: <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"} — {sel.type} — {sel.metal}</p>
+        <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>{isAr?"الموعد:":"Appointment:"} <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"} — {sel.type} — {sel.metal}</p>
         <div style={{display:"grid",gap:12,marginBottom:20}}>
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"التاريخ الجديد":"NEW DATE"}</label>
@@ -1960,7 +1961,7 @@ const Appointments = () => {
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الوقت الجديد":"NEW TIME"}</label>
             <select value={reschedTime} onChange={e=>setReschedTime(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none",background:C.white}}>
-              <option value="">Select time slot...</option>
+              <option value="">{isAr?"اختر الوقت...":"Select time slot..."}</option>
               {["09:00","10:00","11:00","14:00","15:00","16:00"].map(t=><option key={t} value={t}>{t}</option>)}
             </select>
           </div>
@@ -1973,13 +1974,13 @@ const Appointments = () => {
             setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"RESCHEDULED",date:newDate}:a));
             addAudit("RESCHEDULE", sel.id, (sel.nationalId||sel.investorId||"—")+" → "+newDate);
             closeAll();
-          }} style={{opacity:reschedDate&&reschedTime?1:0.5}}><span style={{display:"flex",alignItems:"center",gap:6}}>{Icons.check(14,C.white)} Confirm Reschedule</span></Btn>
+          }} style={{opacity:reschedDate&&reschedTime?1:0.5}}><span style={{display:"flex",alignItems:"center",gap:6}}>{Icons.check(14,C.white)} {isAr?"تأكيد إعادة الجدولة":"Confirm Reschedule"}</span></Btn>
           <Btn variant="outline" onClick={closeAll}>{t("Cancel")}</Btn>
         </div>
       </Modal>}
 
       {/* START — Step 1: Investor Info */}
-      {modal==="start"&&sel&&startStep===1&&<Modal title={`Start Appointment — ${sel.id}`} onClose={closeAll}>
+      {modal==="start"&&sel&&startStep===1&&<Modal title={isAr?`بدء الموعد — ${sel.id}`:`Start Appointment — ${sel.id}`} onClose={closeAll}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,background:C.tealLight,borderRadius:10,padding:"10px 14px"}}>
           {Icons.user(24,C.teal)}
           <div>
@@ -1987,25 +1988,25 @@ const Appointments = () => {
             <p style={{fontSize:13,color:C.textMuted}}>{sel.investorPhone} • {sel.type} • {sel.metal} • {sel.quantity}</p>
           </div>
         </div>
-        {[["Appointment ID",sel.id],["Type",sel.type],["Metal",sel.metal],["Quantity",sel.quantity],["Vault",sel.vault],["Scheduled",sel.date],["Fee Paid",sel.fee+" SAR"],["Payment",sel.paymentMethod]].map(([k,v])=>(
+        {[[isAr?"رقم الموعد":"Appointment ID",sel.id],[isAr?"النوع":"Type",sel.type],[isAr?"المعدن":"Metal",sel.metal],[isAr?"الكمية":"Quantity",sel.quantity],[isAr?"الخزينة":"Vault",sel.vault],[isAr?"المجدول":"Scheduled",sel.date],[isAr?"الرسوم المدفوعة":"Fee Paid",sel.fee+(isAr?" ريال":" SAR")],[isAr?"طريقة الدفع":"Payment",sel.paymentMethod]].map(([k,v])=>(
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontSize:14,color:C.textMuted}}>{k}</span>
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{v}</span>
           </div>
         ))}
         <div style={{marginTop:16,display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>{setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"IN_PROGRESS"}:a));setStartStep(2);}}>Continue to Bar Details →</Btn>
+          <Btn variant="gold" onClick={()=>{setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"IN_PROGRESS"}:a));setStartStep(2);}}>{isAr?"المتابعة إلى تفاصيل السبيكة ←":"Continue to Bar Details →"}</Btn>
         </div>
       </Modal>}
 
       {/* START — Step 2: Bar Details */}
-      {modal==="start"&&sel&&startStep===2&&<Modal title={sel.type==="DEPOSIT"?"Bar Deposit Details":"Bar Withdrawal Details"} onClose={()=>closeAll(true)}>
+      {modal==="start"&&sel&&startStep===2&&<Modal title={sel.type==="DEPOSIT"?(isAr?"تفاصيل إيداع السبيكة":"Bar Deposit Details"):(isAr?"تفاصيل سحب السبيكة":"Bar Withdrawal Details")} onClose={()=>closeAll(true)}>
         <p style={{fontSize:14,color:C.textMuted,marginBottom:14}}>{sel.nationalId||sel.investorId||"—"} • {sel.metal} • {sel.quantity}</p>
         <div style={{display:"grid",gap:12}}>
           {sel.type==="DEPOSIT"&&<>
             <div>
               <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الباركود":"BARCODE"}</label>
-              <input placeholder="Scan or enter barcode..." value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+              <input placeholder={isAr?"امسح أو أدخل الباركود...":"Scan or enter barcode..."} value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
             </div>
             <div>
               <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الشركة المصنعة":"MANUFACTURER"}</label>
@@ -2022,8 +2023,8 @@ const Appointments = () => {
           </>}
           {sel.type==="WITHDRAWAL"&&<>
             <div>
-              <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>BAR BARCODE (to be withdrawn)</label>
-              <input placeholder="Scan or enter barcode..." value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+              <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"باركود السبيكة (للسحب)":"BAR BARCODE (to be withdrawn)"}</label>
+              <input placeholder={isAr?"امسح أو أدخل الباركود...":"Scan or enter barcode..."} value={startData.barcode} onChange={e=>setStartData(d=>({...d,barcode:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
             </div>
           </>}
           <div>
@@ -2031,13 +2032,13 @@ const Appointments = () => {
             <input defaultValue={sel.quantity} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none",background:"#f8f9fb"}} readOnly />
           </div>
           <div>
-            <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>NOTES (optional)</label>
-            <input placeholder="Any additional notes..." value={startData.notes} onChange={e=>setStartData(d=>({...d,notes:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
+            <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"ملاحظات (اختياري)":"NOTES (optional)"}</label>
+            <input placeholder={isAr?"أي ملاحظات إضافية...":"Any additional notes..."} value={startData.notes} onChange={e=>setStartData(d=>({...d,notes:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:19,outline:"none"}} />
           </div>
         </div>
         <div style={{marginTop:16,display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={async ()=>{try{const uid=sel._uuid||sel.id;await apiFetch("/appointments/"+uid+"/otp/generate",{method:"POST"});}catch(e){}setStartStep(3);}}>Continue to OTP Verification →</Btn>
-          <Btn variant="outline" onClick={()=>setStartStep(1)}>← Back</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{const uid=sel._uuid||sel.id;await apiFetch("/appointments/"+uid+"/otp/generate",{method:"POST"});}catch(e){}setStartStep(3);}}>{isAr?"المتابعة إلى التحقق من OTP ←":"Continue to OTP Verification →"}</Btn>
+          <Btn variant="outline" onClick={()=>setStartStep(1)}>{isAr?"→ رجوع":"← Back"}</Btn>
         </div>
       </Modal>}
 
@@ -2046,9 +2047,9 @@ const Appointments = () => {
         <div style={{textAlign:"center",padding:"8px 0 16px"}}>
           <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>{Icons.otp(44,C.teal)}</div>
           <p style={{fontSize:20,fontWeight:700,color:C.navy,marginBottom:6}}>{isAr?"أدخل رمز التحقق للمستثمر":"Enter Investor OTP"}</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:4}}>An OTP has been sent to the investor's registered mobile:</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:4}}>{isAr?"تم إرسال رمز التحقق إلى هاتف المستثمر المسجل:":"An OTP has been sent to the investor's registered mobile:"}</p>
           <p style={{fontSize:19,fontWeight:700,color:C.teal,marginBottom:20}}>{sel.investorPhone}</p>
-          <p style={{fontSize:14,color:C.textMuted,marginBottom:12}}>Ask the investor to read the OTP and enter it below to authenticate the {sel.type.toLowerCase()}:</p>
+          <p style={{fontSize:14,color:C.textMuted,marginBottom:12}}>{isAr?`اطلب من المستثمر قراءة رمز التحقق وأدخله أدناه لتوثيق ${sel.type==="DEPOSIT"?"الإيداع":"السحب"}:`:`Ask the investor to read the OTP and enter it below to authenticate the ${sel.type.toLowerCase()}:`}</p>
           <input
             type="text"
             value={otpVal}
@@ -2060,22 +2061,22 @@ const Appointments = () => {
           {otpError&&<p style={{color:C.red,fontSize:14,marginBottom:8}}>{otpError}</p>}
           <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:20}}>
             <span style={{fontSize:14,fontWeight:700,color:otpExpired?"#C85C3E":otpSecs<60?"#D4943A":C.textMuted}}>
-              {otpExpired?"⛔ OTP expired":`⏱ ${Math.floor(otpSecs/60)}:${String(otpSecs%60).padStart(2,"0")} remaining`}
+              {otpExpired?(isAr?"⛔ انتهت صلاحية الرمز":"⛔ OTP expired"):`⏱ ${Math.floor(otpSecs/60)}:${String(otpSecs%60).padStart(2,"0")} ${isAr?"متبقي":"remaining"}`}
             </span>
             <button onClick={async ()=>{setOtpSecs(300);setOtpExpired(false);setOtpVal("");setOtpError("");try{const uid=sel._uuid||sel.id;await apiFetch("/appointments/"+uid+"/otp/generate",{method:"POST"});}catch(e){}}}
               style={{fontSize:13,fontWeight:700,color:C.teal,background:"none",border:`1px solid ${C.teal}`,borderRadius:6,padding:"3px 10px",cursor:"pointer"}}>
-              Resend OTP
+              {isAr?"إعادة إرسال الرمز":"Resend OTP"}
             </button>
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"center"}}>
             <Btn variant="gold" onClick={async ()=>{
-              if(otpExpired){setOtpError("OTP has expired. Click Resend OTP.");return;}
-              if(otpVal.length!==6){setOtpError("Please enter the 6-digit OTP.");return;}
+              if(otpExpired){setOtpError(isAr?"انتهت صلاحية الرمز. اضغط إعادة إرسال.":"OTP has expired. Click Resend OTP.");return;}
+              if(otpVal.length!==6){setOtpError(isAr?"يرجى إدخال الرمز المكون من 6 أرقام.":"Please enter the 6-digit OTP.");return;}
               // Verify OTP server-side
               try {
                 const uid=sel._uuid||sel.id;
                 const vRes=await apiFetch("/appointments/"+uid+"/otp/verify",{method:"POST",body:JSON.stringify({otp_code:otpVal})});
-                if(!vRes||!vRes.ok){setOtpError("Incorrect OTP. Please ask the investor to check their phone.");return;}
+                if(!vRes||!vRes.ok){setOtpError(isAr?"رمز غير صحيح. اطلب من المستثمر التحقق من هاتفه.":"Incorrect OTP. Please ask the investor to check their phone.");return;}
                 // ═══ VAULT LIFECYCLE ENGINE ═══
                 if(sel.type==="DEPOSIT"){
                   // Step 1: Open deposit appointment (may fail if already IN_PROGRESS — that's OK)
@@ -2129,31 +2130,31 @@ const Appointments = () => {
               addAudit("COMPLETE_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — "+sel.metal+" "+sel.quantity);
               closeAll();
             }} style={{opacity:otpVal.length===6&&!otpExpired?1:0.5}}>
-              ✓ Verify & Complete {sel.type}
+              {isAr?`✓ تحقق وأكمل ${sel.type==="DEPOSIT"?"الإيداع":"السحب"}`:`✓ Verify & Complete ${sel.type}`}
             </Btn>
-            <Btn variant="outline" onClick={()=>setStartStep(2)}>← Back</Btn>
+            <Btn variant="outline" onClick={()=>setStartStep(2)}>{isAr?"→ رجوع":"← Back"}</Btn>
           </div>
-          <p style={{fontSize:12,color:C.textMuted,marginTop:12}}>Note: Completing this action will {sel.type==="DEPOSIT"?"mint tokens to investor wallet":"burn tokens from investor wallet"}.</p>
+          <p style={{fontSize:12,color:C.textMuted,marginTop:12}}>{isAr?`ملاحظة: إكمال هذا الإجراء سيؤدي إلى ${sel.type==="DEPOSIT"?"إصدار رموز لمحفظة المستثمر":"حرق رموز من محفظة المستثمر"}.`:`Note: Completing this action will ${sel.type==="DEPOSIT"?"mint tokens to investor wallet":"burn tokens from investor wallet"}.`}</p>
         </div>
       </Modal>}
 
       {/* VIEW (Completed / No Show / Canceled) */}
-      {modal==="view"&&sel&&<Modal title={`Appointment — ${sel.id}`} onClose={closeAll}>
+      {modal==="view"&&sel&&<Modal title={isAr?`الموعد — ${sel.id}`:`Appointment — ${sel.id}`} onClose={closeAll}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,background:C.bg,borderRadius:10,padding:"10px 14px"}}>
           <ApptBadge status={sel.status} />
           <span style={{fontSize:14,color:C.textMuted}}>{sel.type} • {sel.date}</span>
         </div>
-        {[["Appointment ID",sel.id],["National ID",sel.nationalId||"—"],["Phone",sel.investorPhone],["Type",sel.type],["Metal",sel.metal],["Quantity",sel.quantity],["Vault",sel.vault],["Scheduled",sel.date],["Fee",sel.fee+" SAR"],["Payment Method",sel.paymentMethod],["Status",sel.status.replace("_"," ")]].map(([k,v])=>(
+        {[[isAr?"رقم الموعد":"Appointment ID",sel.id],[isAr?"رقم الهوية":"National ID",sel.nationalId||"—"],[isAr?"الهاتف":"Phone",sel.investorPhone],[isAr?"النوع":"Type",sel.type],[isAr?"المعدن":"Metal",sel.metal],[isAr?"الكمية":"Quantity",sel.quantity],[isAr?"الخزينة":"Vault",sel.vault],[isAr?"المجدول":"Scheduled",sel.date],[isAr?"الرسوم":"Fee",sel.fee+(isAr?" ريال":" SAR")],[isAr?"طريقة الدفع":"Payment Method",sel.paymentMethod],[isAr?"الحالة":"Status",sel.status.replace("_"," ")]].map(([k,v])=>(
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontSize:14,color:C.textMuted}}>{k}</span>
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{v}</span>
           </div>
         ))}
         {sel.status==="CANCELED"&&<div style={{background:"#F3F4F6",borderRadius:10,padding:"10px 14px",marginTop:12}}>
-          <p style={{fontSize:13,color:C.textMuted}}>Refunded: <b>{sel.fee-cfee} SAR</b> (after {cfee} SAR cancellation fee)</p>
+          <p style={{fontSize:13,color:C.textMuted}}>{isAr?<>تم الاسترداد: <b>{sel.fee-cfee} ريال</b> (بعد خصم {cfee} ريال رسوم إلغاء)</>:<>Refunded: <b>{sel.fee-cfee} SAR</b> (after {cfee} SAR cancellation fee)</>}</p>
         </div>}
         {sel.status==="NO_SHOW"&&<div style={{background:C.redBg,borderRadius:10,padding:"10px 14px",marginTop:12}}>
-          <p style={{fontSize:13,color:"#8B3520"}}>No refund issued — investor did not show up.</p>
+          <p style={{fontSize:13,color:"#8B3520"}}>{isAr?"لم يتم استرداد — المستثمر لم يحضر.":"No refund issued — investor did not show up."}</p>
         </div>}
         <div style={{marginTop:14}}><Btn variant="outline" onClick={closeAll}>{isAr?"إغلاق":"Close"}</Btn></div>
       </Modal>}
@@ -2233,53 +2234,53 @@ const Financials = () => {
   return (
     <div>
       {finToast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{finToast}</div>}
-      <SectionHeader title={isAr?"الماليات":"Financials"} sub="Orders, wallets, withdrawals & storage fees" />
+      <SectionHeader title={isAr?"الماليات":"Financials"} sub={isAr?"الطلبات والمحافظ وطلبات السحب ورسوم التخزين":"Orders, wallets, withdrawals & storage fees"} />
       {/* ── Storage Fee stats derived from API history ── */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:14}}>
-        <StatCard icon={Icons.volume(22,C.teal)} title="Volume Today" value={<SARAmount amount={fmtK(volToday)}/>} sub={"All: "+fmtK(volAll)} />
-        <StatCard icon={Icons.commission(22,C.gold)} title="Commission Today" value={<SARAmount amount={fmtK(commToday)}/>} sub={"All: "+fmtK(commAll)} gold />
-        <StatCard icon={Icons.settings(22,C.textMuted)} title="Admin Fees Today" value={<SARAmount amount={fmtK(adminToday)}/>} sub={"All: "+fmtK(adminAll)} />
+        <StatCard icon={Icons.volume(22,C.teal)} title={isAr?"حجم التداول اليوم":"Volume Today"} value={<SARAmount amount={fmtK(volToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(volAll)} />
+        <StatCard icon={Icons.commission(22,C.gold)} title={isAr?"العمولة اليوم":"Commission Today"} value={<SARAmount amount={fmtK(commToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(commAll)} gold />
+        <StatCard icon={Icons.settings(22,C.textMuted)} title={isAr?"رسوم الإدارة اليوم":"Admin Fees Today"} value={<SARAmount amount={fmtK(adminToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(adminAll)} />
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
-        <StatCard icon={Icons.pending(22,"#D4943A")} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={withdrawals.filter(w=>w.status==="PENDING").length+" requests"} />
+        <StatCard icon={Icons.pending(22,"#D4943A")} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={withdrawals.filter(w=>w.status==="PENDING").length+(isAr?" طلب":" requests")} />
         <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walBal))}/>} />
-        <StatCard icon={Icons.vault(22,"#7C3AED")} title="Storage Fees (This Cycle)" value={<SARAmount amount={fmtK(storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.fee_sar)||0),0))}/>} sub={storageFeeHistory.filter(r=>r.status==="OVERDUE").length>0?"⚠️ "+storageFeeHistory.filter(r=>r.status==="OVERDUE").length+" overdue":""} />
+        <StatCard icon={Icons.vault(22,"#7C3AED")} title={isAr?"رسوم التخزين (هذه الدورة)":"Storage Fees (This Cycle)"} value={<SARAmount amount={fmtK(storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.fee_sar)||0),0))}/>} sub={storageFeeHistory.filter(r=>r.status==="OVERDUE").length>0?"⚠️ "+storageFeeHistory.filter(r=>r.status==="OVERDUE").length+" overdue":""} />
       </div>
-      <TabBar tabs={["ORDERS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS","STORAGE FEES"]} active={tab} onChange={setTab} />
+      <TabBar tabs={isAr?[{id:"ORDERS",label:"الطلبات"},{id:"WALLET MOVEMENTS",label:"حركات المحفظة"},{id:"WITHDRAWAL REQUESTS",label:"طلبات السحب"},{id:"STORAGE FEES",label:"رسوم التخزين"}]:["ORDERS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS","STORAGE FEES"]} active={tab} onChange={setTab} />
       {tab==="ORDERS"&&<>
         {matches.length>0&&<div style={{background:C.greenBg,borderRadius:10,padding:"8px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:14,fontWeight:700,color:C.greenSolid}}>✅ {matches.length} live match{matches.length!==1?"es":""} from today's trading session</span>
+          <span style={{fontSize:14,fontWeight:700,color:C.greenSolid}}>{isAr?`✅ ${matches.length} تطابق مباشر من جلسة التداول اليوم`:`✅ ${matches.length} live match${matches.length!==1?"es":""} from today's trading session`}</span>
         </div>}
         <TTable cols={[
-        {key:"id",label:"TX ID"},{key:"investor",label:"Investor",render:(v,row)=>row.filledFor||v},
-        {key:"vaultKey",label:"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
-        {key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
-        {key:"metalAmt",label:"Amount",render:v=><SARAmount amount={v}/>},
-        {key:"commission",label:"Commission",render:v=><SARAmount amount={v}/>},
-        {key:"adminFee",label:"Admin Fee",render:v=>v==="0"?"—":<SARAmount amount={v}/>},
-        {key:"method",label:"Method"},{key:"total",label:"Total",render:v=><SARAmount amount={v}/>},
-        {key:"status",label:"Status",render:v=><Badge label={v}/>},{key:"date",label:"Date"},
+        {key:"id",label:isAr?"رقم العملية":"TX ID"},{key:"investor",label:isAr?"المستثمر":"Investor",render:(v,row)=>row.filledFor||v},
+        {key:"vaultKey",label:isAr?"مفتاح الخزنة":"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
+        {key:"type",label:isAr?"النوع":"Type",render:v=><Badge label={v}/>},{key:"metal",label:isAr?"المعدن":"Metal"},
+        {key:"metalAmt",label:isAr?"المبلغ":"Amount",render:v=><SARAmount amount={v}/>},
+        {key:"commission",label:isAr?"العمولة":"Commission",render:v=><SARAmount amount={v}/>},
+        {key:"adminFee",label:isAr?"رسوم الإدارة":"Admin Fee",render:v=>v==="0"?"—":<SARAmount amount={v}/>},
+        {key:"method",label:isAr?"طريقة الدفع":"Method"},{key:"total",label:isAr?"الإجمالي":"Total",render:v=><SARAmount amount={v}/>},
+        {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},{key:"date",label:isAr?"التاريخ":"Date"},
       ]} rows={txRows} /></>}
       {tab==="WALLET MOVEMENTS"&&<TTable cols={[
-        {key:"id",label:"ID"},{key:"investor",label:"Investor"},
-        {key:"vaultKey",label:"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
-        {key:"type",label:"Type",render:v=><Badge label={v}/>},
-        {key:"amount",label:"Amount",render:v=><SARAmount amount={typeof v==="number"?(v||0).toLocaleString("en-SA"):v}/>},
-        {key:"reason",label:"Reason"},{key:"date",label:"Date"},
+        {key:"id",label:isAr?"المعرف":"ID"},{key:"investor",label:isAr?"المستثمر":"Investor"},
+        {key:"vaultKey",label:isAr?"مفتاح الخزنة":"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
+        {key:"type",label:isAr?"النوع":"Type",render:v=><Badge label={v}/>},
+        {key:"amount",label:isAr?"المبلغ":"Amount",render:v=><SARAmount amount={typeof v==="number"?(v||0).toLocaleString("en-SA"):v}/>},
+        {key:"reason",label:isAr?"السبب":"Reason"},{key:"date",label:isAr?"التاريخ":"Date"},
       ]} rows={walletMovements} />}
       {tab==="WITHDRAWAL REQUESTS"&&<>
         {withdrawals.filter(w=>w.status==="PENDING").length>0&&(
           <div style={{background:"#FDF4EC",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-            {Icons.pending(16,"#D4943A")}<span style={{fontSize:14,fontWeight:600,color:"#8B6540"}}>{withdrawals.filter(w=>w.status==="PENDING").length} pending withdrawal(s) require approval</span>
+            {Icons.pending(16,"#D4943A")}<span style={{fontSize:14,fontWeight:600,color:"#8B6540"}}>{isAr?`${withdrawals.filter(w=>w.status==="PENDING").length} طلبات سحب معلقة تحتاج موافقة`:`${withdrawals.filter(w=>w.status==="PENDING").length} pending withdrawal(s) require approval`}</span>
           </div>
         )}
         <TTable cols={[
-          {key:"id",label:"ID"},{key:"investor",label:"Investor"},
-          {key:"amount",label:"Amount",render:v=><SARAmount amount={typeof v==="number"?(v||0).toLocaleString("en-SA"):v}/>},
-          {key:"bank",label:"Bank"},{key:"iban",label:"IBAN",render:v=><span style={{fontFamily:"monospace",fontSize:12}}>{v}</span>},
-          {key:"status",label:"Status",render:v=><Badge label={v}/>},
-          {key:"requested",label:"Requested"},{key:"processed",label:"Processed",render:v=>v||"—"},
-          {key:"id",label:"Actions",render:(_,row)=>(
+          {key:"id",label:isAr?"المعرف":"ID"},{key:"investor",label:isAr?"المستثمر":"Investor"},
+          {key:"amount",label:isAr?"المبلغ":"Amount",render:v=><SARAmount amount={typeof v==="number"?(v||0).toLocaleString("en-SA"):v}/>},
+          {key:"bank",label:isAr?"البنك":"Bank"},{key:"iban",label:isAr?"الآيبان":"IBAN",render:v=><span style={{fontFamily:"monospace",fontSize:12}}>{v}</span>},
+          {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+          {key:"requested",label:isAr?"تاريخ الطلب":"Requested"},{key:"processed",label:isAr?"تاريخ المعالجة":"Processed",render:v=>v||"—"},
+          {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=>(
             <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"center"}}>
               {row.status==="PENDING"&&<><Btn small variant="teal" onClick={()=>doWithdrawal(row,"approve")}>{t("Approve")}</Btn><Btn small variant="danger" onClick={()=>doWithdrawal(row,"reject")}>{t("Reject")}</Btn></>}
               {row.status==="APPROVED"&&<Btn small variant="gold" onClick={()=>doWithdrawal(row,"processed")}>{t("Mark Processed")}</Btn>}
@@ -2295,9 +2296,9 @@ const Financials = () => {
         <div style={{background:"#F3F0FF",border:"1px solid #C4B5FD",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:12}}>
           <span style={{fontSize:18}}>🏦</span>
           <div>
-            <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>Vault Storage Fees</p>
+            <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>{isAr?"رسوم تخزين الخزينة":"Vault Storage Fees"}</p>
             <p style={{fontSize:12,color:"#6D28D9",margin:0}}>
-              Annual custody fees charged per billing cycle based on holdings value at spot price.
+              {isAr?"رسوم حفظ سنوية تُفرض لكل دورة فوترة بناءً على قيمة الحيازات بالسعر الفوري.":"Annual custody fees charged per billing cycle based on holdings value at spot price."}
               Gold: {storageFeeConfig.gold_rate_percent}%/yr &nbsp;·&nbsp;
               Silver: {storageFeeConfig.silver_rate_percent}%/yr &nbsp;·&nbsp;
               Platinum: {(storageFeeConfig.platinum_rate_percent||storageFeeConfig.plat_rate_percent||0.6)}%/yr &nbsp;·&nbsp;
@@ -2312,10 +2313,10 @@ const Financials = () => {
             const sfOverdue = storageFeeHistory.filter(r=>r.status==="OVERDUE").reduce((a,r)=>a+(parseFloat(r.fee_sar)||0),0);
             const sfCount = storageFeeHistory.length;
             return [
-              {label:"Total Billed",val:"SAR "+fmtK(sfTotal),color:"#5B21B6",bg:"#F3F0FF"},
-              {label:"Overdue",val:"SAR "+fmtK(sfOverdue),color:C.red,bg:C.redBg},
-              {label:"Records",val:String(sfCount),color:C.navy,bg:C.cream},
-              {label:"Avg Fee",val:"SAR "+fmtK(sfCount>0?sfTotal/sfCount:0),color:C.teal,bg:"#EFF9F9"},
+              {label:isAr?"إجمالي الفواتير":"Total Billed",val:"SAR "+fmtK(sfTotal),color:"#5B21B6",bg:"#F3F0FF"},
+              {label:isAr?"متأخرة":"Overdue",val:"SAR "+fmtK(sfOverdue),color:C.red,bg:C.redBg},
+              {label:isAr?"السجلات":"Records",val:String(sfCount),color:C.navy,bg:C.cream},
+              {label:isAr?"متوسط الرسوم":"Avg Fee",val:"SAR "+fmtK(sfCount>0?sfTotal/sfCount:0),color:C.teal,bg:"#EFF9F9"},
             ];
           })().map(c=>(
             <div key={c.label} style={{background:c.bg,borderRadius:10,padding:"12px 16px",border:`1px solid ${c.color}22`}}>
@@ -2326,27 +2327,27 @@ const Financials = () => {
         </div>
         {/* Fee table */}
         <TTable cols={[
-          {key:"id",label:"Fee ID"},
-          {key:"investor",label:"Investor"},
-          {key:"goldGrams",label:"Gold (g)",render:v=>v>0?<span style={{color:C.gold,fontFamily:"monospace"}}>{(v||0).toFixed(1)}g</span>:"—"},
-          {key:"silverGrams",label:"Silver (g)",render:v=>v>0?<span style={{color:"#94A3B8",fontFamily:"monospace"}}>{(v||0).toFixed(1)}g</span>:"—"},
-          {key:"platinumGrams",label:"Platinum (g)",render:v=>v>0?<span style={{color:"#7C3AED",fontFamily:"monospace"}}>{(v||0).toFixed(1)}g</span>:"—"},
-          {key:"goldFee",label:"Au Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
-          {key:"silverFee",label:"Ag Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
-          {key:"platFee",label:"Pt Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
-          {key:"totalFee",label:"Total Fee",render:v=><span style={{fontWeight:700,color:"#5B21B6",fontFamily:"'DM Mono',monospace"}}>SAR {(v||0).toFixed(2)}</span>},
-          {key:"status",label:"Status",render:v=><span style={{
+          {key:"id",label:isAr?"رقم الرسم":"Fee ID"},
+          {key:"investor",label:isAr?"المستثمر":"Investor"},
+          {key:"goldGrams",label:isAr?"ذهب (غ)":"Gold (g)",render:v=>v>0?<span style={{color:C.gold,fontFamily:"monospace"}}>{(v||0).toFixed(1)}g</span>:"—"},
+          {key:"silverGrams",label:isAr?"فضة (غ)":"Silver (g)",render:v=>v>0?<span style={{color:"#94A3B8",fontFamily:"monospace"}}>{(v||0).toFixed(1)}g</span>:"—"},
+          {key:"platinumGrams",label:isAr?"بلاتين (غ)":"Platinum (g)",render:v=>v>0?<span style={{color:"#7C3AED",fontFamily:"monospace"}}>{(v||0).toFixed(1)}g</span>:"—"},
+          {key:"goldFee",label:isAr?"رسم الذهب":"Au Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
+          {key:"silverFee",label:isAr?"رسم الفضة":"Ag Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
+          {key:"platFee",label:isAr?"رسم البلاتين":"Pt Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
+          {key:"totalFee",label:isAr?"إجمالي الرسوم":"Total Fee",render:v=><span style={{fontWeight:700,color:"#5B21B6",fontFamily:"'DM Mono',monospace"}}>SAR {(v||0).toFixed(2)}</span>},
+          {key:"status",label:isAr?"الحالة":"Status",render:v=><span style={{
             padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700,
             background:v==="BILLED"?C.greenBg:v==="OVERDUE"?C.redBg:C.orangeBg,
             color:v==="BILLED"?C.green:v==="OVERDUE"?C.red:C.orange,
             border:`1px solid ${v==="BILLED"?C.green:v==="OVERDUE"?C.red:C.orange}33`
           }}>{v}</span>},
-          {key:"dueDate",label:"Due Date"},
-          {key:"id",label:"Actions",render:(_,row)=>(
+          {key:"dueDate",label:isAr?"تاريخ الاستحقاق":"Due Date"},
+          {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=>(
             <div style={{display:"flex",gap:4}}>
-              {row.status==="PENDING"&&<Btn small variant="teal" onClick={()=>showFinToast("✅ Storage fee billed to "+row.investor)}>Bill Now</Btn>}
-              {row.status==="OVERDUE"&&<Btn small variant="danger" onClick={()=>showFinToast("📩 Reminder sent to "+row.investor)}>Send Reminder</Btn>}
-              <Btn small variant="ghost" onClick={()=>showFinToast("📄 Statement generated for "+row.investor)}>Statement</Btn>
+              {row.status==="PENDING"&&<Btn small variant="teal" onClick={()=>showFinToast(isAr?"✅ تم فوترة رسوم التخزين لـ "+row.investor:"✅ Storage fee billed to "+row.investor)}>{isAr?"فوتر الآن":"Bill Now"}</Btn>}
+              {row.status==="OVERDUE"&&<Btn small variant="danger" onClick={()=>showFinToast(isAr?"📩 تم إرسال تذكير إلى "+row.investor:"📩 Reminder sent to "+row.investor)}>{isAr?"إرسال تذكير":"Send Reminder"}</Btn>}
+              <Btn small variant="ghost" onClick={()=>showFinToast(isAr?"📄 تم إنشاء كشف حساب لـ "+row.investor:"📄 Statement generated for "+row.investor)}>{isAr?"كشف حساب":"Statement"}</Btn>
             </div>
           )},
         ]} rows={storageFeeHistory.map(r=>({
@@ -2364,21 +2365,21 @@ const Financials = () => {
             dueDate: r.due_date || r.billing_date || "",
             billedDate: r.billing_date || r.created_at || "",
           }))} />
-        {sfLoading&&<div style={{textAlign:"center",padding:20,color:C.textMuted,fontSize:14}}>Loading storage fee records…</div>}
-        {!sfLoading&&storageFeeHistory.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted,fontSize:14}}>No storage fee records yet. Run billing via the API to generate records.</div>}
+        {sfLoading&&<div style={{textAlign:"center",padding:20,color:C.textMuted,fontSize:14}}>{isAr?"جاري تحميل سجلات رسوم التخزين…":"Loading storage fee records…"}</div>}
+        {!sfLoading&&storageFeeHistory.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted,fontSize:14}}>{isAr?"لا توجد سجلات رسوم تخزين بعد. قم بتشغيل الفوترة عبر API لإنشاء السجلات.":"No storage fee records yet. Run billing via the API to generate records."}</div>}
       </>}
 
-      {wModal&&<Modal title={{approve:"Approve Withdrawal",reject:"Reject Withdrawal",processed:"Mark as Processed",notify:"Notify Investor"}[wModal.type]} onClose={()=>setWModal(null)}>
+      {wModal&&<Modal title={isAr?{approve:"الموافقة على السحب",reject:"رفض السحب",processed:"تمييز كمُعالج",notify:"إشعار المستثمر"}[wModal.type]:{approve:"Approve Withdrawal",reject:"Reject Withdrawal",processed:"Mark as Processed",notify:"Notify Investor"}[wModal.type]} onClose={()=>setWModal(null)}>
         <div style={{background:{approve:"#EFF5F2",reject:C.redBg,processed:"#E8EFF7",notify:C.purpleBg}[wModal.type],borderRadius:10,padding:"12px 14px",marginBottom:14}}>
           <p style={{fontSize:15,fontWeight:600,color:{approve:C.greenSolid,reject:"#C85C3E",processed:C.blueSolid,notify:C.blueSolid}[wModal.type]}}>
-            {wModal.type==="approve"&&"Investor will be notified. Process the bank transfer manually after approval."}
-            {wModal.type==="reject"&&"Funds will be returned to investor wallet."}
-            {wModal.type==="processed"&&"Confirm that the bank transfer has been completed."}
-            {wModal.type==="notify"&&"Send a status update to the investor."}
+            {wModal.type==="approve"&&(isAr?"سيتم إشعار المستثمر. قم بمعالجة التحويل البنكي يدوياً بعد الموافقة.":"Investor will be notified. Process the bank transfer manually after approval.")}
+            {wModal.type==="reject"&&(isAr?"سيتم إرجاع الأموال إلى محفظة المستثمر.":"Funds will be returned to investor wallet.")}
+            {wModal.type==="processed"&&(isAr?"تأكيد إتمام التحويل البنكي.":"Confirm that the bank transfer has been completed.")}
+            {wModal.type==="notify"&&(isAr?"إرسال تحديث حالة إلى المستثمر.":"Send a status update to the investor.")}
           </p>
         </div>
         <div style={{marginBottom:14}}>
-          {[["Investor",wModal.row.investor],["Amount","SAR "+wModal.row.amount],["Bank",wModal.row.bank],["IBAN",wModal.row.iban||"—"],["Status",wModal.row.status]].map(([k,v])=>(
+          {[[isAr?"المستثمر":"Investor",wModal.row.investor],[isAr?"المبلغ":"Amount","SAR "+wModal.row.amount],[isAr?"البنك":"Bank",wModal.row.bank],[isAr?"الآيبان":"IBAN",wModal.row.iban||"—"],[isAr?"الحالة":"Status",wModal.row.status]].map(([k,v])=>(
             <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:13,color:C.textMuted}}>{k}</span><span style={{fontSize:15,fontWeight:600,color:C.navy}}>{v}</span>
             </div>
@@ -2386,13 +2387,13 @@ const Financials = () => {
         </div>
         {wModal.type==="reject"&&<div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"سبب الرفض":"REJECTION REASON"}</label>
-          <textarea value={wReason} onChange={e=>setWReason(e.target.value)} placeholder="Enter reason for rejection..."
+          <textarea value={wReason} onChange={e=>setWReason(e.target.value)} placeholder={isAr?"أدخل سبب الرفض...":"Enter reason for rejection..."}
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:70,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>}
         <div style={{display:"flex",gap:8}}>
           <Btn variant={{approve:"teal",reject:"danger",processed:"gold",notify:"teal"}[wModal.type]}
             onClick={()=>{if(wModal.type==="reject"&&!wReason.trim()){showFinToast("⚠️ Enter rejection reason");return;}confirmWithdrawal();}}>
-            Confirm
+            {isAr?"تأكيد":"Confirm"}
           </Btn>
           <Btn variant="outline" onClick={()=>setWModal(null)}>{t("Cancel")}</Btn>
         </div>
@@ -2534,44 +2535,44 @@ const Reports = () => {
 
   const REPORT_DATA = {
     financial: [
-      { title:"Revenue Breakdown", sub:"Commission + Fees", value:<SARAmount amount={fmt0(totalComm+totalAdmin)}/>, prev:"—", change:"", up:true, chart:[totalComm], color:C.gold,
-        breakdown:[{label:"Commission",val:fmt0(totalComm),pct:totalComm+totalAdmin>0?Math.round(totalComm/(totalComm+totalAdmin)*100):0},{label:"Admin Fees",val:fmt0(totalAdmin),pct:totalComm+totalAdmin>0?Math.round(totalAdmin/(totalComm+totalAdmin)*100):0}] },
-      { title:"Trading Volume by Metal", sub:"All time", value:<SARAmount amount={fmt0(volTotal)}/>, prev:"—", change:"", up:true, chart:[volGold,volSilver,volPlat].filter(Boolean), color:C.teal,
-        breakdown:[{label:"Gold",val:fmt0(volGold),pct:volTotal>0?Math.round(volGold/volTotal*100):0},{label:"Silver",val:fmt0(volSilver),pct:volTotal>0?Math.round(volSilver/volTotal*100):0},{label:"Platinum",val:fmt0(volPlat),pct:volTotal>0?Math.round(volPlat/volTotal*100):0}] },
-      { title:"Volume by Period", sub:"Daily average", value:<SARAmount amount={fmt0(dailyAvg)}/>, prev:"—", change:"", up:true, chart:[dailyAvg], color:"#8B5CF6",
-        breakdown:[{label:"Avg/Day",val:fmt0(dailyAvg),pct:100}] },
-      { title:"Payment Methods", sub:"All orders", value:`${orders.length} orders`, prev:"—", change:"", up:true, chart:[orders.length], color:"#D4943A",
+      { title:isAr?"تفصيل الإيرادات":"Revenue Breakdown", sub:isAr?"العمولة + الرسوم":"Commission + Fees", value:<SARAmount amount={fmt0(totalComm+totalAdmin)}/>, prev:"—", change:"", up:true, chart:[totalComm], color:C.gold,
+        breakdown:[{label:isAr?"العمولة":"Commission",val:fmt0(totalComm),pct:totalComm+totalAdmin>0?Math.round(totalComm/(totalComm+totalAdmin)*100):0},{label:isAr?"رسوم الإدارة":"Admin Fees",val:fmt0(totalAdmin),pct:totalComm+totalAdmin>0?Math.round(totalAdmin/(totalComm+totalAdmin)*100):0}] },
+      { title:isAr?"حجم التداول حسب المعدن":"Trading Volume by Metal", sub:isAr?"كل الأوقات":"All time", value:<SARAmount amount={fmt0(volTotal)}/>, prev:"—", change:"", up:true, chart:[volGold,volSilver,volPlat].filter(Boolean), color:C.teal,
+        breakdown:[{label:isAr?"الذهب":"Gold",val:fmt0(volGold),pct:volTotal>0?Math.round(volGold/volTotal*100):0},{label:isAr?"الفضة":"Silver",val:fmt0(volSilver),pct:volTotal>0?Math.round(volSilver/volTotal*100):0},{label:isAr?"البلاتين":"Platinum",val:fmt0(volPlat),pct:volTotal>0?Math.round(volPlat/volTotal*100):0}] },
+      { title:isAr?"الحجم حسب الفترة":"Volume by Period", sub:isAr?"المتوسط اليومي":"Daily average", value:<SARAmount amount={fmt0(dailyAvg)}/>, prev:"—", change:"", up:true, chart:[dailyAvg], color:"#8B5CF6",
+        breakdown:[{label:isAr?"متوسط/يوم":"Avg/Day",val:fmt0(dailyAvg),pct:100}] },
+      { title:isAr?"طرق الدفع":"Payment Methods", sub:isAr?"جميع الأوامر":"All orders", value:`${orders.length} ${isAr?"أمر":"orders"}`, prev:"—", change:"", up:true, chart:[orders.length], color:"#D4943A",
         breakdown:[{label:"MADA",val:String(orders.filter(o=>o.payment==="MADA").length),pct:orders.length>0?Math.round(orders.filter(o=>o.payment==="MADA").length/orders.length*100):0},{label:"SADAD",val:String(orders.filter(o=>o.payment==="SADAD").length),pct:orders.length>0?Math.round(orders.filter(o=>o.payment==="SADAD").length/orders.length*100):0},{label:"Visa/MC",val:String(orders.filter(o=>["VISA","MASTERCARD"].includes(o.payment)).length),pct:orders.length>0?Math.round(orders.filter(o=>["VISA","MASTERCARD"].includes(o.payment)).length/orders.length*100):0}] },
-      { title:"Wallet Movements", sub:"Credits & debits", value:<SARAmount amount={fmt0(credits+debits)}/>, prev:"—", change:"", up:true, chart:[credits,debits].filter(Boolean), color:C.teal,
-        breakdown:[{label:"Credits",val:fmt0(credits),pct:credits+debits>0?Math.round(credits/(credits+debits)*100):0},{label:"Debits",val:fmt0(debits),pct:credits+debits>0?Math.round(debits/(credits+debits)*100):0}] },
-      { title:"Withdrawal Requests", sub:"All time", value:<SARAmount amount={fmt0(wdTotal)}/>, prev:"—", change:"", up:true, chart:[wdTotal], color:"#C85C3E",
-        breakdown:[{label:"Processed",val:String(wdProcessed),pct:withdrawals.length>0?Math.round(wdProcessed/withdrawals.length*100):0},{label:"Pending",val:String(wdPending),pct:withdrawals.length>0?Math.round(wdPending/withdrawals.length*100):0}] },
+      { title:isAr?"حركات المحفظة":"Wallet Movements", sub:isAr?"الإيداعات والخصومات":"Credits & debits", value:<SARAmount amount={fmt0(credits+debits)}/>, prev:"—", change:"", up:true, chart:[credits,debits].filter(Boolean), color:C.teal,
+        breakdown:[{label:isAr?"إيداعات":"Credits",val:fmt0(credits),pct:credits+debits>0?Math.round(credits/(credits+debits)*100):0},{label:isAr?"خصومات":"Debits",val:fmt0(debits),pct:credits+debits>0?Math.round(debits/(credits+debits)*100):0}] },
+      { title:isAr?"طلبات السحب":"Withdrawal Requests", sub:isAr?"كل الأوقات":"All time", value:<SARAmount amount={fmt0(wdTotal)}/>, prev:"—", change:"", up:true, chart:[wdTotal], color:"#C85C3E",
+        breakdown:[{label:isAr?"تمت المعالجة":"Processed",val:String(wdProcessed),pct:withdrawals.length>0?Math.round(wdProcessed/withdrawals.length*100):0},{label:isAr?"معلقة":"Pending",val:String(wdPending),pct:withdrawals.length>0?Math.round(wdPending/withdrawals.length*100):0}] },
     ],
     vault: [
-      { title:"Bars by Metal", sub:"Physical inventory", value:`${barsTotal} bars`, prev:"—", change:"", up:true, chart:[barsGold,barsSilver,barsPlat].filter(Boolean), color:C.gold,
-        breakdown:[{label:"Gold",val:String(barsGold),pct:barsTotal>0?Math.round(barsGold/barsTotal*100):0},{label:"Silver",val:String(barsSilver),pct:barsTotal>0?Math.round(barsSilver/barsTotal*100):0},{label:"Platinum",val:String(barsPlat),pct:barsTotal>0?Math.round(barsPlat/barsTotal*100):0}] },
-      { title:"Tokens Minted/Burned", sub:"All time", value:`${fmt0(minted)} minted`, prev:"—", change:"", up:true, chart:[minted,burned].filter(Boolean), color:C.greenSolid,
-        breakdown:[{label:"Minted",val:fmt0(minted),pct:minted+burned>0?Math.round(minted/(minted+burned)*100):0},{label:"Burned",val:fmt0(burned),pct:minted+burned>0?Math.round(burned/(minted+burned)*100):0}] },
-      { title:"Deposit vs Withdrawal", sub:"Appointment types", value:`${apptTotal} total`, prev:"—", change:"", up:true, chart:[apptDeposit,apptWithdr].filter(Boolean), color:"#8B5CF6",
-        breakdown:[{label:"Deposits",val:String(apptDeposit),pct:apptTotal>0?Math.round(apptDeposit/apptTotal*100):0},{label:"Withdrawals",val:String(apptWithdr),pct:apptTotal>0?Math.round(apptWithdr/apptTotal*100):0}] },
+      { title:isAr?"السبائك حسب المعدن":"Bars by Metal", sub:isAr?"المخزون الفعلي":"Physical inventory", value:`${barsTotal} ${isAr?"سبيكة":"bars"}`, prev:"—", change:"", up:true, chart:[barsGold,barsSilver,barsPlat].filter(Boolean), color:C.gold,
+        breakdown:[{label:isAr?"الذهب":"Gold",val:String(barsGold),pct:barsTotal>0?Math.round(barsGold/barsTotal*100):0},{label:isAr?"الفضة":"Silver",val:String(barsSilver),pct:barsTotal>0?Math.round(barsSilver/barsTotal*100):0},{label:isAr?"البلاتين":"Platinum",val:String(barsPlat),pct:barsTotal>0?Math.round(barsPlat/barsTotal*100):0}] },
+      { title:isAr?"الرموز المُصكّة/المحروقة":"Tokens Minted/Burned", sub:isAr?"كل الأوقات":"All time", value:`${fmt0(minted)} ${isAr?"مُصكّة":"minted"}`, prev:"—", change:"", up:true, chart:[minted,burned].filter(Boolean), color:C.greenSolid,
+        breakdown:[{label:isAr?"مُصكّة":"Minted",val:fmt0(minted),pct:minted+burned>0?Math.round(minted/(minted+burned)*100):0},{label:isAr?"محروقة":"Burned",val:fmt0(burned),pct:minted+burned>0?Math.round(burned/(minted+burned)*100):0}] },
+      { title:isAr?"الإيداع مقابل السحب":"Deposit vs Withdrawal", sub:isAr?"أنواع المواعيد":"Appointment types", value:`${apptTotal} ${isAr?"إجمالي":"total"}`, prev:"—", change:"", up:true, chart:[apptDeposit,apptWithdr].filter(Boolean), color:"#8B5CF6",
+        breakdown:[{label:isAr?"إيداعات":"Deposits",val:String(apptDeposit),pct:apptTotal>0?Math.round(apptDeposit/apptTotal*100):0},{label:isAr?"سحوبات":"Withdrawals",val:String(apptWithdr),pct:apptTotal>0?Math.round(apptWithdr/apptTotal*100):0}] },
     ],
     investors: [
-      { title:"Active / Suspended / Banned", sub:"Account status", value:`${invTotal} total`, prev:"—", change:"", up:true, chart:[invActive,invSusp,invBanned].filter(Boolean), color:C.navy,
-        breakdown:[{label:"Active",val:String(invActive),pct:invTotal>0?Math.round(invActive/invTotal*100):0},{label:"Suspended",val:String(invSusp),pct:invTotal>0?Math.round(invSusp/invTotal*100):0},{label:"Banned",val:String(invBanned),pct:invTotal>0?Math.round(invBanned/invTotal*100):0}] },
-      { title:"Top by Holdings Value", sub:"Highest portfolio", value:<SARAmount amount={fmt0(topInv[0]?.holdingsValue||0)}/>, prev:"—", change:"", up:true, chart:[topInv[0]?.holdingsValue||0], color:C.gold,
+      { title:isAr?"نشط / معلّق / محظور":"Active / Suspended / Banned", sub:isAr?"حالة الحسابات":"Account status", value:`${invTotal} ${isAr?"إجمالي":"total"}`, prev:"—", change:"", up:true, chart:[invActive,invSusp,invBanned].filter(Boolean), color:C.navy,
+        breakdown:[{label:isAr?"نشط":"Active",val:String(invActive),pct:invTotal>0?Math.round(invActive/invTotal*100):0},{label:isAr?"معلّق":"Suspended",val:String(invSusp),pct:invTotal>0?Math.round(invSusp/invTotal*100):0},{label:isAr?"محظور":"Banned",val:String(invBanned),pct:invTotal>0?Math.round(invBanned/invTotal*100):0}] },
+      { title:isAr?"الأعلى حسب قيمة الحيازات":"Top by Holdings Value", sub:isAr?"أعلى محفظة":"Highest portfolio", value:<SARAmount amount={fmt0(topInv[0]?.holdingsValue||0)}/>, prev:"—", change:"", up:true, chart:[topInv[0]?.holdingsValue||0], color:C.gold,
         breakdown:topInv.slice(0,3).map((inv,i)=>({label:inv.display_id||inv.id||"—",val:fmt0(inv.holdingsValue||0),pct:topInv[0]?.holdingsValue>0?Math.round((inv.holdingsValue||0)/(topInv[0]?.holdingsValue||1)*100):0})) },
-      { title:"Top by Trading Volume", sub:"Most active", value:<SARAmount amount={fmt0(volTotal)}/>, prev:"—", change:"", up:true, chart:[volTotal], color:"#8B5CF6",
-        breakdown:matches.length?[{label:"Total volume",val:fmt0(volTotal),pct:100}]:[{label:"No trades yet",val:"0",pct:0}] },
+      { title:isAr?"الأعلى حسب حجم التداول":"Top by Trading Volume", sub:isAr?"الأكثر نشاطاً":"Most active", value:<SARAmount amount={fmt0(volTotal)}/>, prev:"—", change:"", up:true, chart:[volTotal], color:"#8B5CF6",
+        breakdown:matches.length?[{label:isAr?"إجمالي الحجم":"Total volume",val:fmt0(volTotal),pct:100}]:[{label:isAr?"لا توجد صفقات بعد":"No trades yet",val:"0",pct:0}] },
     ],
     appointments: [
-      { title:"Total by Period", sub:"All appointments", value:`${apptTotal} total`, prev:"—", change:"", up:true, chart:[apptTotal||0], color:C.teal,
-        breakdown:[{label:"Completed",val:String(apptDone),pct:apptTotal>0?complRate:0},{label:"No Show",val:String(apptNoShow),pct:apptTotal>0?noShowRate:0},{label:"Other",val:String(apptTotal-apptDone-apptNoShow),pct:apptTotal>0?Math.max(0,100-complRate-noShowRate):0}] },
-      { title:"Deposit vs Withdrawal Split", sub:"Type breakdown", value:`${apptDeposit} deposits`, prev:"—", change:"", up:true, chart:[apptDeposit,apptWithdr].filter(Boolean), color:C.gold,
-        breakdown:[{label:"Deposits",val:String(apptDeposit),pct:apptTotal>0?Math.round(apptDeposit/apptTotal*100):0},{label:"Withdrawals",val:String(apptWithdr),pct:apptTotal>0?Math.round(apptWithdr/apptTotal*100):0}] },
-      { title:"No Show Rate", sub:"Missed appointments", value:`${noShowRate}%`, prev:"—", change:"", up:noShowRate===0, chart:[noShowRate||0], color:"#C85C3E",
-        breakdown:[{label:"Attended",val:String(apptTotal-apptNoShow),pct:100-noShowRate},{label:"No Show",val:String(apptNoShow),pct:noShowRate}] },
-      { title:"Completion Rate", sub:"Successfully done", value:`${complRate}%`, prev:"—", change:"", up:complRate>80, chart:[complRate||0], color:C.greenSolid,
-        breakdown:[{label:"Completed",val:String(apptDone),pct:complRate}] },
+      { title:isAr?"الإجمالي حسب الفترة":"Total by Period", sub:isAr?"جميع المواعيد":"All appointments", value:`${apptTotal} ${isAr?"إجمالي":"total"}`, prev:"—", change:"", up:true, chart:[apptTotal||0], color:C.teal,
+        breakdown:[{label:isAr?"مكتملة":"Completed",val:String(apptDone),pct:apptTotal>0?complRate:0},{label:isAr?"لم يحضر":"No Show",val:String(apptNoShow),pct:apptTotal>0?noShowRate:0},{label:isAr?"أخرى":"Other",val:String(apptTotal-apptDone-apptNoShow),pct:apptTotal>0?Math.max(0,100-complRate-noShowRate):0}] },
+      { title:isAr?"تقسيم الإيداع والسحب":"Deposit vs Withdrawal Split", sub:isAr?"تفصيل الأنواع":"Type breakdown", value:`${apptDeposit} ${isAr?"إيداع":"deposits"}`, prev:"—", change:"", up:true, chart:[apptDeposit,apptWithdr].filter(Boolean), color:C.gold,
+        breakdown:[{label:isAr?"إيداعات":"Deposits",val:String(apptDeposit),pct:apptTotal>0?Math.round(apptDeposit/apptTotal*100):0},{label:isAr?"سحوبات":"Withdrawals",val:String(apptWithdr),pct:apptTotal>0?Math.round(apptWithdr/apptTotal*100):0}] },
+      { title:isAr?"نسبة عدم الحضور":"No Show Rate", sub:isAr?"المواعيد الفائتة":"Missed appointments", value:`${noShowRate}%`, prev:"—", change:"", up:noShowRate===0, chart:[noShowRate||0], color:"#C85C3E",
+        breakdown:[{label:isAr?"حضر":"Attended",val:String(apptTotal-apptNoShow),pct:100-noShowRate},{label:isAr?"لم يحضر":"No Show",val:String(apptNoShow),pct:noShowRate}] },
+      { title:isAr?"نسبة الإكمال":"Completion Rate", sub:isAr?"تمت بنجاح":"Successfully done", value:`${complRate}%`, prev:"—", change:"", up:complRate>80, chart:[complRate||0], color:C.greenSolid,
+        breakdown:[{label:isAr?"مكتملة":"Completed",val:String(apptDone),pct:complRate}] },
     ],
   };
 
@@ -2642,7 +2643,7 @@ const Reports = () => {
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:14}}>
           <div>
             <p style={{fontSize:32,fontWeight:800,color:C.navy,lineHeight:1}}>{r.value}</p>
-            <p style={{fontSize:14,color:C.textMuted,marginTop:5}}>prev: {r.prev}</p>
+            <p style={{fontSize:14,color:C.textMuted,marginTop:5}}>{isAr?"السابق":"prev"}: {r.prev}</p>
           </div>
           <MiniBar data={r.chart} color={r.color} />
         </div>
@@ -2673,7 +2674,7 @@ const Reports = () => {
 
   return (
     <div>
-      <SectionHeader title={isAr?"التقارير":"Reports"} sub="Platform analytics and export center" />
+      <SectionHeader title={isAr?"التقارير":"Reports"} sub={isAr?"تحليلات المنصة ومركز التصدير":"Platform analytics and export center"} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:28}}>
         <StatCard icon={Icons.aum(22,C.gold)} title={isAr?"إجمالي الأصول المُدارة":"Total AUM"} value={<SARAmount amount={fmtK(liveAUM)}/>} gold />
         <StatCard icon={Icons.volume(22,C.teal)} title={isAr?"الحجم (الكل)":"Volume (All)"} value={<SARAmount amount={fmtK(volAll)}/>} />
@@ -2743,19 +2744,19 @@ const Blacklist = () => {
   return (
     <div>
       {blToast&&<div style={{position:"fixed",top:20,right:20,background:C.navy,color:C.white,padding:"12px 20px",borderRadius:12,fontSize:15,fontWeight:600,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{blToast}</div>}
-      <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub="Banned by National ID — blocked from login and registration until admin unbans"
-        action={<Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Ban User</span></Btn>} />
+      <SectionHeader title={isAr?"المستخدمون المحظورون":"Banned Users"} sub={isAr?"محظورون بالهوية الوطنية — لا يمكنهم الدخول أو التسجيل حتى رفع الحظر":"Banned by National ID — blocked from login and registration until admin unbans"}
+        action={<Btn variant="danger" onClick={()=>setShowAdd(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"حظر مستخدم":"Ban User"}</span></Btn>} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.blacklist(22,"#C85C3E")} title={isAr?"إجمالي المحظورين":"Total Banned"} value={blacklist.length} />
         <StatCard icon={Icons.calendar(22,C.teal)} title={isAr?"المحظورون هذا الشهر":"Banned This Month"} value={blacklist.filter(b=>b.date?.startsWith(new Date().toISOString().slice(0,7))).length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={isAr?"رُفع الحظر هذا الشهر":"Unbanned This Month"} value="0" />
       </div>
       <TTable cols={[
-        {key:"id",label:"Record ID"},{key:"name",label:"Name"},
-        {key:"nationalId",label:"National ID",render:v=><span style={{fontFamily:"monospace",fontSize:13}}>{v}</span>},
-        {key:"vaultKey",label:"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
-        {key:"reason",label:"Reason"},{key:"bannedBy",label:"Banned By"},{key:"date",label:"Date"},
-        {key:"id",label:"Actions",render:(_,row)=><div style={{display:"flex",gap:4,justifyContent:"center"}}>
+        {key:"id",label:isAr?"رقم السجل":"Record ID"},{key:"name",label:isAr?"الاسم":"Name"},
+        {key:"nationalId",label:isAr?"الهوية الوطنية":"National ID",render:v=><span style={{fontFamily:"monospace",fontSize:13}}>{v}</span>},
+        {key:"vaultKey",label:isAr?"مفتاح الخزنة":"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
+        {key:"reason",label:isAr?"السبب":"Reason"},{key:"bannedBy",label:isAr?"محظور من قبل":"Banned By"},{key:"date",label:isAr?"التاريخ":"Date"},
+        {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=><div style={{display:"flex",gap:4,justifyContent:"center"}}>
           <Btn small variant="teal" onClick={()=>unban(row.id)}>{t("Unban")}</Btn>
           <Btn small variant="outline" onClick={()=>setEditRow(row)}>{isAr?"تعديل":"Edit"}</Btn>
           <Btn small variant="ghost" onClick={()=>showBlToast("✅ Notification sent to registry")}>{t("Notify")}</Btn>
@@ -2765,21 +2766,21 @@ const Blacklist = () => {
       {/* Ban Form */}
       {showAdd&&<Modal title={isAr?"حظر مستخدم برقم الهوية":"Ban User by National ID"} onClose={()=>setShowAdd(false)}>
         <div style={{background:"#FBF0EC",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-          {Icons.warning(16,"#C85C3E")}<p style={{fontSize:14,color:"#C85C3E",fontWeight:500}}>Ban is tied to National ID. Cannot login or re-register until manually unbanned.</p>
+          {Icons.warning(16,"#C85C3E")}<p style={{fontSize:14,color:"#C85C3E",fontWeight:500}}>{isAr?"الحظر مرتبط برقم الهوية. لا يمكنه تسجيل الدخول أو إعادة التسجيل حتى يتم رفع الحظر يدوياً.":"Ban is tied to National ID. Cannot login or re-register until manually unbanned."}</p>
         </div>
-        <Inp label="National ID *" value={form.nationalId} onChange={v=>setForm({...form,nationalId:v})} placeholder="1090123456" />
-        <Inp label="Full Name (optional)" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="Mohammed Al-..." />
+        <Inp label={isAr?"رقم الهوية *":"National ID *"} value={form.nationalId} onChange={v=>setForm({...form,nationalId:v})} placeholder="1090123456" />
+        <Inp label={isAr?"الاسم الكامل (اختياري)":"Full Name (optional)"} value={form.name} onChange={v=>setForm({...form,name:v})} placeholder={isAr?"محمد ال...":"Mohammed Al-..."} />
         <div style={{marginBottom:14}}>
-          <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>REASON *</label>
-          <textarea value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} placeholder="Describe the reason for ban..."
+          <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"السبب *":"REASON *"}</label>
+          <textarea value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} placeholder={isAr?"اذكر سبب الحظر...":"Describe the reason for ban..."}
             style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:15,border:`1px solid ${C.border}`,resize:"vertical",minHeight:80,boxSizing:"border-box",fontFamily:"inherit"}}/>
         </div>
         <div style={{display:"flex",gap:8}}><Btn variant="danger" onClick={addBan}>{isAr?"تأكيد الحظر":"Confirm Ban"}</Btn><Btn variant="outline" onClick={()=>setShowAdd(false)}>{t("Cancel")}</Btn></div>
       </Modal>}
 
       {/* Edit Modal */}
-      {editRow&&<Modal title={"Edit — "+editRow.id} onClose={()=>setEditRow(null)}>
-        <Inp label={isAr?"السبب":"Reason"} value={editRow.reason} onChange={v=>setEditRow({...editRow,reason:v})} placeholder="Update reason..." />
+      {editRow&&<Modal title={(isAr?"تعديل — ":"Edit — ")+editRow.id} onClose={()=>setEditRow(null)}>
+        <Inp label={isAr?"السبب":"Reason"} value={editRow.reason} onChange={v=>setEditRow({...editRow,reason:v})} placeholder={isAr?"تحديث السبب...":"Update reason..."} />
         <div style={{display:"flex",gap:8}}>
           <Btn variant="gold" onClick={()=>{
             setBlacklist(prev=>prev.map(b=>b.id===editRow.id?{...b,reason:editRow.reason}:b));
@@ -2935,7 +2936,7 @@ const Blocks = () => {
   const blockTxRows = [...matchRows,...eventRows];
   return (
     <div>
-      <SectionHeader title={isAr?"الكتل":"Blocks"} sub="Private permissioned blockchain — Tanaqul network" />
+      <SectionHeader title={isAr?"الكتل":"Blocks"} sub={isAr?"بلوكشين خاص مرخص — شبكة تنقّل":"Private permissioned blockchain — Tanaqul network"} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:18}}>
         <StatCard icon={Icons.block(22,C.navy)} title={isAr?"آخر كتلة":"Latest Block"} value={"#"+(appBlockStats?.latest_block_number || 0)} gold />
         <StatCard icon={Icons.token(22,C.teal)} title={isAr?"الرموز المصكوكة":"Tokens Minted"} value={appBlockStats?.total_blocks || 0} />
@@ -2947,30 +2948,30 @@ const Blocks = () => {
       <div style={{background:C.navyDark,borderRadius:12,padding:"12px 16px",marginBottom:18,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:7,height:7,borderRadius:"50%",background:"#4ADE80",boxShadow:"0 0 8px #4ADE80"}} /><span style={{fontSize:13,color:"#A89880",fontWeight:500}}>{isAr?"الشبكة متصلة":"Network Online"}</span></div>
         <span style={{color:C.silverText}}>|</span>
-        <span style={{fontSize:13,color:"#A89880"}}>Trigger: <span style={{color:C.gold}}>{triggerText}</span></span>
+        <span style={{fontSize:13,color:"#A89880"}}>{isAr?"المحفز:":"Trigger:"} <span style={{color:C.gold}}>{triggerText}</span></span>
         <span style={{color:C.silverText}}>|</span>
-        <span style={{fontSize:13,color:"#A89880"}}>Split: <span style={{color:C.teal}}>{tanaqulPct}% Tanaqul / {creatorPct}% Creator / {validatorsPct}% Validators</span></span>
+        <span style={{fontSize:13,color:"#A89880"}}>{isAr?"التوزيع:":"Split:"} <span style={{color:C.teal}}>{tanaqulPct}% {isAr?"تنقّل":"Tanaqul"} / {creatorPct}% {isAr?"المنشئ":"Creator"} / {validatorsPct}% {isAr?"المدققون":"Validators"}</span></span>
         <span style={{color:C.silverText}}>|</span>
-        <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>Last: {(appBlockStats?.latest_block_hash ? (appBlockStats.latest_block_hash.substring(0,10)+"..."+appBlockStats.latest_block_hash.slice(-4)) : "–")}</span>
-        {appBlocks.length===0&&<button onClick={createGenesis} disabled={genesisLoading} style={{marginLeft:"auto",padding:"6px 16px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",border:"1px solid "+C.gold,background:C.goldLight,color:C.goldDim}}>{genesisLoading?"Creating...":"⛓ Create Genesis Block #1"}</button>}
+        <span style={{fontSize:13,color:"#A89880",fontFamily:"monospace"}}>{isAr?"آخر:":"Last:"} {(appBlockStats?.latest_block_hash ? (appBlockStats.latest_block_hash.substring(0,10)+"..."+appBlockStats.latest_block_hash.slice(-4)) : "–")}</span>
+        {appBlocks.length===0&&<button onClick={createGenesis} disabled={genesisLoading} style={{marginLeft:"auto",padding:"6px 16px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",border:"1px solid "+C.gold,background:C.goldLight,color:C.goldDim}}>{genesisLoading?(isAr?"جاري الإنشاء...":"Creating..."):(isAr?"⛓ إنشاء كتلة التأسيس #1":"⛓ Create Genesis Block #1")}</button>}
       </div>
       <TabBar tabs={[{id:"BLOCKS",label:isAr?"البلوكات":"BLOCKS"},{id:"TRANSACTIONS",label:isAr?"المعاملات":"TRANSACTIONS"},{id:"VALIDATORS",label:isAr?"المدققون":"VALIDATORS"}]} active={tab} onChange={setTab} />
       {tab==="BLOCKS"&&<><TTable cols={[
-        {key:"number",label:"Block #",render:v=><span style={{fontFamily:"monospace",color:C.gold,cursor:"pointer"}} onClick={()=>openBlock(v)}>#{v}</span>},
-        {key:"hash",label:"Hash",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
-        {key:"txCount",label:"TXs"},
-        {key:"commission",label:"Commission",render:v=><SARAmount amount={v}/>},
-        {key:"tanaqulShare",label:`Tanaqul ${tanaqulPct}%`,render:v=><SARAmount amount={v}/>},
-        {key:"creatorShare",label:`Creator ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
-        {key:"validatorsShare",label:`Validators ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
-        {key:"validator",label:"Creator"},{key:"size",label:"Size"},{key:"timestamp",label:"Time"},
+        {key:"number",label:isAr?"كتلة #":"Block #",render:v=><span style={{fontFamily:"monospace",color:C.gold,cursor:"pointer"}} onClick={()=>openBlock(v)}>#{v}</span>},
+        {key:"hash",label:isAr?"الهاش":"Hash",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
+        {key:"txCount",label:isAr?"المعاملات":"TXs"},
+        {key:"commission",label:isAr?"العمولة":"Commission",render:v=><SARAmount amount={v}/>},
+        {key:"tanaqulShare",label:`${isAr?"تنقّل":"Tanaqul"} ${tanaqulPct}%`,render:v=><SARAmount amount={v}/>},
+        {key:"creatorShare",label:`${isAr?"المنشئ":"Creator"} ${creatorPct}%`,render:v=><SARAmount amount={v}/>},
+        {key:"validatorsShare",label:`${isAr?"المدققون":"Validators"} ${validatorsPct}%`,render:v=><SARAmount amount={v}/>},
+        {key:"validator",label:isAr?"المنشئ":"Creator"},{key:"size",label:isAr?"الحجم":"Size"},{key:"timestamp",label:isAr?"الوقت":"Time"},
       ]} rows={appBlocks} emptyText={isAr?"لا توجد كتل بعد — سيتم إنشاؤها تلقائياً":"No blocks yet — will be created automatically"} />
-      {blockDetail&&<Modal title={"Block #"+blockDetail.number} onClose={()=>setBlockDetail(null)}>
+      {blockDetail&&<Modal title={(isAr?"كتلة #":"Block #")+blockDetail.number} onClose={()=>setBlockDetail(null)}>
         <div style={{fontFamily:"monospace",fontSize:11,color:C.teal,wordBreak:"break-all",marginBottom:16,background:C.bg,padding:12,borderRadius:8}}>{blockDetail.hash}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
-          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>TRANSACTIONS</p><p style={{fontSize:20,fontWeight:700,color:C.navy}}>{blockDetail.tx_count}</p></div>
-          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>SIZE</p><p style={{fontSize:20,fontWeight:700,color:C.navy}}>{blockDetail.size_bytes?(blockDetail.size_bytes/1024).toFixed(1)+"KB":"—"}</p></div>
-          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>TIME</p><p style={{fontSize:13,fontWeight:600,color:C.navy}}>{blockDetail.created_at?new Date(blockDetail.created_at).toLocaleString():"—"}</p></div>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>{isAr?"المعاملات":"TRANSACTIONS"}</p><p style={{fontSize:20,fontWeight:700,color:C.navy}}>{blockDetail.tx_count}</p></div>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>{isAr?"الحجم":"SIZE"}</p><p style={{fontSize:20,fontWeight:700,color:C.navy}}>{blockDetail.size_bytes?(blockDetail.size_bytes/1024).toFixed(1)+"KB":"—"}</p></div>
+          <div style={{background:C.bg,borderRadius:10,padding:12,textAlign:"center"}}><p style={{fontSize:10,color:C.textMuted,fontWeight:600}}>{isAr?"الوقت":"TIME"}</p><p style={{fontSize:13,fontWeight:600,color:C.navy}}>{blockDetail.created_at?new Date(blockDetail.created_at).toLocaleString():"—"}</p></div>
         </div>
         {blockDetail.token_snapshot&&<><p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{isAr?"لقطة الرموز":"Token Snapshot"}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
@@ -2983,11 +2984,11 @@ const Blocks = () => {
         </div>}
       </Modal>}</>}
       {tab==="TRANSACTIONS"&&<TTable cols={[
-        {key:"id",label:"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
-        {key:"investor",label:"Investor"},{key:"type",label:"Type",render:v=><Badge label={v}/>},{key:"metal",label:"Metal"},
-        {key:"metalAmt",label:"Amount",render:v=><SARAmount amount={v}/>},
-        {key:"commission",label:"Commission",render:v=><SARAmount amount={v}/>},
-        {key:"status",label:"Status",render:v=><Badge label={v}/>},{key:"date",label:"Time"},
+        {key:"id",label:isAr?"هاش المعاملة":"TX Hash",render:(_,r)=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{r.id}</span>},
+        {key:"investor",label:isAr?"المستثمر":"Investor"},{key:"type",label:isAr?"النوع":"Type",render:v=><Badge label={v}/>},{key:"metal",label:isAr?"المعدن":"Metal"},
+        {key:"metalAmt",label:isAr?"المبلغ":"Amount",render:v=><SARAmount amount={v}/>},
+        {key:"commission",label:isAr?"العمولة":"Commission",render:v=><SARAmount amount={v}/>},
+        {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},{key:"date",label:isAr?"الوقت":"Time"},
       ]} rows={blockTxRows} />}
       {tab==="VALIDATORS"&&<ValidatorsTab />}
     </div>
@@ -3471,13 +3472,13 @@ const AuditLog = () => {
           <span style={{fontSize:14,fontWeight:700,color:"#4ADE80"}}>{isAr?"المراقبة المباشرة":"LIVE MONITORING"}</span>
         </div>
         <div style={{width:1,height:16,background:"#3D3225"}}/>
-        <span style={{fontSize:13,color:"#A89880"}}>14 AML + 10 CMA rules scanning continuously</span>
+        <span style={{fontSize:13,color:"#A89880"}}>{isAr?"14 قاعدة لغسل الأموال + 10 قواعد لهيئة السوق تعمل باستمرار":"14 AML + 10 CMA rules scanning continuously"}</span>
         <div style={{width:1,height:16,background:"#3D3225"}}/>
-        <span style={{fontSize:13,color:"#A89880"}}>Last scan: {amlLastRun ? new Date(amlLastRun).toLocaleTimeString() : "—"}</span>
+        <span style={{fontSize:13,color:"#A89880"}}>{isAr?"آخر فحص:":"Last scan:"} {amlLastRun ? new Date(amlLastRun).toLocaleTimeString() : "—"}</span>
         <div style={{width:1,height:16,background:"#3D3225"}}/>
-        <span style={{fontSize:13,color:"#A89880"}}>{amlAlerts.filter(a=>!amlDismissed.has(a.key)).length} active / {amlDismissed.size} dismissed</span>
+        <span style={{fontSize:13,color:"#A89880"}}>{amlAlerts.filter(a=>!amlDismissed.has(a.key)).length} {isAr?"نشط":"active"} / {amlDismissed.size} {isAr?"مرفوض":"dismissed"}</span>
         <div style={{flex:1}}/>
-        <span style={{fontSize:12,color:"#8C7E6F"}}>Engine re-evaluates on every state mutation (orders, matches, bans, withdrawals)</span>
+        <span style={{fontSize:12,color:"#8C7E6F"}}>{isAr?"يُعاد التقييم عند كل تغيير (أوامر، مطابقات، حظر، سحوبات)":"Engine re-evaluates on every state mutation (orders, matches, bans, withdrawals)"}</span>
       </div>
 
       {/* TOP STATS */}
@@ -3492,10 +3493,10 @@ const AuditLog = () => {
       {(critCount + cmaCritCount) > 0 && <div style={{background:"linear-gradient(90deg,#8B3520,#C85C3E)",borderRadius:12,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
         <span style={{fontSize:26}}>🚨</span>
         <div style={{flex:1}}>
-          <p style={{fontSize:16,fontWeight:800,color:"#FFF"}}>{critCount + cmaCritCount} CRITICAL Alert{(critCount+cmaCritCount)>1?"s":""} — {critCount>0?`${critCount} AML`:""}{critCount>0&&cmaCritCount>0?" + ":""}{cmaCritCount>0?`${cmaCritCount} Market Manipulation`:""}</p>
-          <p style={{fontSize:13,color:"#E8C5BA"}}>{cmaCritCount>0?"CMA Market Conduct Regulations require immediate investigation of manipulation alerts. ":""}SAMA regulations require escalation within 24 hours.</p>
+          <p style={{fontSize:16,fontWeight:800,color:"#FFF"}}>{critCount + cmaCritCount} {isAr?"تنبيه حرج":"CRITICAL Alert"}{(critCount+cmaCritCount)>1&&!isAr?"s":""} — {critCount>0?`${critCount} ${isAr?"غسل أموال":"AML"}`:""}{critCount>0&&cmaCritCount>0?" + ":""}{cmaCritCount>0?`${cmaCritCount} ${isAr?"تلاعب بالسوق":"Market Manipulation"}`:""}</p>
+          <p style={{fontSize:13,color:"#E8C5BA"}}>{cmaCritCount>0?(isAr?"تتطلب أنظمة سلوك السوق التحقيق الفوري. ":"CMA Market Conduct Regulations require immediate investigation of manipulation alerts. "):""}{isAr?"تتطلب أنظمة ساما التصعيد خلال 24 ساعة.":"SAMA regulations require escalation within 24 hours."}</p>
         </div>
-        <button onClick={()=>setTab(cmaCritCount>0?"cma":"aml")} style={{padding:"8px 16px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}>Review Now →</button>
+        <button onClick={()=>setTab(cmaCritCount>0?"cma":"aml")} style={{padding:"8px 16px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}>{isAr?"مراجعة الآن ←":"Review Now →"}</button>
       </div>}
 
       {/* TAB BAR */}
@@ -3525,15 +3526,15 @@ const AuditLog = () => {
           <div style={{flex:1}}/>
           <button onClick={()=>setShowDismissed(d=>!d)} style={{padding:"5px 12px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",
             border:`1px solid ${C.border}`,background:showDismissed?"#F5F0E8":C.white,color:C.textMuted}}>
-            {showDismissed?"Hide":"Show"} Dismissed ({amlDismissed.size})
+            {showDismissed?(isAr?"إخفاء":"Hide"):(isAr?"عرض":"Show")} {isAr?"المرفوضة":"Dismissed"} ({amlDismissed.size})
           </button>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search alerts..." style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:200,outline:"none"}}/>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder={isAr?"بحث في التنبيهات...":"Search alerts..."} style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,width:200,outline:"none"}}/>
         </div>
 
         {filteredAlerts.length===0?(
           <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"40px",textAlign:"center"}}>
             <p style={{fontSize:38,marginBottom:12}}>✅</p>
-            <p style={{fontSize:16,color:C.greenSolid,fontWeight:600}}>No alerts match the current filter</p>
+            <p style={{fontSize:16,color:C.greenSolid,fontWeight:600}}>{isAr?"لا توجد تنبيهات تطابق الفلتر الحالي":"No alerts match the current filter"}</p>
           </div>
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -3557,8 +3558,8 @@ const AuditLog = () => {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                   <Btn small variant="outline" onClick={()=>setAmlModal(a)}>{isAr?"التفاصيل":"Details"}</Btn>
-                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Alert dismissed");}}>Dismiss</Btn>}
-                  {amlDismissed.has(a.key)&&<span style={{fontSize:11,color:C.textMuted,textAlign:"center",fontWeight:600}}>✓ Dismissed</span>}
+                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم رفض التنبيه":"Alert dismissed");}}>{isAr?"رفض":"Dismiss"}</Btn>}
+                  {amlDismissed.has(a.key)&&<span style={{fontSize:11,color:C.textMuted,textAlign:"center",fontWeight:600}}>{isAr?"✓ مرفوض":"✓ Dismissed"}</span>}
                 </div>
               </div>
             ))}
@@ -3608,7 +3609,7 @@ const AuditLog = () => {
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
                 <span style={{fontSize:24}}>🔴</span>
                 <div style={{flex:1}}>
-                  <p style={{fontSize:16,fontWeight:800,color:"#8B3520"}}>⚠️ {selfTrades.length} Self-Trading Violation{selfTrades.length>1?"s":""} — Art 3(b)(1) Market Conduct Regulations</p>
+                  <p style={{fontSize:16,fontWeight:800,color:"#8B3520"}}>{isAr?`⚠️ ${selfTrades.length} مخالفة تداول ذاتي — المادة 3(ب)(1)`:`⚠️ ${selfTrades.length} Self-Trading Violation${selfTrades.length>1?"s":""} — Art 3(b)(1) Market Conduct Regulations`}</p>
                   <p style={{fontSize:13,color:"#B91C1C"}}>{isAr?"تداول لا يغير الملكية المستفيدة — محظور بموجب المادة 3(ب)(1)":"Trades involving no change in beneficial ownership — strictly prohibited. CMA penalty: up to SAR 25,000,000 fine + 5 years imprisonment."}</p>
                 </div>
               </div>
@@ -3623,7 +3624,7 @@ const AuditLog = () => {
                     <div style={{display:"flex",gap:4}}>
                       <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                       <Btn small variant="outline" style={{borderColor:C.purpleSolid,color:C.purpleSolid}} onClick={()=>{const n=generateCMANotif(a);setCmaNotifModal(n);}}>{isAr?"إخطار الهيئة":"Notify CMA"}</Btn>
-                      {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Dismissed");}}>Dismiss</Btn>}
+                      {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم الرفض":"Dismissed");}}>{isAr?"رفض":"Dismiss"}</Btn>}
                     </div>
                   </div>
                   <p style={{fontSize:13,color:C.text,lineHeight:"1.5"}}>{a.detail}</p>
@@ -3660,7 +3661,7 @@ const AuditLog = () => {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   <Btn small variant="danger" onClick={()=>{const sar=generateSAR(a);setSarModal(sar);}}>{isAr?"تقديم بلاغ":"File SAR"}</Btn>
                   <Btn small variant="outline" style={{borderColor:C.purpleSolid,color:C.purpleSolid}} onClick={()=>{const n=generateCMANotif(a);setCmaNotifModal(n);}}>{isAr?"إخطار الهيئة":"Notify CMA"}</Btn>
-                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast("Dismissed");}}>Dismiss</Btn>}
+                  {!amlDismissed.has(a.key)&&<Btn small variant="outline" onClick={()=>{dismissAmlAlert(a.key);showToast(isAr?"تم الرفض":"Dismissed");}}>{isAr?"رفض":"Dismiss"}</Btn>}
                 </div>
               </div>
             ))}
@@ -3679,16 +3680,16 @@ const AuditLog = () => {
           <p style={{fontSize:16,fontWeight:800,color:C.navy,marginBottom:14}}>{Icons.cmaScale(16,C.navy)} {isAr?"قواعد كشف التلاعب بالسوق — هيئة السوق المالية":"CMA Market Manipulation Detection Rules — Active (10)"}</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {[
-              {id:"CMA-01",name:isAr?"التداول الذاتي":"Self-Trading",art:"Art 3(b)(1)",desc:"Trade with no change in beneficial ownership"},
-              {id:"CMA-02",name:isAr?"أوامر مرتبة مسبقاً":"Pre-Arranged Orders",art:"Art 3(b)(2-3)",desc:"Same size/time/price on both sides"},
-              {id:"CMA-03",name:isAr?"الانتحال":"Spoofing",art:"Art 3(b)(6)",desc:"Orders not intended to execute"},
-              {id:"CMA-04",name:isAr?"التصعيد السعري":"Price Ramping",art:"Art 3(b)(4-5)",desc:"Successively higher/lower prices"},
-              {id:"CMA-05",name:isAr?"صفقات وهمية":"Fictitious Trades",art:"Art 3(a)(1)",desc:"System-to-system trade review"},
-              {id:"CMA-06",name:isAr?"الإفراط في التداول":"Churning",art:"Art 16",desc:"Turnover ratio > 3x holdings"},
-              {id:"CMA-07",name:isAr?"ضخ وتفريغ":"Pump-and-Dump",art:"Art 3(a)(2-3)",desc:"Buy cluster then rapid sell"},
-              {id:"CMA-08",name:isAr?"التلاعب بسعر الإغلاق":"Closing Price Manipulation",art:"Art 3(b)(6)",desc:"Near-close orders affecting price"},
-              {id:"CMA-09",name:isAr?"الطبقات":"Layering",art:"Art 3(b)(6)",desc:"Multiple orders at different price levels"},
-              {id:"CMA-10",name:isAr?"التواطؤ":"Cross-Party Collusion",art:"Art 2",desc:"Repeated counterparty pattern"},
+              {id:"CMA-01",name:isAr?"التداول الذاتي":"Self-Trading",art:"Art 3(b)(1)",desc:isAr?"تداول دون تغيير في الملكية المستفيدة":"Trade with no change in beneficial ownership"},
+              {id:"CMA-02",name:isAr?"أوامر مرتبة مسبقاً":"Pre-Arranged Orders",art:"Art 3(b)(2-3)",desc:isAr?"نفس الحجم/الوقت/السعر على الجانبين":"Same size/time/price on both sides"},
+              {id:"CMA-03",name:isAr?"الانتحال":"Spoofing",art:"Art 3(b)(6)",desc:isAr?"أوامر غير مقصود تنفيذها":"Orders not intended to execute"},
+              {id:"CMA-04",name:isAr?"التصعيد السعري":"Price Ramping",art:"Art 3(b)(4-5)",desc:isAr?"أسعار متصاعدة/متناقصة متتالية":"Successively higher/lower prices"},
+              {id:"CMA-05",name:isAr?"صفقات وهمية":"Fictitious Trades",art:"Art 3(a)(1)",desc:isAr?"مراجعة الصفقات بين الأنظمة":"System-to-system trade review"},
+              {id:"CMA-06",name:isAr?"الإفراط في التداول":"Churning",art:"Art 16",desc:isAr?"معدل الدوران > 3 أضعاف الحيازات":"Turnover ratio > 3x holdings"},
+              {id:"CMA-07",name:isAr?"ضخ وتفريغ":"Pump-and-Dump",art:"Art 3(a)(2-3)",desc:isAr?"تجميع شراء ثم بيع سريع":"Buy cluster then rapid sell"},
+              {id:"CMA-08",name:isAr?"التلاعب بسعر الإغلاق":"Closing Price Manipulation",art:"Art 3(b)(6)",desc:isAr?"أوامر قرب الإغلاق تؤثر على السعر":"Near-close orders affecting price"},
+              {id:"CMA-09",name:isAr?"الطبقات":"Layering",art:"Art 3(b)(6)",desc:isAr?"أوامر متعددة بمستويات أسعار مختلفة":"Multiple orders at different price levels"},
+              {id:"CMA-10",name:isAr?"التواطؤ":"Cross-Party Collusion",art:"Art 2",desc:isAr?"نمط طرف مقابل متكرر":"Repeated counterparty pattern"},
             ].map(r=>(
               <div key={r.id} style={{display:"flex",gap:10,padding:"8px 12px",borderRadius:8,background:"#FAF8F5",alignItems:"center"}}>
                 <span style={{fontSize:12,fontWeight:900,color:C.purpleSolid,fontFamily:"monospace",minWidth:50}}>{r.id}</span>
@@ -3709,9 +3710,9 @@ const AuditLog = () => {
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
           {[{lv:"CRITICAL",c:"#C85C3E",bg:C.redBg},{lv:"HIGH",c:"#D4943A",bg:"#FDF4EC"},{lv:"MEDIUM",c:"#C4956A",bg:"#FDF4EC"},{lv:"LOW",c:C.greenSolid,bg:"#EFF5F2"}].map(x=>(
             <div key={x.lv} style={{background:x.bg,borderRadius:12,padding:"14px 18px",border:`1px solid ${x.c}33`}}>
-              <p style={{fontSize:12,fontWeight:700,color:x.c,letterSpacing:"0.08em"}}>{x.lv} RISK</p>
+              <p style={{fontSize:12,fontWeight:700,color:x.c,letterSpacing:"0.08em"}}>{x.lv} {isAr?"مخاطر":"RISK"}</p>
               <p style={{fontSize:30,fontWeight:900,color:x.c}}>{riskDistro[x.lv]}</p>
-              <p style={{fontSize:12,color:x.c,opacity:0.7}}>{riskScores.length>0?Math.round(riskDistro[x.lv]/riskScores.length*100):0}% of investors</p>
+              <p style={{fontSize:12,color:x.c,opacity:0.7}}>{riskScores.length>0?Math.round(riskDistro[x.lv]/riskScores.length*100):0}% {isAr?"من المستثمرين":"of investors"}</p>
             </div>
           ))}
         </div>
@@ -3721,7 +3722,7 @@ const AuditLog = () => {
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
             <thead>
               <tr style={{background:C.navyDark}}>
-                {["Rank","Investor","NID","Score","Level","Volume","TX Count","Factors"].map(h=>(
+                {(isAr?["الترتيب","المستثمر","الهوية","النقاط","المستوى","الحجم","عدد المعاملات","العوامل"]:["Rank","Investor","NID","Score","Level","Volume","TX Count","Factors"]).map(h=>(
                   <th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:12,fontWeight:700,color:"#A89880",letterSpacing:"0.06em"}}>{h}</th>
                 ))}
               </tr>
@@ -3759,7 +3760,7 @@ const AuditLog = () => {
                       {r.factors.slice(0,3).map((f,fi)=>(
                         <span key={fi} style={{fontSize:11,padding:"1px 6px",borderRadius:4,background:"#F5F0E8",color:C.textMuted}}>{f}</span>
                       ))}
-                      {r.factors.length>3&&<span style={{fontSize:11,color:C.teal,fontWeight:700}}>+{r.factors.length-3} more</span>}
+                      {r.factors.length>3&&<span style={{fontSize:11,color:C.teal,fontWeight:700}}>+{r.factors.length-3} {isAr?"أخرى":"more"}</span>}
                     </div>
                   </td>
                 </tr>
@@ -3790,19 +3791,19 @@ const AuditLog = () => {
                   </div>
                   <div style={{textAlign:"right"}}>
                     {risk&&<RiskBadge level={risk.riskLevel}/>}
-                    <p style={{fontSize:12,color:C.textMuted,marginTop:2}}>Score: {risk?.riskScore||0}/100</p>
+                    <p style={{fontSize:12,color:C.textMuted,marginTop:2}}>{isAr?"النقاط":"Score"}: {risk?.riskScore||0}/100</p>
                   </div>
                 </div>
 
                 {/* Metrics Grid */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
                   {[
-                    {label:"Buy Vol",val:`SAR ${(p.buyVolume||0).toLocaleString()}`,color:C.greenSolid},
-                    {label:"Sell Vol",val:`SAR ${(p.sellVolume||0).toLocaleString()}`,color:"#C85C3E"},
-                    {label:"Holdings",val:`SAR ${(p.holdings||0).toLocaleString()}`,color:C.navy},
-                    {label:"Transactions",val:p.txCount,color:C.teal},
-                    {label:"TX Freq",val:p.txFrequency>0?(p.txFrequency||0).toFixed(2)+"/day":"—",color:C.textMuted},
-                    {label:"Withdrawn",val:`SAR ${(p.totalWithdrawn||0).toLocaleString()}`,color:"#D4943A"},
+                    {label:isAr?"حجم الشراء":"Buy Vol",val:`SAR ${(p.buyVolume||0).toLocaleString()}`,color:C.greenSolid},
+                    {label:isAr?"حجم البيع":"Sell Vol",val:`SAR ${(p.sellVolume||0).toLocaleString()}`,color:"#C85C3E"},
+                    {label:isAr?"الحيازات":"Holdings",val:`SAR ${(p.holdings||0).toLocaleString()}`,color:C.navy},
+                    {label:isAr?"المعاملات":"Transactions",val:p.txCount,color:C.teal},
+                    {label:isAr?"تكرار المعاملات":"TX Freq",val:p.txFrequency>0?(p.txFrequency||0).toFixed(2)+(isAr?"/يوم":"/day"):"—",color:C.textMuted},
+                    {label:isAr?"المسحوب":"Withdrawn",val:`SAR ${(p.totalWithdrawn||0).toLocaleString()}`,color:"#D4943A"},
                   ].map(m=>(
                     <div key={m.label} style={{background:"#FAF8F5",borderRadius:8,padding:"8px 10px"}}>
                       <p style={{fontSize:11,fontWeight:700,color:C.textMuted,letterSpacing:"0.06em"}}>{m.label.toUpperCase()}</p>
@@ -3814,7 +3815,7 @@ const AuditLog = () => {
                 {/* Behavioral Flags */}
                 {pAlerts.length > 0 && (
                   <div style={{background:"#FDF4EC",borderRadius:8,padding:"8px 12px"}}>
-                    <p style={{fontSize:12,fontWeight:700,color:"#8B6540",marginBottom:4}}>⚠️ {pAlerts.length} AML Alert{pAlerts.length>1?"s":""}</p>
+                    <p style={{fontSize:12,fontWeight:700,color:"#8B6540",marginBottom:4}}>⚠️ {pAlerts.length} {isAr?"تنبيه غسل أموال":"AML Alert"}{pAlerts.length>1&&!isAr?"s":""}</p>
                     {pAlerts.slice(0,3).map((a,i)=>(
                       <p key={i} style={{fontSize:12,color:"#8B6540"}}>• {a.rule}: {a.title}</p>
                     ))}
@@ -3822,14 +3823,14 @@ const AuditLog = () => {
                 )}
                 {pAlerts.length === 0 && (
                   <div style={{background:"#EFF5F2",borderRadius:8,padding:"8px 12px"}}>
-                    <p style={{fontSize:12,fontWeight:700,color:C.greenSolid}}>✅ No AML flags — normal behavior profile</p>
+                    <p style={{fontSize:12,fontWeight:700,color:C.greenSolid}}>{isAr?"✅ لا توجد تنبيهات — ملف سلوكي طبيعي":"✅ No AML flags — normal behavior profile"}</p>
                   </div>
                 )}
 
                 {/* No-Show / Appointment Flags */}
                 {(p.noShows>0||p.cancelledAppts>0)&&<div style={{marginTop:6,display:"flex",gap:8}}>
-                  {p.noShows>0&&<span style={{fontSize:12,padding:"2px 8px",borderRadius:4,background:C.redBg,color:"#C85C3E",fontWeight:700}}>🚫 {p.noShows} no-show{p.noShows>1?"s":""}</span>}
-                  {p.cancelledAppts>0&&<span style={{fontSize:12,padding:"2px 8px",borderRadius:4,background:"#F3F4F6",color:"#6B7280",fontWeight:700}}>❌ {p.cancelledAppts} cancelled</span>}
+                  {p.noShows>0&&<span style={{fontSize:12,padding:"2px 8px",borderRadius:4,background:C.redBg,color:"#C85C3E",fontWeight:700}}>🚫 {p.noShows} {isAr?"عدم حضور":"no-show"}{p.noShows>1&&!isAr?"s":""}</span>}
+                  {p.cancelledAppts>0&&<span style={{fontSize:12,padding:"2px 8px",borderRadius:4,background:"#F3F4F6",color:"#6B7280",fontWeight:700}}>❌ {p.cancelledAppts} {isAr?"ملغاة":"cancelled"}</span>}
                 </div>}
               </div>
             );
@@ -3997,19 +3998,19 @@ const AuditLog = () => {
 
         {/* SAMA Compliance Checklist */}
         <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 24px",marginBottom:16}}>
-          <p style={{fontSize:16,fontWeight:800,color:C.navy,marginBottom:14,display:"flex",alignItems:"center",gap:8}}>{Icons.amlVault(16,C.navy)} SAMA AML/CFT Compliance Status</p>
+          <p style={{fontSize:16,fontWeight:800,color:C.navy,marginBottom:14,display:"flex",alignItems:"center",gap:8}}>{Icons.amlVault(16,C.navy)} {isAr?"حالة الامتثال لأنظمة ساما لمكافحة غسل الأموال":"SAMA AML/CFT Compliance Status"}</p>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {[
-              {check:"Customer Due Diligence (CDD)",status:investors.every(i=>i.nationalId)?"PASS":"FAIL",detail:"All investors have verified National ID"},
-              {check:"Enhanced Due Diligence (EDD) for High-Risk",status:riskDistro.CRITICAL===0?"PASS":"ACTION",detail:riskDistro.CRITICAL>0?`${riskDistro.CRITICAL} critical-risk investor(s) require EDD`:"No critical-risk investors"},
-              {check:"Transaction Monitoring System",status:"PASS",detail:"14-rule automated AML detection engine active"},
-              {check:"Suspicious Activity Reporting (SAR)",status:"PASS",detail:"SAR generation tool available for all alert levels"},
-              {check:"KYC Renewal Tracking",status:riskScores.some(r=>r.kycExpiry&&(new Date(r.kycExpiry)-new Date())/(86400000)<0)?"FAIL":"PASS",detail:"All active investors must have valid KYC"},
-              {check:"Sanctions Screening",status:compTasks.find(t=>t.id==="SANC-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="SANC-01")?.status==="COMPLETED"?"Last completed: "+compTasks.find(t=>t.id==="SANC-01")?.log.slice(-1)[0]?.date?.slice(0,10):"Action required — use workflow above"},
-              {check:"Record Retention (5 years)",status:"PASS",detail:`${auditLog.length} audit entries maintained. Production: archive to immutable storage.`},
-              {check:"Staff Training Records",status:compTasks.find(t=>t.id==="TRAIN-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="TRAIN-01")?.status==="COMPLETED"?"Training verified — "+compTasks.find(t=>t.id==="TRAIN-01")?.log.slice(-1)[0]?.date?.slice(0,10):"Action required — use workflow above"},
-              {check:"Risk Assessment Methodology",status:"PASS",detail:"Multi-factor scoring model (volume, velocity, behavior, KYC, status)"},
-              {check:"Politically Exposed Persons (PEP) Screening",status:compTasks.find(t=>t.id==="PEP-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="PEP-01")?.status==="COMPLETED"?"PEP screening completed — "+compTasks.find(t=>t.id==="PEP-01")?.log.slice(-1)[0]?.date?.slice(0,10):"Action required — use workflow above"},
+              {check:isAr?"العناية الواجبة تجاه العملاء (CDD)":"Customer Due Diligence (CDD)",status:investors.every(i=>i.nationalId)?"PASS":"FAIL",detail:isAr?"جميع المستثمرين لديهم هوية وطنية موثقة":"All investors have verified National ID"},
+              {check:isAr?"العناية الواجبة المعززة (EDD) للمخاطر العالية":"Enhanced Due Diligence (EDD) for High-Risk",status:riskDistro.CRITICAL===0?"PASS":"ACTION",detail:riskDistro.CRITICAL>0?`${riskDistro.CRITICAL} ${isAr?"مستثمر عالي المخاطر يتطلب EDD":"critical-risk investor(s) require EDD"}`:(isAr?"لا يوجد مستثمرون عاليو المخاطر":"No critical-risk investors")},
+              {check:isAr?"نظام مراقبة المعاملات":"Transaction Monitoring System",status:"PASS",detail:isAr?"14 قاعدة آلية لكشف غسل الأموال نشطة":"14-rule automated AML detection engine active"},
+              {check:isAr?"الإبلاغ عن النشاط المشبوه (SAR)":"Suspicious Activity Reporting (SAR)",status:"PASS",detail:isAr?"أداة إنشاء بلاغات SAR متاحة لجميع مستويات التنبيه":"SAR generation tool available for all alert levels"},
+              {check:isAr?"تتبع تجديد التحقق من الهوية":"KYC Renewal Tracking",status:riskScores.some(r=>r.kycExpiry&&(new Date(r.kycExpiry)-new Date())/(86400000)<0)?"FAIL":"PASS",detail:isAr?"يجب أن يكون لجميع المستثمرين النشطين تحقق صالح":"All active investors must have valid KYC"},
+              {check:isAr?"فحص العقوبات":"Sanctions Screening",status:compTasks.find(t=>t.id==="SANC-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="SANC-01")?.status==="COMPLETED"?(isAr?"آخر إكمال: ":"Last completed: ")+compTasks.find(t=>t.id==="SANC-01")?.log.slice(-1)[0]?.date?.slice(0,10):(isAr?"إجراء مطلوب — استخدم سير العمل أعلاه":"Action required — use workflow above")},
+              {check:isAr?"حفظ السجلات (5 سنوات)":"Record Retention (5 years)",status:"PASS",detail:`${auditLog.length} ${isAr?"سجل محفوظ. الإنتاج: أرشفة في تخزين غير قابل للتغيير.":"audit entries maintained. Production: archive to immutable storage."}`},
+              {check:isAr?"سجلات تدريب الموظفين":"Staff Training Records",status:compTasks.find(t=>t.id==="TRAIN-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="TRAIN-01")?.status==="COMPLETED"?(isAr?"تم التحقق من التدريب — ":"Training verified — ")+compTasks.find(t=>t.id==="TRAIN-01")?.log.slice(-1)[0]?.date?.slice(0,10):(isAr?"إجراء مطلوب — استخدم سير العمل أعلاه":"Action required — use workflow above")},
+              {check:isAr?"منهجية تقييم المخاطر":"Risk Assessment Methodology",status:"PASS",detail:isAr?"نموذج تقييم متعدد العوامل (الحجم، السرعة، السلوك، التحقق، الحالة)":"Multi-factor scoring model (volume, velocity, behavior, KYC, status)"},
+              {check:isAr?"فحص الأشخاص المعرضين سياسياً (PEP)":"Politically Exposed Persons (PEP) Screening",status:compTasks.find(t=>t.id==="PEP-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="PEP-01")?.status==="COMPLETED"?(isAr?"تم فحص PEP — ":"PEP screening completed — ")+compTasks.find(t=>t.id==="PEP-01")?.log.slice(-1)[0]?.date?.slice(0,10):(isAr?"إجراء مطلوب — استخدم سير العمل أعلاه":"Action required — use workflow above")},
             ].map((item,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,background:item.status==="PASS"?C.greenBg:item.status==="FAIL"?"#FBF0EC":"#FDF4EC"}}>
                 <span style={{fontSize:20}}>{item.status==="PASS"?"✅":item.status==="FAIL"?"❌":"⚠️"}</span>
@@ -4057,23 +4058,23 @@ const AuditLog = () => {
 
         {/* AML Rules Reference */}
         <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 24px"}}>
-          <p style={{fontSize:16,fontWeight:800,color:C.navy,marginBottom:14}}>🤖 AI Detection Rules — Active ({14})</p>
+          <p style={{fontSize:16,fontWeight:800,color:C.navy,marginBottom:14}}>🤖 {isAr?"قواعد الكشف بالذكاء الاصطناعي — نشطة":"AI Detection Rules — Active"} ({14})</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {[
-              {id:"R01",name:"High-Value Transaction",threshold:"SAR 60,000",cat:"VOLUME"},
-              {id:"R02",name:"Wash Trading Pattern",threshold:"Buy+Sell > 10K + freq > 0.5/d",cat:"PATTERN"},
-              {id:"R03",name:"Velocity Spike",threshold:"≥5 TX in < 7 days",cat:"VELOCITY"},
-              {id:"R04",name:"Disproportionate Withdrawal",threshold:"> 70% of portfolio",cat:"WITHDRAWAL"},
-              {id:"R05",name:"New Account High Volume",threshold:"< 30 days + > SAR 50K",cat:"ONBOARDING"},
-              {id:"R06",name:"Repeated No-Shows",threshold:"≥ 2 no-shows",cat:"BEHAVIOR"},
-              {id:"R07",name:"KYC Expiry",threshold:"< 30 days / expired",cat:"COMPLIANCE"},
-              {id:"R08",name:"Excessive Cancellations",threshold:"≥ 3 cancelled orders",cat:"PATTERN"},
-              {id:"R09",name:"Banned User Activity",threshold:"Any historical activity",cat:"ENFORCEMENT"},
-              {id:"R10",name:"Round-Amount Structuring",threshold:"≥ 2 round-number TX",cat:"PATTERN"},
-              {id:"R11",name:"Platform Volume Anomaly",threshold:"> SAR 100K daily",cat:"SYSTEM"},
-              {id:"R12",name:"Blacklisted Active Orders",threshold:"Any open orders",cat:"ENFORCEMENT"},
-              {id:"R13",name:"Bar Outside Vault > 30d",threshold:"> 30 days since left",cat:"VAULT"},
-              {id:"R14",name:"Multiple Bank Withdrawals",threshold:"≥ 2 different banks",cat:"WITHDRAWAL"},
+              {id:"R01",name:isAr?"معاملة عالية القيمة":"High-Value Transaction",threshold:"SAR 60,000",cat:"VOLUME"},
+              {id:"R02",name:isAr?"نمط تداول ذاتي":"Wash Trading Pattern",threshold:isAr?"شراء+بيع > 10K + تكرار > 0.5/يوم":"Buy+Sell > 10K + freq > 0.5/d",cat:"PATTERN"},
+              {id:"R03",name:isAr?"ارتفاع مفاجئ في السرعة":"Velocity Spike",threshold:isAr?"≥5 معاملات في < 7 أيام":"≥5 TX in < 7 days",cat:"VELOCITY"},
+              {id:"R04",name:isAr?"سحب غير متناسب":"Disproportionate Withdrawal",threshold:isAr?"> 70% من المحفظة":"> 70% of portfolio",cat:"WITHDRAWAL"},
+              {id:"R05",name:isAr?"حساب جديد بحجم مرتفع":"New Account High Volume",threshold:isAr?"< 30 يوم + > 50K ريال":"< 30 days + > SAR 50K",cat:"ONBOARDING"},
+              {id:"R06",name:isAr?"عدم حضور متكرر":"Repeated No-Shows",threshold:isAr?"≥ 2 عدم حضور":"≥ 2 no-shows",cat:"BEHAVIOR"},
+              {id:"R07",name:isAr?"انتهاء التحقق من الهوية":"KYC Expiry",threshold:isAr?"< 30 يوم / منتهية":"< 30 days / expired",cat:"COMPLIANCE"},
+              {id:"R08",name:isAr?"إلغاءات مفرطة":"Excessive Cancellations",threshold:isAr?"≥ 3 أوامر ملغاة":"≥ 3 cancelled orders",cat:"PATTERN"},
+              {id:"R09",name:isAr?"نشاط مستخدم محظور":"Banned User Activity",threshold:isAr?"أي نشاط سابق":"Any historical activity",cat:"ENFORCEMENT"},
+              {id:"R10",name:isAr?"تجزئة بمبالغ مدوّرة":"Round-Amount Structuring",threshold:isAr?"≥ 2 معاملات بمبالغ مدوّرة":"≥ 2 round-number TX",cat:"PATTERN"},
+              {id:"R11",name:isAr?"شذوذ في حجم المنصة":"Platform Volume Anomaly",threshold:isAr?"> 100K ريال يومياً":"> SAR 100K daily",cat:"SYSTEM"},
+              {id:"R12",name:isAr?"أوامر نشطة لمحظور":"Blacklisted Active Orders",threshold:isAr?"أي أوامر مفتوحة":"Any open orders",cat:"ENFORCEMENT"},
+              {id:"R13",name:isAr?"سبيكة خارج الخزينة > 30 يوم":"Bar Outside Vault > 30d",threshold:isAr?"> 30 يوم منذ الخروج":"> 30 days since left",cat:"VAULT"},
+              {id:"R14",name:isAr?"سحوبات من بنوك متعددة":"Multiple Bank Withdrawals",threshold:isAr?"≥ 2 بنوك مختلفة":"≥ 2 different banks",cat:"WITHDRAWAL"},
             ].map(r=>(
               <div key={r.id} style={{display:"flex",gap:10,padding:"8px 12px",borderRadius:8,background:"#FAF8F5",alignItems:"center"}}>
                 <span style={{fontSize:12,fontWeight:900,color:C.teal,fontFamily:"monospace",minWidth:28}}>{r.id}</span>
@@ -4251,12 +4252,12 @@ const PriceFeedSettings = () => {
   const tierInfo = TIER_INFO[pInfo.tier] || TIER_INFO.starter;
 
   const STATUS_INFO = {
-    LIVE:        { color:C.greenSolid, bg:"#EFF5F2", label:"✅ Live prices active" },
-    DEMO:        { color:"#D4943A", bg:"#FDF4EC", label:"⚠️ Demo mode — enter API key to activate" },
-    LOADING:     { color:"#C4956A", bg:"#FDF4EC", label:"⏳ Connecting..." },
-    ERROR:       { color:"#C85C3E", bg:C.redBg, label:"❌ Connection error" },
-    INVALID_KEY: { color:"#C85C3E", bg:C.redBg, label:"❌ Invalid API key" },
-    QUOTA:       { color:"#D4943A", bg:"#FDF4EC", label:"⚠️ Monthly quota exceeded" },
+    LIVE:        { color:C.greenSolid, bg:"#EFF5F2", label:isAr?"✅ الأسعار المباشرة نشطة":"✅ Live prices active" },
+    DEMO:        { color:"#D4943A", bg:"#FDF4EC", label:isAr?"⚠️ الوضع التجريبي — أدخل مفتاح API للتفعيل":"⚠️ Demo mode — enter API key to activate" },
+    LOADING:     { color:"#C4956A", bg:"#FDF4EC", label:isAr?"⏳ جاري الاتصال...":"⏳ Connecting..." },
+    ERROR:       { color:"#C85C3E", bg:C.redBg, label:isAr?"❌ خطأ في الاتصال":"❌ Connection error" },
+    INVALID_KEY: { color:"#C85C3E", bg:C.redBg, label:isAr?"❌ مفتاح API غير صالح":"❌ Invalid API key" },
+    QUOTA:       { color:"#D4943A", bg:"#FDF4EC", label:isAr?"⚠️ تم تجاوز الحصة الشهرية":"⚠️ Monthly quota exceeded" },
   }[status] || { color:"#8C7E6F", bg:"#F5F0E8", label:"..." };
 
   const handleSave = () => {
@@ -4265,12 +4266,12 @@ const PriceFeedSettings = () => {
   };
 
   const handleTest = async () => {
-    if (!key.trim()) { setTestMsg("❌ Enter an API key first"); return; }
-    setTesting(true); setTestMsg("Testing connection to " + pInfo.name + "...");
+    if (!key.trim()) { setTestMsg(isAr?"❌ أدخل مفتاح API أولاً":"❌ Enter an API key first"); return; }
+    setTesting(true); setTestMsg(isAr?`جاري اختبار الاتصال بـ ${pInfo.name}...`:`Testing connection to ${pInfo.name}...`);
     try {
       const result = await fetchFromProvider(provider, key.trim());
       const g = result.XAU?.priceSAR ? (Number(result.XAU.priceSAR)||0).toFixed(2) : null;
-      setTestMsg(`✅ Connected to ${pInfo.name}! Gold = ${g} SAR/g`);
+      setTestMsg(isAr?`✅ متصل بـ ${pInfo.name}! الذهب = ${g} ريال/غ`:`✅ Connected to ${pInfo.name}! Gold = ${g} SAR/g`);
     } catch(e) {
       setTestMsg("❌ " + e.message);
     }
@@ -4282,21 +4283,21 @@ const PriceFeedSettings = () => {
   return (
     <div style={{background:C.white,borderRadius:14,padding:20,border:`1px solid ${C.border}`,marginBottom:16}}>
       <h3 style={{fontSize:20,fontWeight:700,color:C.navy,marginBottom:6,paddingBottom:10,borderBottom:`2px solid ${C.gold}33`}}>
-        Live Price Feed
+        {isAr?"بيانات الأسعار المباشرة":"Live Price Feed"}
       </h3>
 
       {/* Status Bar */}
       <div style={{background:STATUS_INFO.bg,borderRadius:10,padding:"10px 14px",marginBottom:18,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:14,fontWeight:700,color:STATUS_INFO.color}}>{STATUS_INFO.label}</span>
-          {status==="LIVE"&&<span style={{fontSize:13,color:STATUS_INFO.color,opacity:0.8}}>via {PROVIDERS[activeProvider]?.name||activeProvider}</span>}
+          {status==="LIVE"&&<span style={{fontSize:13,color:STATUS_INFO.color,opacity:0.8}}>{isAr?"عبر":"via"} {PROVIDERS[activeProvider]?.name||activeProvider}</span>}
         </div>
-        {lastFetch>0&&<span style={{fontSize:12,color:STATUS_INFO.color}}>Updated: {new Date(lastFetch).toLocaleTimeString()}</span>}
+        {lastFetch>0&&<span style={{fontSize:12,color:STATUS_INFO.color}}>{isAr?"آخر تحديث:":"Updated:"} {new Date(lastFetch).toLocaleTimeString()}</span>}
       </div>
 
       {/* Provider Selector */}
       <div style={{marginBottom:18}}>
-        <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:10,letterSpacing:"0.05em"}}>SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED</label>
+        <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:10,letterSpacing:"0.05em"}}>{isAr?"اختر المزود — يمكنك التبديل في أي وقت بدون تغيير الكود":"SELECT PROVIDER — SWITCH ANYTIME, NO CODE CHANGES NEEDED"}</label>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {Object.values(PROVIDERS).map(p => {
             const ti   = TIER_INFO[p.tier];
@@ -4326,15 +4327,15 @@ const PriceFeedSettings = () => {
       {/* Selected Provider Info */}
       <div style={{background:"#FAF8F5",borderRadius:12,padding:"14px 16px",marginBottom:16,border:`1px solid ${pInfo.color}33`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-          <p style={{fontSize:15,fontWeight:700,color:pInfo.color}}>{pInfo.name} — Setup</p>
+          <p style={{fontSize:15,fontWeight:700,color:pInfo.color}}>{pInfo.name} — {isAr?"الإعداد":"Setup"}</p>
           <div style={{display:"flex",gap:8}}>
             <a href={pInfo.signupUrl} target="_blank" rel="noreferrer"
               style={{fontSize:13,color:pInfo.color,fontWeight:700,textDecoration:"none",border:`1px solid ${pInfo.color}44`,padding:"4px 10px",borderRadius:7}}>
-              Sign Up →
+              {isAr?"تسجيل →":"Sign Up →"}
             </a>
             <a href={pInfo.docsUrl} target="_blank" rel="noreferrer"
               style={{fontSize:13,color:C.textMuted,fontWeight:600,textDecoration:"none",border:`1px solid ${C.border}`,padding:"4px 10px",borderRadius:7}}>
-              Docs
+              {isAr?"المستندات":"Docs"}
             </a>
           </div>
         </div>
@@ -4359,7 +4360,7 @@ const PriceFeedSettings = () => {
             style={{flex:1,padding:"10px 12px",borderRadius:9,fontSize:15,border:`1px solid ${C.border}`,outline:"none",fontFamily:"monospace"}}/>
           <button onClick={()=>setShowKey(s=>!s)}
             style={{padding:"10px 14px",borderRadius:9,border:`1px solid ${C.border}`,background:C.white,cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMuted,whiteSpace:"nowrap"}}>
-            {showKey?"Hide":"Show"}
+            {showKey?(isAr?"إخفاء":"Hide"):(isAr?"إظهار":"Show")}
           </button>
         </div>
       </div>
@@ -4381,20 +4382,20 @@ const PriceFeedSettings = () => {
             );
           })}
         </div>
-        <p style={{fontSize:12,color:C.textMuted,marginTop:5}}>Min interval for {pInfo.name}: {pInfo.minInterval}s</p>
+        <p style={{fontSize:12,color:C.textMuted,marginTop:5}}>{isAr?`الحد الأدنى للفترة لـ ${pInfo.name}: ${pInfo.minInterval} ثانية`:`Min interval for ${pInfo.name}: ${pInfo.minInterval}s`}</p>
       </div>
 
       {/* Actions */}
       <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
         <button onClick={handleSave} style={{padding:"10px 20px",borderRadius:9,border:"none",background:pInfo.color,color:C.white,fontSize:15,fontWeight:700,cursor:"pointer"}}>
-          {saved?"✅ Saved & Active!":"Save & Activate"}
+          {saved?(isAr?"✅ تم الحفظ والتفعيل!":"✅ Saved & Active!"):(isAr?"حفظ وتفعيل":"Save & Activate")}
         </button>
         <button onClick={handleTest} disabled={testing} style={{padding:"10px 16px",borderRadius:9,border:`1px solid ${C.border}`,background:C.white,color:C.navy,fontSize:15,fontWeight:600,cursor:testing?"not-allowed":"pointer",opacity:testing?0.7:1}}>
-          {testing?"Testing...":"Test Connection"}
+          {testing?(isAr?"جاري الاختبار...":"Testing..."):(isAr?"اختبار الاتصال":"Test Connection")}
         </button>
         {key&&<button onClick={()=>{setKey("");setPriceFeed(provider,"",parseInt(intv));}}
           style={{padding:"10px 14px",borderRadius:9,border:"1px solid #C85C3E44",background:"transparent",color:"#C85C3E",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-          Clear Key
+          {isAr?"مسح المفتاح":"Clear Key"}
         </button>}
       </div>
 
@@ -4406,7 +4407,7 @@ const PriceFeedSettings = () => {
 
       {/* Roadmap */}
       <div style={{marginTop:18,padding:"14px 16px",background:"#FAF8F5",borderRadius:12,border:`1px solid ${C.border}`}}>
-        <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:10}}>📈 Recommended Provider by Stage</p>
+        <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:10}}>{isAr?"📈 المزود الموصى به حسب المرحلة":"📈 Recommended Provider by Stage"}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
           {TIER_ORDER.map(tier=>{
             const ti = TIER_INFO[tier];
@@ -4420,7 +4421,7 @@ const PriceFeedSettings = () => {
                     <span style={{fontSize:13,fontWeight:600,color:C.navy}}>{p.name}</span>
                     <button onClick={()=>{setProvider(p.id);setTestMsg("");}}
                       style={{fontSize:11,padding:"2px 8px",borderRadius:6,border:`1px solid ${p.color}55`,background:provider===p.id?p.color:"transparent",color:provider===p.id?C.white:p.color,cursor:"pointer",fontWeight:700}}>
-                      {provider===p.id?"Selected":"Use"}
+                      {provider===p.id?(isAr?"محدد":"Selected"):(isAr?"استخدام":"Use")}
                     </button>
                   </div>
                 ))}
@@ -4490,7 +4491,7 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
           <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"فترة المواعيد":"SLOT INTERVAL"}</label>
           <select value={interval} onChange={e=>setInterval(e.target.value)}
             style={{width:"100%",padding:"8px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
-            {[["15","Every 15 min"],["20","Every 20 min"],["30","Every 30 min"],["45","Every 45 min"],["60","Every 1 hour"]].map(([v,l])=>(
+            {[["15",isAr?"كل 15 دقيقة":"Every 15 min"],["20",isAr?"كل 20 دقيقة":"Every 20 min"],["30",isAr?"كل 30 دقيقة":"Every 30 min"],["45",isAr?"كل 45 دقيقة":"Every 45 min"],["60",isAr?"كل ساعة":"Every 1 hour"]].map(([v,l])=>(
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
@@ -4500,7 +4501,7 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
           <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"مكاتب الاستقبال":"RECEPTION DESKS"}</label>
           <select value={desks} onChange={e=>setDesks(e.target.value)}
             style={{width:"100%",padding:"8px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
-            {["1","2","3","4","5","6"].map(n=><option key={n} value={n}>{n} {n==="1"?"desk":"desks"}</option>)}
+            {["1","2","3","4","5","6"].map(n=><option key={n} value={n}>{n} {isAr?"مكتب":n==="1"?"desk":"desks"}</option>)}
           </select>
         </div>
       </div>
@@ -4509,7 +4510,7 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
         <div style={{background:C.tealLight,borderRadius:10,padding:"10px 14px",textAlign:"center"}}>
           <p style={{fontSize:24,fontWeight:800,color:C.teal}}>{total}</p>
-          <p style={{fontSize:12,color:C.teal,fontWeight:600}}>Slots/day</p>
+          <p style={{fontSize:12,color:C.teal,fontWeight:600}}>{isAr?"فترة/يوم":"Slots/day"}</p>
         </div>
         <div style={{background:C.goldLight,borderRadius:10,padding:"10px 14px",textAlign:"center"}}>
           <p style={{fontSize:24,fontWeight:800,color:C.goldDim}}>{desks}</p>
@@ -4517,7 +4518,7 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
         </div>
         <div style={{background:C.greenBg,borderRadius:10,padding:"10px 14px",textAlign:"center"}}>
           <p style={{fontSize:24,fontWeight:800,color:C.greenSolid}}>{capacity}</p>
-          <p style={{fontSize:12,color:C.greenSolid,fontWeight:600}}>Capacity/day</p>
+          <p style={{fontSize:12,color:C.greenSolid,fontWeight:600}}>{isAr?"السعة/يوم":"Capacity/day"}</p>
         </div>
       </div>
 
@@ -4525,7 +4526,7 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
       {slots.length > 0 ? (
         <div style={{background:"#FAF8F5",borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
           <p style={{fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:8,letterSpacing:"0.05em"}}>
-            GENERATED SLOTS — {start} to {end}, every {interval} min × {desks} desk{desks>1?"s":""}
+            {isAr?`الفترات المُنشأة — ${start} إلى ${end}، كل ${interval} دقيقة × ${desks} مكتب`:`GENERATED SLOTS — ${start} to ${end}, every ${interval} min × ${desks} desk${desks>1?"s":""}`}
           </p>
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {slots.map(slot=>(
@@ -4537,7 +4538,7 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
         </div>
       ) : (
         <div style={{background:"#FBF0EC",borderRadius:10,padding:"10px 14px",border:"1px solid #E8C5BA"}}>
-          <p style={{fontSize:14,color:"#C85C3E",fontWeight:600}}>⚠️ No slots — closing time must be after opening time</p>
+          <p style={{fontSize:14,color:"#C85C3E",fontWeight:600}}>{isAr?"⚠️ لا فترات — وقت الإغلاق يجب أن يكون بعد وقت الفتح":"⚠️ No slots — closing time must be after opening time"}</p>
         </div>
       )}
     </div>
@@ -4682,10 +4683,10 @@ const CommissionTab = ({
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           {[
-            {label:"Tanaqul — Buying Side",val:splitBuying,set:setSplitBuying,color:C.navy,icon:"🏛"},
-            {label:"Tanaqul — Selling Side",val:splitSelling,set:setSplitSelling,color:C.teal,icon:"🏛"},
-            {label:"Block Creator",val:splitCreator,set:setSplitCreator,color:C.purpleSolid,icon:"⛏"},
-            {label:"Validators (weighted)",val:splitValidators,set:setSplitValidators,color:"#D4943A",icon:"✅"},
+            {label:isAr?"تنقل — جانب الشراء":"Tanaqul — Buying Side",val:splitBuying,set:setSplitBuying,color:C.navy,icon:"🏛"},
+            {label:isAr?"تنقل — جانب البيع":"Tanaqul — Selling Side",val:splitSelling,set:setSplitSelling,color:C.teal,icon:"🏛"},
+            {label:isAr?"منشئ البلوك":"Block Creator",val:splitCreator,set:setSplitCreator,color:C.purpleSolid,icon:"⛏"},
+            {label:isAr?"المصادقون (موزون)":"Validators (weighted)",val:splitValidators,set:setSplitValidators,color:"#D4943A",icon:"✅"},
           ].map(({label,val,set,color,icon})=>(
             <div key={label} style={{background:"#FAF8F5",borderRadius:10,padding:"12px 14px",border:`1px solid ${color}33`}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -4698,7 +4699,7 @@ const CommissionTab = ({
               </select>
               {/* Split amount from example trade */}
               <p style={{fontSize:12,color:C.textMuted,marginTop:5}}>
-                Example: {(splitOf(val)||0).toLocaleString()} SAR per 10,000 SAR trade
+                {isAr?"مثال:":"Example:"} {(splitOf(val)||0).toLocaleString()} {isAr?"ريال لكل 10,000 ريال صفقة":"SAR per 10,000 SAR trade"}
               </p>
               {/* Visual bar */}
               <div style={{marginTop:6,height:4,borderRadius:4,background:"#E8E0D4",overflow:"hidden"}}>
@@ -4712,17 +4713,17 @@ const CommissionTab = ({
       {/* ── Distribution ── */}
       <G title={isAr?"التوزيع":"Distribution"}>
         <Sel label={isAr?"جدول التوزيع":"Distribution Schedule"} value={distSched} onChange={setDistSched}
-          options={[{value:"daily",label:"Daily"},{value:"weekly",label:"Weekly"},{value:"perblock",label:"Per Block (instant)"}]} />
+          options={[{value:"daily",label:isAr?"يومي":"Daily"},{value:"weekly",label:isAr?"أسبوعي":"Weekly"},{value:"perblock",label:isAr?"لكل بلوك (فوري)":"Per Block (instant)"}]} />
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:4}}>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>BLOCKS PER PERIOD (ESTIMATE)</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"عدد البلوكات لكل فترة (تقدير)":"BLOCKS PER PERIOD (ESTIMATE)"}</label>
             <select value={blocksInPeriod} onChange={e=>setBlocksInPeriod(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
-              {["100","250","500","1000","2000","5000"].map(v=><option key={v} value={v}>{v} blocks</option>)}
+              {["100","250","500","1000","2000","5000"].map(v=><option key={v} value={v}>{v} {isAr?"بلوك":"blocks"}</option>)}
             </select>
           </div>
           <div>
-            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>MIN BLOCK PARTICIPATION TO QUALIFY</label>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الحد الأدنى للمشاركة في البلوكات للتأهل":"MIN BLOCK PARTICIPATION TO QUALIFY"}</label>
             <select value={minValidator} onChange={e=>setMinValidator(e.target.value)}
               style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,color:C.text,outline:"none",background:C.white,cursor:"pointer"}}>
               {["5","10","15","20","25","30","40","50"].map(v=><option key={v} value={v}>{v}%</option>)}
@@ -4746,7 +4747,7 @@ const CommissionTab = ({
                   </div>
                   <div style={{background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
                     <p style={{fontSize:22,fontWeight:800,color:C.teal}}>{need}</p>
-                    <p style={{fontSize:11,color:"#8C7E6F",fontWeight:600,marginTop:2}}>MUST VALIDATE ({pct}%)</p>
+                    <p style={{fontSize:11,color:"#8C7E6F",fontWeight:600,marginTop:2}}>{isAr?`يجب التصديق (${pct}%)`:`MUST VALIDATE (${pct}%)`}</p>
                   </div>
                   <div style={{background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
                     <p style={{fontSize:22,fontWeight:800,color:"#4ADE80"}}>{total - need}</p>
@@ -4755,9 +4756,7 @@ const CommissionTab = ({
                 </div>
                 <div style={{background:"rgba(239,68,68,0.1)",borderRadius:8,padding:"10px 14px",border:"1px solid rgba(239,68,68,0.2)"}}>
                   <p style={{fontSize:13,color:"#FCA5A5",fontWeight:600,lineHeight:1.6}}>
-                    ⚠️ Validator signs fewer than <strong style={{color:"#E8826A"}}>{need} blocks</strong> in the period
-                    → their commission share (<strong style={{color:"#E8826A"}}>{splitValidators}% = {validatorSplitSAR} SAR</strong> on a 10,000 SAR trade)
-                    is forfeited and transferred to the <strong style={{color:"#FBBF24"}}>{isAr?"محفظة تخارج":"Takharoj wallet"}</strong>.
+                    {isAr?<>⚠️ المصادق الذي يوقّع أقل من <strong style={{color:"#E8826A"}}>{need} بلوك</strong> في الفترة ← تُصادر حصته من العمولة (<strong style={{color:"#E8826A"}}>{splitValidators}% = {validatorSplitSAR} ريال</strong> لكل صفقة 10,000 ريال) وتُحوّل إلى <strong style={{color:"#FBBF24"}}>محفظة تخارج</strong>.</>:<>⚠️ Validator signs fewer than <strong style={{color:"#E8826A"}}>{need} blocks</strong> in the period → their commission share (<strong style={{color:"#E8826A"}}>{splitValidators}% = {validatorSplitSAR} SAR</strong> on a 10,000 SAR trade) is forfeited and transferred to the <strong style={{color:"#FBBF24"}}>Takharoj wallet</strong>.</>}
                   </p>
                 </div>
               </div>
@@ -4767,11 +4766,10 @@ const CommissionTab = ({
       </G>
 
       {/* ── Takharoj Wallet ── */}
-      <G title="تخارج — Takharoj Reserve Wallet">
+      <G title={isAr?"تخارج — محفظة الاحتياطي":"تخارج — Takharoj Reserve Wallet"}>
         <div style={{background:"#FDF4EC",borderRadius:10,padding:"10px 14px",marginBottom:14,border:"1px solid #FCD34D"}}>
           <p style={{fontSize:14,color:"#8B6540",fontWeight:600,lineHeight:1.6}}>
-            Forfeited validator commissions are transferred to this Tanaqul-controlled wallet.
-            Validators who fail to meet the minimum block participation threshold lose their share for that period — no exceptions.
+            {isAr?"تُحوّل عمولات المصادقين المصادرة إلى هذه المحفظة التي تتحكم بها تنقل. المصادقون الذين لا يستوفون الحد الأدنى من المشاركة في البلوكات يفقدون حصتهم لتلك الفترة — بدون استثناءات.":"Forfeited validator commissions are transferred to this Tanaqul-controlled wallet. Validators who fail to meet the minimum block participation threshold lose their share for that period — no exceptions."}
           </p>
         </div>
         <div style={{marginBottom:14}}>
@@ -4790,14 +4788,20 @@ const CommissionTab = ({
           </div>
         </div>
         <div style={{background:"#FAF8F5",borderRadius:10,padding:"12px 16px",border:`1px solid ${C.border}`}}>
-          <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>What happens to forfeited earnings:</p>
-          {[
+          <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{isAr?"ماذا يحدث للأرباح المصادرة:":"What happens to forfeited earnings:"}</p>
+          {(isAr?[
+            ["1","إغلاق البلوك ← تسجيل المشاركة على السلسلة"],
+            ["2","انتهاء الفترة ← النظام يتحقق من عدد بلوكات كل مصادق"],
+            ["3","أقل من الحد ← يتم حساب حصتهم"],
+            ["4","المبلغ يُحوّل تلقائياً إلى محفظة تخارج"],
+            ["5","المصادقون المؤهلون لا يتأثرون — يحصلون على حصتهم كاملة"],
+          ]:[
             ["1","Block closes → participation recorded on-chain"],
             ["2","Period ends → system checks each validator's block count"],
             ["3","Below threshold → their share calculated"],
             ["4","Amount transferred to Takharoj wallet automatically"],
             ["5","Qualifying validators are NOT affected — they receive their full share"],
-          ].map(([n,t])=>(
+          ]).map(([n,t])=>(
             <div key={n} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:6}}>
               <div style={{width:18,height:18,borderRadius:"50%",background:C.navy,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
                 <span style={{fontSize:11,fontWeight:800,color:C.white}}>{n}</span>
@@ -5474,16 +5478,16 @@ const OrderBook = () => {
             <Btn variant="gold" onClick={()=>setTab("stabilizer")}>⚡ {isAr?"صانع السوق":"Market Maker"}</Btn>
           </div>
           <TTable cols={[
-            {key:"id",      label:"Order ID"},
+            {key:"id",      label:isAr?"رقم الأمر":"Order ID"},
             {key:"investor",label:isAr?"\u0627\u0644\u0645\u0633\u062a\u062b\u0645\u0631":"Investor",render:(v,row)=><span>{isAr&&row.investorAr?row.investorAr:v}</span>},
-            {key:"side",    label:"Side",  render:(_,row)=>sidePill(row.side,row.marketMaker)},
-            {key:"metal",   label:"Metal", render:(v)=><span style={{fontWeight:600,color:MCOL[v]}}>{isAr?METALS_AR[v]:v}</span>},
-            {key:"qty",     label:"Qty",   render:(v,row)=><span>{v}g ({row.filled}g {isAr?"\u0645\u0646\u0641\u0630":"filled"})</span>},
-            {key:"price",   label:"Price", render:(v)=><span style={{fontWeight:600}}>SAR {(v||0).toFixed(2)}</span>},
+            {key:"side",    label:isAr?"الجانب":"Side",  render:(_,row)=>sidePill(row.side,row.marketMaker)},
+            {key:"metal",   label:isAr?"المعدن":"Metal", render:(v)=><span style={{fontWeight:600,color:MCOL[v]}}>{isAr?METALS_AR[v]:v}</span>},
+            {key:"qty",     label:isAr?"الكمية":"Qty",   render:(v,row)=><span>{v}g ({row.filled}g {isAr?"\u0645\u0646\u0641\u0630":"filled"})</span>},
+            {key:"price",   label:isAr?"السعر":"Price", render:(v)=><span style={{fontWeight:600}}>SAR {(v||0).toFixed(2)}</span>},
             {key:"payment", label:isAr?"\u0627\u0644\u062f\u0641\u0639":"Payment",render:(v)=><span>{v}{GATEWAY.includes(v)&&<span style={{fontSize:11,color:C.textMuted,background:"#F5F0E8",borderRadius:4,padding:"0 3px",marginLeft:3}}>200K</span>}</span>},
-            {key:"expiry",  label:"Expiry",render:(v,row)=><span>{v}{row.expiryDate?" "+row.expiryDate:""}</span>},
-            {key:"status",  label:"Status",render:(_,row)=>stPill(row.status,row.synthetic)},
-            {key:"placed",  label:"Placed"},
+            {key:"expiry",  label:isAr?"الصلاحية":"Expiry",render:(v,row)=><span>{v}{row.expiryDate?" "+row.expiryDate:""}</span>},
+            {key:"status",  label:isAr?"الحالة":"Status",render:(_,row)=>stPill(row.status,row.synthetic)},
+            {key:"placed",  label:isAr?"تاريخ الوضع":"Placed"},
             {key:"cancelReason", label:isAr?"ملاحظة":"Note", render:v=>v?<span style={{fontSize:12,color:"#C85C3E",fontStyle:"italic"}}>{v}</span>:null},
             {key:"_a",      label:"",render:(_,row)=>(row.status==="OPEN"||row.status==="PARTIAL")&&!row.synthetic?<Btn small variant="danger" onClick={()=>cancelOrder(row.id)}>{isAr?"إلغاء":"Cancel"}</Btn>:null},
           ]} rows={orders} />
@@ -5500,18 +5504,18 @@ const OrderBook = () => {
             <StatCard icon={Icons.orders(22,C.purpleSolid)} title={isAr?"ASK فقط":"ASK-only fills"} value={matches.filter(m=>m.mode==="ask-only").length} />
           </div>
           <TTable cols={[
-            {key:"id",        label:"Match ID"},
-            {key:"metal",     label:"Metal",      render:(v)=><span style={{fontWeight:600,color:MCOL[v]}}>{isAr?METALS_AR[v]:v}</span>},
-            {key:"qty",       label:"Qty",         render:(v)=><span>{v}g</span>},
-            {key:"price",     label:"Exec Price",  render:(v)=><span style={{fontWeight:600}}>SAR {(v||0).toFixed(2)}</span>},
-            {key:"totalSAR",  label:"Total",       render:(v)=><span style={{fontWeight:700}}><SARAmount amount={(v||0).toLocaleString("en-SA")}/></span>},
-            {key:"commission",label:"Commission",  render:(v)=><SARAmount amount={(v||0).toLocaleString("en-SA")}/>},
-            {key:"adminFee",  label:"Admin Fee",   render:(v)=>v?<SARAmount amount={(v||0).toLocaleString("en-SA")}/>:<span style={{color:C.textMuted}}>—</span>},
-            {key:"buyOrder",  label:"Buy Order"},
-            {key:"sellOrder", label:"Sell Order"},
-            {key:"mode",      label:"Mode", render:v=><span style={{fontSize:12,fontWeight:700,padding:"2px 7px",borderRadius:20,background:v==="ask-only"?C.purpleBg:"#E8EFF7",color:v==="ask-only"?C.purpleSolid:C.blueSolid}}>{v==="ask-only"?"ASK-only":"Bid-Ask"}</span>},
+            {key:"id",        label:isAr?"رقم المطابقة":"Match ID"},
+            {key:"metal",     label:isAr?"المعدن":"Metal",      render:(v)=><span style={{fontWeight:600,color:MCOL[v]}}>{isAr?METALS_AR[v]:v}</span>},
+            {key:"qty",       label:isAr?"الكمية":"Qty",         render:(v)=><span>{v}g</span>},
+            {key:"price",     label:isAr?"سعر التنفيذ":"Exec Price",  render:(v)=><span style={{fontWeight:600}}>SAR {(v||0).toFixed(2)}</span>},
+            {key:"totalSAR",  label:isAr?"الإجمالي":"Total",       render:(v)=><span style={{fontWeight:700}}><SARAmount amount={(v||0).toLocaleString("en-SA")}/></span>},
+            {key:"commission",label:isAr?"العمولة":"Commission",  render:(v)=><SARAmount amount={(v||0).toLocaleString("en-SA")}/>},
+            {key:"adminFee",  label:isAr?"رسوم الإدارة":"Admin Fee",   render:(v)=>v?<SARAmount amount={(v||0).toLocaleString("en-SA")}/>:<span style={{color:C.textMuted}}>—</span>},
+            {key:"buyOrder",  label:isAr?"أمر الشراء":"Buy Order"},
+            {key:"sellOrder", label:isAr?"أمر البيع":"Sell Order"},
+            {key:"mode",      label:isAr?"الوضع":"Mode", render:v=><span style={{fontSize:12,fontWeight:700,padding:"2px 7px",borderRadius:20,background:v==="ask-only"?C.purpleBg:"#E8EFF7",color:v==="ask-only"?C.purpleSolid:C.blueSolid}}>{v==="ask-only"?(isAr?"بيع فقط":"ASK-only"):(isAr?"شراء-بيع":"Bid-Ask")}</span>},
             {key:"filledFor", label:isAr?"مُنفَّذ لـ":"Filled For"},
-            {key:"date",      label:"Executed"},
+            {key:"date",      label:isAr?"تاريخ التنفيذ":"Executed"},
           ]} rows={matches} />
         </div>
       )}
@@ -5557,14 +5561,14 @@ const OrderBook = () => {
           </div>
           <SectionHeader title={isAr?"\u0633\u062c\u0644 \u0627\u0644\u0623\u0648\u0627\u0645\u0631 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a\u0629":"Synthetic Order Log"} />
           <TTable cols={[
-            {key:"id",    label:"ID"},
-            {key:"metal", label:"Metal", render:(v)=><span style={{fontWeight:600,color:MCOL[v]}}>{isAr?METALS_AR[v]:v}</span>},
-            {key:"side",  label:"Side",  render:(_,row)=>sidePill(row.side)},
-            {key:"qty",   label:"Qty",   render:(v)=><span>{v}g</span>},
-            {key:"price", label:"Price", render:(v)=><span>SAR {(v||0).toFixed(2)}</span>},
-            {key:"reason",label:"Trigger"},
-            {key:"status",label:"Status",render:(v)=>stPill(v,false)},
-            {key:"date",  label:"Date"},
+            {key:"id",    label:isAr?"المعرف":"ID"},
+            {key:"metal", label:isAr?"المعدن":"Metal", render:(v)=><span style={{fontWeight:600,color:MCOL[v]}}>{isAr?METALS_AR[v]:v}</span>},
+            {key:"side",  label:isAr?"الجانب":"Side",  render:(_,row)=>sidePill(row.side)},
+            {key:"qty",   label:isAr?"الكمية":"Qty",   render:(v)=><span>{v}g</span>},
+            {key:"price", label:isAr?"السعر":"Price", render:(v)=><span>SAR {(v||0).toFixed(2)}</span>},
+            {key:"reason",label:isAr?"المحفّز":"Trigger"},
+            {key:"status",label:isAr?"الحالة":"Status",render:(v)=>stPill(v,false)},
+            {key:"date",  label:isAr?"التاريخ":"Date"},
           ]} rows={synLog} />
         </div>
       )}
@@ -5887,6 +5891,57 @@ const UserManagement = () => {
     "withdrawal.submit":C.blueSolid,"withdrawal.approve":C.greenSolid,"withdrawal.reject":"#C85C3E","withdrawal.process":C.greenSolid,
     "blacklist.add":"#C85C3E","blacklist.unban":C.greenSolid,"bar.register":C.greenSolid,"bar.link":C.blueSolid,"bar.unlink":"#D4943A",
     "bar.status_change":"#C4956A","BID_DISABLE":"#D4943A","BID_ENABLE":C.greenSolid,
+    "auth.login":C.blueSolid,"auth.logout":"#8C7E6F","auth.2fa_setup":C.purpleSolid,
+    "appointment.otp_generate":C.blueSolid,"appointment.otp_verified":C.greenSolid,"appointment.otp_fail":"#C85C3E",
+  };
+  const ACTION_LABELS = {
+    "auth.login":{en:"Login",ar:"تسجيل دخول"},
+    "auth.logout":{en:"Logout",ar:"تسجيل خروج"},
+    "auth.2fa_setup":{en:"2FA Setup",ar:"إعداد المصادقة الثنائية"},
+    "investor.create":{en:"Create Investor",ar:"إنشاء مستثمر"},
+    "investor.update":{en:"Update Investor",ar:"تحديث مستثمر"},
+    "investor.suspend":{en:"Suspend Investor",ar:"تعليق مستثمر"},
+    "investor.activate":{en:"Activate Investor",ar:"تفعيل مستثمر"},
+    "investor.ban":{en:"Ban Investor",ar:"حظر مستثمر"},
+    "investor.unban":{en:"Unban Investor",ar:"رفع حظر مستثمر"},
+    "appointment.book":{en:"Book Appointment",ar:"حجز موعد"},
+    "appointment.cancel":{en:"Cancel Appointment",ar:"إلغاء موعد"},
+    "appointment.complete":{en:"Complete Appointment",ar:"إتمام موعد"},
+    "appointment.reschedule":{en:"Reschedule",ar:"إعادة جدولة"},
+    "appointment.no_show":{en:"No Show",ar:"عدم حضور"},
+    "appointment.start":{en:"Start Appointment",ar:"بدء موعد"},
+    "appointment.otp_generate":{en:"Generate OTP",ar:"إنشاء رمز تحقق"},
+    "appointment.otp_verified":{en:"OTP Verified",ar:"تم التحقق من الرمز"},
+    "appointment.otp_fail":{en:"OTP Failed",ar:"فشل رمز التحقق"},
+    "withdrawal.submit":{en:"Submit Withdrawal",ar:"تقديم سحب"},
+    "withdrawal.approve":{en:"Approve Withdrawal",ar:"موافقة سحب"},
+    "withdrawal.reject":{en:"Reject Withdrawal",ar:"رفض سحب"},
+    "withdrawal.process":{en:"Process Withdrawal",ar:"معالجة سحب"},
+    "blacklist.add":{en:"Add to Blacklist",ar:"إضافة للقائمة السوداء"},
+    "blacklist.unban":{en:"Remove from Blacklist",ar:"إزالة من القائمة السوداء"},
+    "bar.register":{en:"Register Bar",ar:"تسجيل سبيكة"},
+    "bar.link":{en:"Link Bar",ar:"ربط سبيكة"},
+    "bar.unlink":{en:"Unlink Bar",ar:"فك ربط سبيكة"},
+    "bar.status_change":{en:"Bar Status Change",ar:"تغيير حالة سبيكة"},
+    "BID_DISABLE":{en:"Disable Bid Orders",ar:"تعطيل أوامر الشراء"},
+    "BID_ENABLE":{en:"Enable Bid Orders",ar:"تفعيل أوامر الشراء"},
+    "order.place":{en:"Place Order",ar:"وضع أمر"},
+    "order.cancel":{en:"Cancel Order",ar:"إلغاء أمر"},
+    "order.match":{en:"Match Order",ar:"مطابقة أمر"},
+    "wallet.credit":{en:"Wallet Credit",ar:"إيداع محفظة"},
+    "wallet.debit":{en:"Wallet Debit",ar:"خصم محفظة"},
+    "admin.create":{en:"Create Admin",ar:"إنشاء مسؤول"},
+    "admin.suspend":{en:"Suspend Admin",ar:"تعليق مسؤول"},
+    "admin.activate":{en:"Activate Admin",ar:"تفعيل مسؤول"},
+    "admin.delete":{en:"Delete Admin",ar:"حذف مسؤول"},
+    "admin.role_change":{en:"Change Role",ar:"تغيير الدور"},
+    "settings.update":{en:"Update Settings",ar:"تحديث الإعدادات"},
+  };
+  const actionLabel = (code) => {
+    const l = ACTION_LABELS[code];
+    if(l) return isAr ? l.ar : l.en;
+    // Fallback: make code readable
+    return code ? code.replace(/[._]/g," ").replace(/\b\w/g,c=>c.toUpperCase()) : "—";
   };
 
   // Audit log filtering
@@ -5990,7 +6045,7 @@ const UserManagement = () => {
           <select value={auditTypeFilter} onChange={e=>setAuditTypeFilter(e.target.value)}
             style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,fontWeight:600,color:C.navy,background:C.white,outline:"none",cursor:"pointer"}}>
             <option value="ALL">{isAr?"جميع الإجراءات":"All Actions"}</option>
-            {auditActionTypes.slice(0,15).map(a=><option key={a} value={a}>{a}</option>)}
+            {auditActionTypes.slice(0,15).map(a=><option key={a} value={a}>{actionLabel(a)}</option>)}
           </select>
           <div style={{flex:1}}/>
           <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)} placeholder={isAr?"بحث في السجل...":"Search audit log..."}
@@ -6021,8 +6076,8 @@ const UserManagement = () => {
                     <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?C.white:"#FAF8F5"}}>
                       <td style={{padding:"8px 12px",fontSize:12,fontFamily:"monospace",color:C.textMuted,whiteSpace:"nowrap"}}>{e.time?new Date(e.time).toLocaleString("en-SA",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—"}</td>
                       <td style={{padding:"8px 12px",fontSize:13,fontWeight:600,color:C.navy}}>{e.admin||"—"}</td>
-                      <td style={{padding:"8px 12px"}}><span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:700,color:col,background:col+"15",border:`1px solid ${col}33`}}>{e.action||"—"}</span></td>
-                      <td style={{padding:"8px 12px",fontSize:13,color:C.textMuted,fontWeight:600}}>{e.entityType||"—"}</td>
+                      <td style={{padding:"8px 12px"}}><span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:700,color:col,background:col+"15",border:`1px solid ${col}33`}}>{actionLabel(e.action)}</span></td>
+                      <td style={{padding:"8px 12px",fontSize:13,color:C.textMuted,fontWeight:600}}>{(()=>{const et=e.entityType||"—";const m={"investor":isAr?"مستثمر":"Investor","appointment":isAr?"موعد":"Appointment","withdrawal":isAr?"سحب":"Withdrawal","bar":isAr?"سبيكة":"Bar","order":isAr?"أمر":"Order","ORDER_BOOK":isAr?"دفتر الأوامر":"Order Book","wallet":isAr?"محفظة":"Wallet","admin":isAr?"مسؤول":"Admin","blacklist":isAr?"قائمة سوداء":"Blacklist","settings":isAr?"إعدادات":"Settings","block":isAr?"بلوك":"Block"};return m[et]||et;})()}</td>
                       <td style={{padding:"8px 12px",fontWeight:600,color:C.navy,fontSize:12,fontFamily:"monospace"}}>{e.entityId?(e.entityId+"").slice(0,16):""}</td>
                       <td style={{padding:"8px 12px",fontSize:12,color:C.textMuted,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.detail||"—"}</td>
                     </tr>
@@ -6041,7 +6096,7 @@ const UserManagement = () => {
       {modal==="add"&&<Modal title={isAr?"إضافة مستخدم إدارة":"Add Admin User"} onClose={()=>setModal(null)}>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"flex",gap:10}}>
-            <div style={{flex:1}}><Inp label="Full Name (English)" value={newUser.name} onChange={v=>setNewUser(p=>({...p,name:v}))} placeholder="e.g. Noura Al-Shamsi" /></div>
+            <div style={{flex:1}}><Inp label={isAr?"الاسم الكامل (إنجليزي)":"Full Name (English)"} value={newUser.name} onChange={v=>setNewUser(p=>({...p,name:v}))} placeholder={isAr?"مثال: نورة الشمسي":"e.g. Noura Al-Shamsi"} /></div>
             <div style={{flex:1}}><Inp label="الاسم الكامل (عربي)" value={newUser.nameAr} onChange={v=>setNewUser(p=>({...p,nameAr:v}))} placeholder="مثال: نورة الشمسي" /></div>
           </div>
           <Inp label={isAr?"البريد الإلكتروني":"Email"} value={newUser.email} onChange={v=>setNewUser(p=>({...p,email:v}))} placeholder="user@tanaqul.sa" />
@@ -6109,7 +6164,7 @@ const UserManagement = () => {
       {roleModal&&<Modal title={isAr?"إنشاء دور مخصص":"Create Custom Role"} onClose={()=>setRoleModal(false)}>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"flex",gap:10}}>
-            <div style={{flex:1}}><Inp label="Role Name (English)" value={newRole.label} onChange={v=>setNewRole(p=>({...p,label:v}))} placeholder="e.g. Auditor" /></div>
+            <div style={{flex:1}}><Inp label={isAr?"اسم الدور (إنجليزي)":"Role Name (English)"} value={newRole.label} onChange={v=>setNewRole(p=>({...p,label:v}))} placeholder={isAr?"مثال: مدقق":"e.g. Auditor"} /></div>
             <div style={{flex:1}}><Inp label="اسم الدور (عربي)" value={newRole.labelAr} onChange={v=>setNewRole(p=>({...p,labelAr:v}))} placeholder="مثال: مدقق" /></div>
           </div>
           {/* Color picker */}
@@ -6362,47 +6417,47 @@ const AccountProfile = () => {
           return false;
         };
         const descMap = {
-          "auth.login":"Logged in to admin dashboard",
-          "auth.refresh":"Session refreshed",
-          "auth.logout":"Logged out",
-          "investor.create":"New investor created",
-          "investor.create.market_maker":"Market Maker investor created",
-          "investor.update":"Investor profile updated",
-          "investor.suspend":"Investor suspended",
-          "investor.ban":"Investor banned",
-          "investor.activate":"Investor activated",
-          "block.create":"New block created on chain",
-          "block.auto_create":"Auto block created",
-          "block.split_updated":"Commission split updated",
-          "block.trigger_updated":"Block trigger settings updated",
-          "withdrawal.approve":"Withdrawal approved",
-          "withdrawal.reject":"Withdrawal rejected",
-          "withdrawal.process":"Withdrawal processed",
-          "blacklist.add":"Added to blacklist",
-          "blacklist.unban":"Removed from blacklist",
-          "appointment.cancel":"Appointment cancelled",
-          "appointment.complete":"Appointment completed",
-          "appointment.no_show":"No-show recorded",
-          "appointment.reschedule":"Appointment rescheduled",
-          "settings.update":"Platform settings updated",
-          "admin.create":"New admin user created",
-          "admin.suspend":"Admin user suspended",
-          "admin.activate":"Admin user activated",
-          "order.place":"Order placed",
-          "order.cancel":"Order cancelled",
-          "vault.deposit":"Vault deposit completed",
-          "vault.withdraw":"Vault withdrawal completed",
-          "token.mint":"Token minted",
-          "token.burn":"Token burned",
+          "auth.login":isAr?"تسجيل الدخول إلى لوحة الإدارة":"Logged in to admin dashboard",
+          "auth.refresh":isAr?"تم تحديث الجلسة":"Session refreshed",
+          "auth.logout":isAr?"تسجيل الخروج":"Logged out",
+          "investor.create":isAr?"تم إنشاء مستثمر جديد":"New investor created",
+          "investor.create.market_maker":isAr?"تم إنشاء مستثمر صانع السوق":"Market Maker investor created",
+          "investor.update":isAr?"تم تحديث ملف المستثمر":"Investor profile updated",
+          "investor.suspend":isAr?"تم تعليق المستثمر":"Investor suspended",
+          "investor.ban":isAr?"تم حظر المستثمر":"Investor banned",
+          "investor.activate":isAr?"تم تفعيل المستثمر":"Investor activated",
+          "block.create":isAr?"تم إنشاء كتلة جديدة على السلسلة":"New block created on chain",
+          "block.auto_create":isAr?"تم إنشاء كتلة تلقائياً":"Auto block created",
+          "block.split_updated":isAr?"تم تحديث تقسيم العمولة":"Commission split updated",
+          "block.trigger_updated":isAr?"تم تحديث إعدادات محفز الكتلة":"Block trigger settings updated",
+          "withdrawal.approve":isAr?"تمت الموافقة على السحب":"Withdrawal approved",
+          "withdrawal.reject":isAr?"تم رفض السحب":"Withdrawal rejected",
+          "withdrawal.process":isAr?"تمت معالجة السحب":"Withdrawal processed",
+          "blacklist.add":isAr?"تمت الإضافة إلى القائمة السوداء":"Added to blacklist",
+          "blacklist.unban":isAr?"تمت الإزالة من القائمة السوداء":"Removed from blacklist",
+          "appointment.cancel":isAr?"تم إلغاء الموعد":"Appointment cancelled",
+          "appointment.complete":isAr?"تم إكمال الموعد":"Appointment completed",
+          "appointment.no_show":isAr?"تم تسجيل عدم الحضور":"No-show recorded",
+          "appointment.reschedule":isAr?"تمت إعادة جدولة الموعد":"Appointment rescheduled",
+          "settings.update":isAr?"تم تحديث إعدادات المنصة":"Platform settings updated",
+          "admin.create":isAr?"تم إنشاء مستخدم إداري جديد":"New admin user created",
+          "admin.suspend":isAr?"تم تعليق المستخدم الإداري":"Admin user suspended",
+          "admin.activate":isAr?"تم تفعيل المستخدم الإداري":"Admin user activated",
+          "order.place":isAr?"تم وضع أمر":"Order placed",
+          "order.cancel":isAr?"تم إلغاء أمر":"Order cancelled",
+          "vault.deposit":isAr?"تم إيداع في الخزينة":"Vault deposit completed",
+          "vault.withdraw":isAr?"تم سحب من الخزينة":"Vault withdrawal completed",
+          "token.mint":isAr?"تم صك رمز":"Token minted",
+          "token.burn":isAr?"تم حرق رمز":"Token burned",
         };
         const getDesc = (action, details, entityType) => {
           if(descMap[action]) return descMap[action];
           for(const [k,v] of Object.entries(descMap)){if(action.includes(k)) return v;}
-          if(action.startsWith("POST /api/v1/auth/login")) return "Admin login";
-          if(action.startsWith("POST /api/v1/")) return "Action: " + action.split("/").pop().replace(/-/g," ");
-          if(action.startsWith("PUT /api/v1/")) return "Updated: " + action.split("/").pop().replace(/-/g," ");
-          if(action.startsWith("PATCH /api/v1/")) return "Modified: " + action.split("/").pop().replace(/-/g," ");
-          if(action.startsWith("DELETE /api/v1/")) return "Deleted: " + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("POST /api/v1/auth/login")) return isAr?"تسجيل دخول إداري":"Admin login";
+          if(action.startsWith("POST /api/v1/")) return (isAr?"إجراء: ":"Action: ") + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("PUT /api/v1/")) return (isAr?"تحديث: ":"Updated: ") + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("PATCH /api/v1/")) return (isAr?"تعديل: ":"Modified: ") + action.split("/").pop().replace(/-/g," ");
+          if(action.startsWith("DELETE /api/v1/")) return (isAr?"حذف: ":"Deleted: ") + action.split("/").pop().replace(/-/g," ");
           return action.replace(/\./g," ").replace(/_/g," ").replace(/^(\w)/,m=>m.toUpperCase());
         };
         const meaningful = d.items.filter(a=>!isNoise(a.action||""));
@@ -6518,7 +6573,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||"Failed to save"));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل الحفظ":"Failed to save")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -6558,7 +6613,7 @@ const AccountProfile = () => {
             if(!pwForm.current||!pwForm.newPw||!pwForm.confirm){showToast(isAr?"⚠️ أكمل جميع الحقول":"⚠️ Fill all fields");return;}
             if(pwForm.newPw.length<8){showToast(isAr?"⚠️ 8 أحرف على الأقل":"⚠️ Min 8 characters");return;}
             if(pwForm.newPw!==pwForm.confirm){showToast(isAr?"⚠️ غير متطابقة":"⚠️ Passwords don't match");return;}
-            try{const r=await apiFetch("/auth/change-password",{method:"POST",body:JSON.stringify({current_password:pwForm.current,new_password:pwForm.newPw})});if(r&&r.ok){setPwForm({current:"",newPw:"",confirm:""});showToast(isAr?"✅ تم تغيير كلمة المرور":"✅ Password changed successfully");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||"Failed to change password"));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}
+            try{const r=await apiFetch("/auth/change-password",{method:"POST",body:JSON.stringify({current_password:pwForm.current,new_password:pwForm.newPw})});if(r&&r.ok){setPwForm({current:"",newPw:"",confirm:""});showToast(isAr?"✅ تم تغيير كلمة المرور":"✅ Password changed successfully");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل تغيير كلمة المرور":"Failed to change password")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}
           }}>{isAr?"تحديث كلمة المرور":"Update Password"}</Btn>
         </div>
         <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:20,boxShadow:C.cardShadow}}>
@@ -7042,17 +7097,17 @@ const CommCenter = () => {
     const notifs = [];
     const now = Date.now();
     [...(amlAlerts||[]),...(cmaAlerts||[])].filter(a=>!amlDismissed.has(a.key)&&(a.level==="CRITICAL"||a.level==="HIGH")).slice(0,5).forEach((a,i)=>{
-      notifs.push({id:"N-AML-"+a.key,type:"🚨 AML",icon:"🚨",title:a.title||"AML Alert",detail:(a.name||"")+" — "+a.level,time:now-i*120000,page:"auditlog",severity:"critical"});
+      notifs.push({id:"N-AML-"+a.key,type:isAr?"🚨 مكافحة غسل":"🚨 AML",icon:"🚨",title:a.title||(isAr?"تنبيه مكافحة غسل":"AML Alert"),detail:(a.name||"")+" — "+a.level,time:now-i*120000,page:"auditlog",severity:"critical"});
     });
     const pending = (withdrawals||[]).filter(w=>w.status==="PENDING");
-    if(pending.length>0) notifs.push({id:"N-WD",type:"💸 Finance",icon:"💸",title:`${pending.length} pending withdrawal${pending.length>1?"s":""}`,detail:"Awaiting approval",time:now-300000,page:"financials",severity:"high"});
+    if(pending.length>0) notifs.push({id:"N-WD",type:isAr?"💸 مالية":"💸 Finance",icon:"💸",title:isAr?`${pending.length} طلب سحب معلق`:`${pending.length} pending withdrawal${pending.length>1?"s":""}`,detail:isAr?"بانتظار الموافقة":"Awaiting approval",time:now-300000,page:"financials",severity:"high"});
     const expired = (appointments||[]).filter(a=>a.status==="EXPIRED");
-    if(expired.length>0) notifs.push({id:"N-APPT",type:"⏰ Ops",icon:"⏰",title:`${expired.length} expired appointment${expired.length>1?"s":""}`,detail:"Mark attended or no-show",time:now-600000,page:"appointments",severity:"medium"});
+    if(expired.length>0) notifs.push({id:"N-APPT",type:isAr?"⏰ عمليات":"⏰ Ops",icon:"⏰",title:isAr?`${expired.length} موعد منتهي الصلاحية`:`${expired.length} expired appointment${expired.length>1?"s":""}`,detail:isAr?"سجّل الحضور أو عدمه":"Mark attended or no-show",time:now-600000,page:"appointments",severity:"medium"});
     const today = new Date().toISOString().slice(0,10);
     const kycSoon = (investors||[]).filter(i=>i.kycExpiry&&i.kycExpiry<new Date(Date.now()+30*86400000).toISOString().slice(0,10)&&i.kycExpiry>=today&&i.status==="ACTIVE");
-    if(kycSoon.length>0) notifs.push({id:"N-KYC",type:"🪪 Compliance",icon:"🪪",title:`${kycSoon.length} KYC expiring soon`,detail:"Within 30 days",time:now-900000,page:"investors",severity:"medium"});
+    if(kycSoon.length>0) notifs.push({id:"N-KYC",type:isAr?"🪪 امتثال":"🪪 Compliance",icon:"🪪",title:isAr?`${kycSoon.length} هوية تنتهي قريباً`:`${kycSoon.length} KYC expiring soon`,detail:isAr?"خلال 30 يوم":"Within 30 days",time:now-900000,page:"investors",severity:"medium"});
     const todayAppts = (appointments||[]).filter(a=>a.date===today&&a.status==="BOOKED");
-    if(todayAppts.length>0) notifs.push({id:"N-TODAY",type:"📅 Today",icon:"📅",title:`${todayAppts.length} appointment${todayAppts.length>1?"s":""} today`,detail:"Check vault schedule",time:now-100000,page:"appointments",severity:"info"});
+    if(todayAppts.length>0) notifs.push({id:"N-TODAY",type:isAr?"📅 اليوم":"📅 Today",icon:"📅",title:isAr?`${todayAppts.length} موعد اليوم`:`${todayAppts.length} appointment${todayAppts.length>1?"s":""} today`,detail:isAr?"تحقق من جدول الخزنة":"Check vault schedule",time:now-100000,page:"appointments",severity:"info"});
     setNotifications(notifs);
   },[amlAlerts,cmaAlerts,amlDismissed,withdrawals,appointments,investors]);
 
@@ -7204,7 +7259,7 @@ const CommCenter = () => {
         {drafts.length===0?<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:40,textAlign:"center"}}><p style={{fontSize:36,marginBottom:8}}>📝</p><p style={{fontSize:15,fontWeight:600,color:C.navy}}>{isAr?"لا مسودات":"No drafts"}</p></div>
         :<div style={{display:"flex",flexDirection:"column",gap:8}}>
           {drafts.map(d=><div key={d.id} style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><p style={{fontSize:14,fontWeight:600,color:C.navy}}>{d.subject||"(No subject)"}</p><p style={{fontSize:12,color:C.textMuted}}>{isAr?"إلى":"To"}: {d.to} — {d.body.slice(0,60)}...</p></div>
+            <div><p style={{fontSize:14,fontWeight:600,color:C.navy}}>{d.subject||(isAr?"(بدون موضوع)":"(No subject)")}</p><p style={{fontSize:12,color:C.textMuted}}>{isAr?"إلى":"To"}: {d.to} — {d.body.slice(0,60)}...</p></div>
             <div style={{display:"flex",gap:6}}>
               <Btn small variant="gold" onClick={()=>{setCompTo(d.to);setCompBody(d.body);setCompSubject(d.subject||"");setDrafts(p=>p.filter(x=>x.id!==d.id));setTab("compose");}}>{isAr?"تحرير":"Edit"}</Btn>
               <Btn small variant="danger" onClick={()=>setDrafts(p=>p.filter(x=>x.id!==d.id))}>{isAr?"حذف":"Delete"}</Btn>
@@ -7265,7 +7320,7 @@ const CommCenter = () => {
           <textarea value={compBody} onChange={e=>setCompBody(e.target.value)} rows={4} placeholder={isAr?"اكتب الرسالة الجماعية...":"Type bulk message..."}
             style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}} />
         </div>
-        <Btn variant="gold" onClick={async ()=>{if(!compBody){showToast("⚠️ Message is empty");return;}
+        <Btn variant="gold" onClick={async ()=>{if(!compBody){showToast(isAr?"⚠️ الرسالة فارغة":"⚠️ Message is empty");return;}
           const count=bulkRecipients.length;
           try{const r=await apiFetch("/sms/bulk",{method:"POST",body:JSON.stringify({body:compBody,channel:"SMS",filter_status:bulkFilter,subject:"Bulk"})});if(r&&r.ok){const d=await r.json();showToast(`✅ ${d.sent||count} ${isAr?"رسالة أُرسلت":"messages sent"}`);} else {showToast(isAr?"⚠️ خطأ":"⚠️ Error");}}catch(e){showToast(isAr?"⚠️ خطأ":"⚠️ Error");}
           setCompBody("");}}>{isAr?`إرسال إلى ${bulkRecipients.length} مستثمر`:`Send to ${bulkRecipients.length} investors`}</Btn>
@@ -7275,7 +7330,7 @@ const CommCenter = () => {
       {/* ═══ EDIT TEMPLATE MODAL ═══ */}
       {editTpl&&<Modal title={isAr?"تعديل القالب":"Edit Template — "+editTpl.name} onClose={()=>setEditTpl(null)}>
         <div style={{marginBottom:12}}>
-          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"الاسم (English)":"Name (English)"}</label>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"الاسم (إنجليزي)":"Name (English)"}</label>
           <input value={editTpl.name} onChange={e=>setEditTpl({...editTpl,name:e.target.value})} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13}} />
         </div>
         <div style={{marginBottom:12}}>
@@ -7283,7 +7338,7 @@ const CommCenter = () => {
           <input value={editTpl.nameAr} onChange={e=>setEditTpl({...editTpl,nameAr:e.target.value})} dir="rtl" style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,fontFamily:"inherit"}} />
         </div>
         <div style={{marginBottom:12}}>
-          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"النص (English)":"Body (English)"}</label>
+          <label style={{fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4,display:"block"}}>{isAr?"النص (إنجليزي)":"Body (English)"}</label>
           <textarea value={editTpl.body} onChange={e=>setEditTpl({...editTpl,body:e.target.value})} rows={3} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,resize:"vertical",fontFamily:"inherit"}} />
         </div>
         <div style={{marginBottom:14}}>
@@ -7664,7 +7719,7 @@ const NotificationSettings = () => {
       <G title={isAr?"قنوات الإرسال":"Delivery Channels"}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>SMS — Unifonic</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"SMS — يونيفونك":"SMS — Unifonic"}</span></div>
             <Inp label={isAr?"مفتاح API":"API Key"} value={smsKey} onChange={setSmsKey} type="password" />
             <Inp label={isAr?"نقطة الاتصال":"Endpoint"} value={smsEndpoint} onChange={setSmsEndpoint} />
             <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={setSmsSenderId} />
@@ -7675,7 +7730,7 @@ const NotificationSettings = () => {
             <Inp label={isAr?"معرف المشروع":"Project ID"} value="tanaqul-prod-sa" onChange={()=>{}} />
           </div>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📧</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>Email — AWS SES</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📧</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"البريد — AWS SES":"Email — AWS SES"}</span></div>
             <Sel label={isAr?"المزود":"Provider"} value={emailProvider} onChange={setEmailProvider} options={[{value:"ses",label:"AWS SES"},{value:"sendgrid",label:"SendGrid"},{value:"mailgun",label:"Mailgun"}]} />
             <Inp label={isAr?"من":"From"} value={emailFrom} onChange={setEmailFrom} />
             <Inp label={isAr?"الرد على":"Reply-To"} value={emailReplyTo} onChange={setEmailReplyTo} />
@@ -7805,29 +7860,29 @@ const NotificationSettings = () => {
           <Inp label={isAr?"الاسم (AR)":"Name (AR)"} value={editTpl.nameAr} onChange={v=>setEditTpl(p=>({...p,nameAr:v}))} />
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-          <Inp label="Push Title (EN)" value={editTpl.pushTitleEn} onChange={v=>setEditTpl(p=>({...p,pushTitleEn:v}))} />
-          <Inp label="Push Title (AR)" value={editTpl.pushTitleAr} onChange={v=>setEditTpl(p=>({...p,pushTitleAr:v}))} />
+          <Inp label={isAr?"عنوان الإشعار (EN)":"Push Title (EN)"} value={editTpl.pushTitleEn} onChange={v=>setEditTpl(p=>({...p,pushTitleEn:v}))} />
+          <Inp label={isAr?"عنوان الإشعار (AR)":"Push Title (AR)"} value={editTpl.pushTitleAr} onChange={v=>setEditTpl(p=>({...p,pushTitleAr:v}))} />
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           <div>
-            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>Body (EN)</label>
+            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>{isAr?"النص (EN)":"Body (EN)"}</label>
             <textarea value={editTpl.bodyEn} onChange={e=>setEditTpl(p=>({...p,bodyEn:e.target.value}))} rows={4}
               style={{width:"100%",padding:"10px 12px",borderRadius:8,fontSize:13,border:`1px solid ${C.border}`,resize:"vertical",boxSizing:"border-box",fontFamily:"inherit"}} />
           </div>
           <div>
-            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>Body (AR)</label>
+            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>{isAr?"النص (AR)":"Body (AR)"}</label>
             <textarea value={editTpl.bodyAr} onChange={e=>setEditTpl(p=>({...p,bodyAr:e.target.value}))} rows={4} dir="rtl"
               style={{width:"100%",padding:"10px 12px",borderRadius:8,fontSize:13,border:`1px solid ${C.border}`,resize:"vertical",boxSizing:"border-box",fontFamily:"inherit"}} />
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           <div>
-            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>Push Body (EN)</label>
+            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>{isAr?"نص الإشعار (EN)":"Push Body (EN)"}</label>
             <textarea value={editTpl.pushBodyEn} onChange={e=>setEditTpl(p=>({...p,pushBodyEn:e.target.value}))} rows={2}
               style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:13,border:`1px solid ${C.border}`,resize:"vertical",boxSizing:"border-box",fontFamily:"inherit"}} />
           </div>
           <div>
-            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>Push Body (AR)</label>
+            <label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:4}}>{isAr?"نص الإشعار (AR)":"Push Body (AR)"}</label>
             <textarea value={editTpl.pushBodyAr} onChange={e=>setEditTpl(p=>({...p,pushBodyAr:e.target.value}))} rows={2} dir="rtl"
               style={{width:"100%",padding:"8px 12px",borderRadius:8,fontSize:13,border:`1px solid ${C.border}`,resize:"vertical",boxSizing:"border-box",fontFamily:"inherit"}} />
           </div>
@@ -7984,25 +8039,25 @@ const Settings = ({ onLangChange }) => {
 
   return (
     <div>
-      <SectionHeader title={isAr?"الإعدادات":"Settings"} sub="Platform configuration and management" />
+      <SectionHeader title={isAr?"الإعدادات":"Settings"} sub={isAr?"إعدادات وإدارة المنصة":"Platform configuration and management"} />
       <TabBar tabs={["PLATFORM","PAYMENTS","COMMISSION","STORAGE FEES","BLOCKCHAIN","NOTIFICATIONS","REPORTING","VAULT","MANUFACTURERS","NAFATH","SECURITY"]} active={tab} onChange={setTab} />
       {tab==="PLATFORM"&&<div>
         <G title={isAr?"إعدادات المنصة":"Platform Settings"}>
           <Inp label={isAr?"اسم المنصة":"Platform Name"} value={platform.name} onChange={v=>setPlatform({...platform,name:v})} />
           <Inp label={isAr?"المنطقة الزمنية":"Timezone"} value={platform.timezone} onChange={v=>setPlatform({...platform,timezone:v})} />
           <Sel label={isAr?"اللغة الافتراضية":"Default Language"} value={platform.lang} onChange={v=>{setPlatform({...platform,lang:v});if(onLangChange)onLangChange(v);}} options={[{value:"ar",label:"Arabic (العربية)"},{value:"en",label:"English"}]} />
-          <p style={{fontSize:13,color:C.textMuted}}>Currency: Saudi Riyal — official SAMA SVG everywhere</p>
+          <p style={{fontSize:13,color:C.textMuted}}>{isAr?"العملة: ريال سعودي — رمز ساما الرسمي في كل مكان":"Currency: Saudi Riyal — official SAMA SVG everywhere"}</p>
         </G>
         <BidTogglePanel />
       </div>}
       {tab==="PAYMENTS"&&<div>
         <div style={{background:"#FDF4EC",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-          {Icons.warning(18,"#D4943A")}<p style={{fontSize:14,color:C.orange,fontWeight:500}}>Wallet Deposit disabled — pending SAMA regulatory clearance.</p>
+          {Icons.warning(18,"#D4943A")}<p style={{fontSize:14,color:C.orange,fontWeight:500}}>{isAr?"إيداع المحفظة معطّل — بانتظار موافقة ساما التنظيمية.":"Wallet Deposit disabled — pending SAMA regulatory clearance."}</p>
         </div>
-        <G title="Wallet Deposit"><Toggle label={isAr?"تفعيل إيداع المحفظة":"Enable Wallet Deposits"} sub={isAr?"تفعيل عند موافقة ساما فقط":"Activate only when SAMA approved"} value={walletOn} onChange={setWalletOn} /></G>
-        <G title="MADA — Percentage + Fixed Cap"><Inp label="Fee %" value={madaFee} onChange={setMadaFee} /><Inp label={isAr?"الحد الأقصى (ريال)":"Max Cap (SAR)"} value={madaCap} onChange={setMadaCap} /></G>
-        <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label="Fee %" value={visaFee} onChange={setVisaFee} /></G>
-        <G title="SADAD — Fixed Fee"><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
+        <G title={isAr?"إيداع المحفظة":"Wallet Deposit"}><Toggle label={isAr?"تفعيل إيداع المحفظة":"Enable Wallet Deposits"} sub={isAr?"تفعيل عند موافقة ساما فقط":"Activate only when SAMA approved"} value={walletOn} onChange={setWalletOn} /></G>
+        <G title={isAr?"مدى — نسبة + حد أقصى ثابت":"MADA — Percentage + Fixed Cap"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={madaFee} onChange={setMadaFee} /><Inp label={isAr?"الحد الأقصى (ريال)":"Max Cap (SAR)"} value={madaCap} onChange={setMadaCap} /></G>
+        <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={visaFee} onChange={setVisaFee} /></G>
+        <G title={isAr?"سداد — رسوم ثابتة":"SADAD — Fixed Fee"}><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
       </div>}
       {tab==="COMMISSION"&&<CommissionTab
         commBuyer={commBuyer} setCommBuyer={setCommBuyer}
@@ -8021,66 +8076,66 @@ const Settings = ({ onLangChange }) => {
         <div style={{background:"#F3F0FF",border:"1px solid #C4B5FD",borderRadius:10,padding:"12px 18px",marginBottom:18,display:"flex",gap:12,alignItems:"flex-start"}}>
           <span style={{fontSize:18}}>🏦</span>
           <div>
-            <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>Vault Storage Fee Configuration</p>
-            <p style={{fontSize:12,color:"#6D28D9",margin:0}}>Annual custody fees are charged on the market value of physical holdings per billing cycle. Minimum fee applies even if calculated fee is lower.</p>
+            <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>{isAr?"إعدادات رسوم التخزين":"Vault Storage Fee Configuration"}</p>
+            <p style={{fontSize:12,color:"#6D28D9",margin:0}}>{isAr?"يتم احتساب رسوم الحفظ السنوية على القيمة السوقية للحيازات الفعلية لكل دورة فوترة. يُطبّق الحد الأدنى حتى لو كانت الرسوم المحسوبة أقل.":"Annual custody fees are charged on the market value of physical holdings per billing cycle. Minimum fee applies even if calculated fee is lower."}</p>
           </div>
         </div>
-        <G title="Per-Metal Annual Fee Rate (%)">
+        <G title={isAr?"نسبة الرسوم السنوية لكل معدن (%)":"Per-Metal Annual Fee Rate (%)"}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>GOLD — ANNUAL %</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الذهب — السنوي %":"GOLD — ANNUAL %"}</label>
               <input type="number" step="0.05" min="0" max="5"
                 value={storageFeeSettings?.goldAnnualPct||"0.5"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,goldAnnualPct:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>e.g. 0.5% per year of gold value</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.5% سنوياً من قيمة الذهب":"e.g. 0.5% per year of gold value"}</p>
             </div>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>SILVER — ANNUAL %</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الفضة — السنوي %":"SILVER — ANNUAL %"}</label>
               <input type="number" step="0.05" min="0" max="5"
                 value={storageFeeSettings?.silverAnnualPct||"0.75"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,silverAnnualPct:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>e.g. 0.75% per year of silver value</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.75% سنوياً من قيمة الفضة":"e.g. 0.75% per year of silver value"}</p>
             </div>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>PLATINUM — ANNUAL %</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"البلاتين — السنوي %":"PLATINUM — ANNUAL %"}</label>
               <input type="number" step="0.05" min="0" max="5"
                 value={storageFeeSettings?.platinumAnnualPct||"0.6"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,platinumAnnualPct:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>e.g. 0.6% per year of platinum value</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.6% سنوياً من قيمة البلاتين":"e.g. 0.6% per year of platinum value"}</p>
             </div>
           </div>
         </G>
-        <G title="Billing Settings">
+        <G title={isAr?"إعدادات الفوترة":"Billing Settings"}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>BILLING CYCLE</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"دورة الفوترة":"BILLING CYCLE"}</label>
               <select
                 value={storageFeeSettings?.billingCycle||"monthly"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,billingCycle:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none",background:C.white,cursor:"pointer"}}>
-                <option value="monthly">Monthly (12×/year)</option>
-                <option value="quarterly">Quarterly (4×/year)</option>
-                <option value="annually">Annually (1×/year)</option>
+                <option value="monthly">{isAr?"شهري (12×/سنة)":"Monthly (12×/year)"}</option>
+                <option value="quarterly">{isAr?"ربع سنوي (4×/سنة)":"Quarterly (4×/year)"}</option>
+                <option value="annually">{isAr?"سنوي (1×/سنة)":"Annually (1×/year)"}</option>
               </select>
             </div>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>MINIMUM FEE (SAR)</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الحد الأدنى للرسوم (ريال)":"MINIMUM FEE (SAR)"}</label>
               <input type="number" step="1" min="0"
                 value={storageFeeSettings?.minFee||"5"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,minFee:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>Min fee charged even if calculated fee is lower</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"الحد الأدنى يُطبّق حتى لو كانت الرسوم المحسوبة أقل":"Min fee charged even if calculated fee is lower"}</p>
             </div>
           </div>
         </G>
-        <G title="Live Fee Preview (at current spot prices)">
+        <G title={isAr?"معاينة الرسوم الحية (بأسعار السوق الحالية)":"Live Fee Preview (at current spot prices)"}>
           <div style={{background:C.navyDark,borderRadius:12,padding:"14px 18px"}}>
             {[
               {metal:"Gold",   pct:storageFeeSettings?.goldAnnualPct||"0.5",    sarPerG:285,  color:C.gold},
@@ -8092,13 +8147,13 @@ const Settings = ({ onLangChange }) => {
               const feePerG = sarPerG * parseFloat(pct||0)/100 / div;
               return (
                 <div key={metal} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.06)",fontSize:13}}>
-                  <span style={{color:"rgba(255,255,255,0.5)"}}>{metal}</span>
+                  <span style={{color:"rgba(255,255,255,0.5)"}}>{isAr?({"Gold":"الذهب","Silver":"الفضة","Platinum":"البلاتين"}[metal]||metal):metal}</span>
                   <span style={{color:"rgba(255,255,255,0.5)"}}>SAR {sarPerG}/g × {pct}%/yr ÷ {div}</span>
                   <span style={{color,fontWeight:700,fontFamily:"'DM Mono',monospace"}}>SAR {(feePerG||0).toFixed(4)} / gram / {cycle.replace("ly","")}</span>
                 </div>
               );
             })}
-            <div style={{paddingTop:10,fontSize:12,color:"rgba(255,255,255,0.35)"}}>Minimum fee: SAR {storageFeeSettings?.minFee||"5"} per investor per {(storageFeeSettings?.billingCycle||"monthly").replace("ly","")}</div>
+            <div style={{paddingTop:10,fontSize:12,color:"rgba(255,255,255,0.35)"}}>{isAr?"الحد الأدنى":"Minimum fee"}: SAR {storageFeeSettings?.minFee||"5"} {isAr?"لكل مستثمر لكل":"per investor per"} {(storageFeeSettings?.billingCycle||"monthly").replace("ly","")}</div>
           </div>
         </G>
         <div style={{display:"flex",justifyContent:"flex-end",marginTop:4}}>
@@ -8113,14 +8168,14 @@ const Settings = ({ onLangChange }) => {
                 })});
               } catch(e){}
               showSaved();
-            }}>Save Storage Fee Settings</Btn>
+            }}>{isAr?"حفظ إعدادات رسوم التخزين":"Save Storage Fee Settings"}</Btn>
         </div>
       </div>}
 
       {tab==="BLOCKCHAIN"&&<div>
         <G title={isAr?"الشبكة":"Network"}><Inp label={isAr?"اسم الشبكة":"Network Name"} value={netName} onChange={setNetName} /><Sel label={isAr?"البروتوكول":"Protocol"} value={protocol} onChange={setProtocol} options={[{value:"besu",label:"Hyperledger Besu"},{value:"fabric",label:"Hyperledger Fabric"}]} /><Inp label={isAr?"عنوان العقد":"Contract Address"} value={contract} onChange={setContract} /></G>
-        <G title={isAr?"محفز الكتلة":"Block Trigger"}><Inp label="Max Size (MB)" value={maxMB} onChange={setMaxMB} /><Inp label="Max Time (hours)" value={maxHrs} onChange={setMaxHrs} /></G>
-        <G title={isAr?"المصادقون":"Validators"}><Inp label={isAr?"حد النصاب":"Quorum Threshold"} value={quorum} onChange={setQuorum} /><Toggle label={isAr?"مستكشف الكتل العام":"Public Block Explorer"} sub="Allow public read-only access" value={explorerOn} onChange={setExplorerOn} /></G>
+        <G title={isAr?"محفز الكتلة":"Block Trigger"}><Inp label={isAr?"الحد الأقصى للحجم (ميجابايت)":"Max Size (MB)"} value={maxMB} onChange={setMaxMB} /><Inp label={isAr?"الحد الأقصى للوقت (ساعات)":"Max Time (hours)"} value={maxHrs} onChange={setMaxHrs} /></G>
+        <G title={isAr?"المصادقون":"Validators"}><Inp label={isAr?"حد النصاب":"Quorum Threshold"} value={quorum} onChange={setQuorum} /><Toggle label={isAr?"مستكشف الكتل العام":"Public Block Explorer"} sub={isAr?"السماح بالوصول العام للقراءة فقط":"Allow public read-only access"} value={explorerOn} onChange={setExplorerOn} /></G>
       </div>}
       {tab==="NOTIFICATIONS"&&<NotificationSettings />}
 
@@ -8199,7 +8254,7 @@ const Settings = ({ onLangChange }) => {
           {/* MLRO Name — auto from logged-in user, read-only */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <p style={{fontSize:12,color:C.textMuted,marginBottom:4}}>MLRO Name (English) — <span style={{color:C.gold,fontWeight:600}}>{isAr?"تلقائي":"Auto"}</span></p>
+              <p style={{fontSize:12,color:C.textMuted,marginBottom:4}}>{isAr?"اسم مسؤول الإبلاغ (إنجليزي)":"MLRO Name (English)"} — <span style={{color:C.gold,fontWeight:600}}>{isAr?"تلقائي":"Auto"}</span></p>
               <div style={{padding:"10px 14px",background:C.bg,borderRadius:10,border:`1px solid ${C.border}`,fontSize:15,fontWeight:600,color:C.navy}}>{reportingConfig.mlroName}</div>
             </div>
             <div style={{flex:1}}>
@@ -8210,7 +8265,7 @@ const Settings = ({ onLangChange }) => {
           {/* MLRO Title */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="MLRO Title (English)" value={reportingConfig.mlroTitle} onChange={v=>setReportingConfig(p=>({...p,mlroTitle:v}))} placeholder="Money Laundering Reporting Officer" />
+              <Inp label={isAr?"المسمى الوظيفي (إنجليزي)":"MLRO Title (English)"} value={reportingConfig.mlroTitle} onChange={v=>setReportingConfig(p=>({...p,mlroTitle:v}))} placeholder="Money Laundering Reporting Officer" />
             </div>
             <div style={{flex:1}}>
               <Inp label="المسمى الوظيفي (عربي)" value={reportingConfig.mlroTitleAr} onChange={v=>setReportingConfig(p=>({...p,mlroTitleAr:v}))} placeholder="مسؤول الإبلاغ عن غسل الأموال" />
@@ -8219,7 +8274,7 @@ const Settings = ({ onLangChange }) => {
           {/* Company Name */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="Company Name (English)" value={reportingConfig.companyName} onChange={v=>setReportingConfig(p=>({...p,companyName:v}))} placeholder="Tanaqul Precious Metals Trading Co." />
+              <Inp label={isAr?"اسم الشركة (إنجليزي)":"Company Name (English)"} value={reportingConfig.companyName} onChange={v=>setReportingConfig(p=>({...p,companyName:v}))} placeholder="Tanaqul Precious Metals Trading Co." />
             </div>
             <div style={{flex:1}}>
               <Inp label="اسم الشركة (عربي)" value={reportingConfig.companyNameAr} onChange={v=>setReportingConfig(p=>({...p,companyNameAr:v}))} placeholder="شركة تناقل لتجارة المعادن الثمينة" />
@@ -8228,7 +8283,7 @@ const Settings = ({ onLangChange }) => {
           {/* License */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="License Number (English)" value={reportingConfig.companyLicense} onChange={v=>setReportingConfig(p=>({...p,companyLicense:v}))} placeholder="SAMA License No. 12345" />
+              <Inp label={isAr?"رقم الترخيص (إنجليزي)":"License Number (English)"} value={reportingConfig.companyLicense} onChange={v=>setReportingConfig(p=>({...p,companyLicense:v}))} placeholder="SAMA License No. 12345" />
             </div>
             <div style={{flex:1}}>
               <Inp label="رقم الترخيص (عربي)" value={reportingConfig.companyLicenseAr} onChange={v=>setReportingConfig(p=>({...p,companyLicenseAr:v}))} placeholder="ترخيص ساما رقم ١٢٣٤٥" />
@@ -8237,7 +8292,7 @@ const Settings = ({ onLangChange }) => {
           {/* Company Address */}
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <div style={{flex:1}}>
-              <Inp label="Company Address (English)" value={reportingConfig.companyAddress} onChange={v=>setReportingConfig(p=>({...p,companyAddress:v}))} placeholder="King Fahd Road, Riyadh 12345" />
+              <Inp label={isAr?"عنوان الشركة (إنجليزي)":"Company Address (English)"} value={reportingConfig.companyAddress} onChange={v=>setReportingConfig(p=>({...p,companyAddress:v}))} placeholder="King Fahd Road, Riyadh 12345" />
             </div>
             <div style={{flex:1}}>
               <Inp label="عنوان الشركة (عربي)" value={reportingConfig.companyAddressAr} onChange={v=>setReportingConfig(p=>({...p,companyAddressAr:v}))} placeholder="طريق الملك فهد، الرياض ١٢٣٤٥" />
@@ -8254,16 +8309,16 @@ const Settings = ({ onLangChange }) => {
             </div>
           ))}
           {showNewVault&&<div style={{display:"flex",gap:8,marginTop:10}}>
-            <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder="Vault name..." style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
-            <Btn small variant="teal" onClick={async ()=>{if(newVault.trim()){const updated=[...vaultLocs,newVault];setVaultLocs(updated);setNewVault("");setShowNewVault(false);try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:updated})});}catch(e){}}}}>Add</Btn>
+            <input value={newVault} onChange={e=>setNewVault(e.target.value)} placeholder={isAr?"اسم الخزنة...":"Vault name..."} style={{flex:1,padding:"7px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none"}}/>
+            <Btn small variant="teal" onClick={async ()=>{if(newVault.trim()){const updated=[...vaultLocs,newVault];setVaultLocs(updated);setNewVault("");setShowNewVault(false);try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:updated})});}catch(e){}}}}>{isAr?"إضافة":"Add"}</Btn>
             <Btn small variant="ghost" onClick={()=>setShowNewVault(false)}>{t("Cancel")}</Btn>
           </div>}
-          <div style={{marginTop:10}}><Btn small variant="teal" onClick={()=>setShowNewVault(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} Add Location</span></Btn></div>
+          <div style={{marginTop:10}}><Btn small variant="teal" onClick={()=>setShowNewVault(true)}><span style={{display:"flex",alignItems:"center",gap:5}}>{Icons.add(14,C.white)} {isAr?"إضافة موقع":"Add Location"}</span></Btn></div>
         </G>
         <G title={isAr?"أحجام السبائك":"Bar Sizes"}><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["1g","5g","10g","15g","20g","25g","50g","100g"].map(w=><span key={w} style={{padding:"5px 12px",background:C.goldLight,borderRadius:8,fontSize:14,fontWeight:600,color:C.goldDim,border:`1px solid ${C.gold}44`}}>{w}</span>)}</div></G>
         <G title={isAr?"قواعد المواعيد":"Appointment Rules"}>
-          <Inp label="Advance Booking (days)" value={advBook} onChange={setAdvBook} />
-          <Inp label="Expiry Window (minutes after appointment)" value={expiry} onChange={setExpiry} />
+          <Inp label={isAr?"الحجز المسبق (أيام)":"Advance Booking (days)"} value={advBook} onChange={setAdvBook} />
+          <Inp label={isAr?"نافذة الانتهاء (دقائق بعد الموعد)":"Expiry Window (minutes after appointment)"} value={expiry} onChange={setExpiry} />
           <ApptSlotsConfig
             start={slotStart} setStart={setSlotStart}
             end={slotEnd}     setEnd={setSlotEnd}
@@ -8273,11 +8328,11 @@ const Settings = ({ onLangChange }) => {
         </G>
         <G title={isAr?"رسوم المواعيد":"Appointment Fees"}>
           <div style={{background:C.purpleBg,borderRadius:10,padding:"10px 14px",marginBottom:12}}>
-            <p style={{fontSize:13,color:C.blueSolid}}>💡 These fees are charged when the investor books an appointment. Cancellation refunds 50 SAR less. No Show = no refund.</p>
+            <p style={{fontSize:13,color:C.blueSolid}}>{isAr?"💡 تُحصّل هذه الرسوم عند حجز الموعد. يُسترد المبلغ ناقص 50 ريال عند الإلغاء. عدم الحضور = لا استرداد.":"💡 These fees are charged when the investor books an appointment. Cancellation refunds 50 SAR less. No Show = no refund."}</p>
           </div>
-          <Inp label="Testing Fee — Deposit Appointments (SAR)" value={testFee} onChange={setTestFee} />
-          <Inp label="Handling Fee — Withdrawal Appointments (SAR)" value={handFee} onChange={setHandFee} />
-          <Inp label="Cancellation Penalty (SAR)" value={cancelFee} onChange={setCancelFee} />
+          <Inp label={isAr?"رسوم الفحص — مواعيد الإيداع (ريال)":"Testing Fee — Deposit Appointments (SAR)"} value={testFee} onChange={setTestFee} />
+          <Inp label={isAr?"رسوم المناولة — مواعيد السحب (ريال)":"Handling Fee — Withdrawal Appointments (SAR)"} value={handFee} onChange={setHandFee} />
+          <Inp label={isAr?"غرامة الإلغاء (ريال)":"Cancellation Penalty (SAR)"} value={cancelFee} onChange={setCancelFee} />
         </G>
       </div>}
       {tab==="MANUFACTURERS"&&<G title={isAr?"الشركات المصنعة":"Manufacturers"}>
@@ -8304,18 +8359,18 @@ const Settings = ({ onLangChange }) => {
       {tab==="NAFATH"&&<G title={isAr?"تكامل نفاذ":"NAFATH Integration"}>
         <Inp label={isAr?"مفتاح API":"API Key"} value={nafathKey} onChange={setNafathKey} type="password" />
         <Inp label={isAr?"رابط Webhook":"Webhook URL"} value={nafathWebhook} onChange={setNafathWebhook} />
-        <Sel label={isAr?"الوضع":"Mode"} value={nafathMode} onChange={setNafathMode} options={[{value:"production",label:"Production"},{value:"test",label:"Test Mode"}]} />
-        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>NAFATH mandatory for all registrations. No KYC bypass.</p>
+        <Sel label={isAr?"الوضع":"Mode"} value={nafathMode} onChange={setNafathMode} options={[{value:"production",label:isAr?"إنتاج":"Production"},{value:"test",label:isAr?"وضع اختبار":"Test Mode"}]} />
+        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{isAr?"نفاذ إلزامي لجميع التسجيلات. لا تجاوز للتحقق.":"NAFATH mandatory for all registrations. No KYC bypass."}</p>
       </G>}
       {tab==="SECURITY"&&<div>
         <G title={isAr?"أمان المسؤول":"Admin Security"}>
-          <Toggle label="Two-Factor Authentication (2FA) 🔒" sub="Required for all admin logins — cannot be disabled" value={true} onChange={()=>{}} />
-          <Inp label="Session Timeout (minutes)" value={session} onChange={setSession} />
+          <Toggle label={isAr?"المصادقة الثنائية (2FA) 🔒":"Two-Factor Authentication (2FA) 🔒"} sub={isAr?"مطلوبة لجميع عمليات دخول المسؤولين — لا يمكن تعطيلها":"Required for all admin logins — cannot be disabled"} value={true} onChange={()=>{}} />
+          <Inp label={isAr?"مهلة الجلسة (دقائق)":"Session Timeout (minutes)"} value={session} onChange={setSession} />
           <Inp label={isAr?"القائمة البيضاء لعناوين IP":"IP Whitelist"} value={ipWhitelist} onChange={setIpWhitelist} />
         </G>
         <PriceFeedSettings />
       </div>}
-      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>✅ Settings saved!</span>}<Btn variant="gold" onClick={async ()=>{
+      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>{isAr?"✅ تم حفظ الإعدادات!":"✅ Settings saved!"}</span>}<Btn variant="gold" onClick={async ()=>{
           // Save ALL settings to backend
           // Split saved via localStorage — backend _set has table conflict, skip for now
           //try{await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});}catch(e){}
@@ -9221,7 +9276,7 @@ const ActionCenterWidget = ({actions, accent, critCount, highCount, isAr, setPag
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:16}}>🎯</span>
           <span style={{fontSize:14,fontWeight:800,color:"#FFF"}}>{isAr?"إجراءات مطلوبة":"ACTION CENTER"}</span>
-          {critCount>0&&<span style={{fontSize:11,fontWeight:800,color:"#FFF",background:"rgba(255,255,255,0.2)",padding:"2px 6px",borderRadius:4,animation:"pulse 2s infinite"}}>⚡ {critCount} CRITICAL</span>}
+          {critCount>0&&<span style={{fontSize:11,fontWeight:800,color:"#FFF",background:"rgba(255,255,255,0.2)",padding:"2px 6px",borderRadius:4,animation:"pulse 2s infinite"}}>⚡ {critCount} {isAr?"حرج":"CRITICAL"}</span>}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
           <span style={{background:"#FFF",color:accent,fontSize:12,fontWeight:900,borderRadius:10,padding:"2px 8px"}}>{actions.length}</span>
@@ -9460,7 +9515,7 @@ const TreasuryReconciliation = () => {
 
   // Nightly Reconciliation
   const runRecon = async () => {
-    showToast("⏳ Freezing trading... Running reconciliation...");
+    showToast(isAr?"⏳ تجميد التداول... جاري المطابقة...":"⏳ Freezing trading... Running reconciliation...");
     const today = new Date().toISOString().slice(0,10);
     // Cash check
     const cashOk = poolValid;
@@ -9487,21 +9542,21 @@ const TreasuryReconciliation = () => {
     }
     // Save to API
     try{await apiFetch("/treasury/recon",{method:"POST",body:JSON.stringify(entry)});}catch(e){}
-    showToast(allOk?"✅ Reconciliation PASSED — All balanced":"⚠️ Discrepancy found — Review required");
+    showToast(allOk?(isAr?"✅ المطابقة ناجحة — الكل متوازن":"✅ Reconciliation PASSED — All balanced"):(isAr?"⚠️ تم اكتشاف فرق — يتطلب مراجعة":"⚠️ Discrepancy found — Review required"));
   };
 
   // Weekly Sweep
   const runSweep = async (force) => {
     const last7 = dailyHistory.slice(0,7);
     const balanced7 = last7.filter(d=>d.overall==="balanced").length;
-    if(balanced7 < 7 && !force){showToast("⚠️ Cannot auto-sweep: only "+balanced7+"/7 days balanced. Use Manual Override.");return;}
+    if(balanced7 < 7 && !force){showToast(isAr?`⚠️ لا يمكن التحويل التلقائي: ${balanced7}/7 أيام فقط متوازنة. استخدم التحويل اليدوي.`:`⚠️ Cannot auto-sweep: only ${balanced7}/7 days balanced. Use Manual Override.`);return;}
     const revenueAmt = poolBank.platformRevenue;
     const mmProfit = Math.max(0, mmAccount?.pnl?.realized||0);
     const sweepTotal = revenueAmt + mmProfit;
     const entry = {date:new Date().toISOString().slice(0,10),amount:sweepTotal,revenue:revenueAmt,mmProfit,type:force?"MANUAL":"AUTO",status:"COMPLETED"};
     setSweepHistory(p=>[entry,...p]);
     try{await apiFetch("/treasury/sweep",{method:"POST",body:JSON.stringify(entry)});}catch(e){}
-    showToast(`✅ Sweep complete: SAR ${fmt0(sweepTotal)} → Takharoj Operating Account`);
+    showToast(isAr?`✅ تم التحويل: ${fmt0(sweepTotal)} ريال → حساب التخارج التشغيلي`:`✅ Sweep complete: SAR ${fmt0(sweepTotal)} → Takharoj Operating Account`);
   };
 
   const resolveDiscrep = async (id) => {
@@ -9509,7 +9564,7 @@ const TreasuryReconciliation = () => {
     setDiscrepancies(updated);
     setResolveId(null);setResolveNote("");
     try{await apiFetch("/treasury/recon",{method:"POST",body:JSON.stringify({type:"discrepancy_resolve",items:updated})});}catch(e){}
-    showToast("✅ Discrepancy resolved");
+    showToast(isAr?"✅ تم حل الفرق":"✅ Discrepancy resolved");
   };
 
   const last7Status = dailyHistory.slice(0,7);
@@ -9543,7 +9598,7 @@ const TreasuryReconciliation = () => {
           <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:20}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <p style={{fontWeight:700,fontSize:15,color:C.navy}}>{isAr?"حساب المجمع":"Pool Bank"}</p>
-              <span style={{fontSize:11,fontWeight:600,color:poolValid?C.greenSolid:"#C85C3E",background:poolValid?C.greenBg:C.redBg,padding:"3px 10px",borderRadius:20}}>{poolValid?"✓ Balanced":"⚠ Check"}</span>
+              <span style={{fontSize:11,fontWeight:600,color:poolValid?C.greenSolid:"#C85C3E",background:poolValid?C.greenBg:C.redBg,padding:"3px 10px",borderRadius:20}}>{poolValid?(isAr?"✓ متوازن":"✓ Balanced"):(isAr?"⚠ تحقق":"⚠ Check")}</span>
             </div>
             {[
               [isAr?"محافظ المستثمرين":"Investor Wallets", fmt2(poolBank.investorWallets)],
@@ -9556,7 +9611,7 @@ const TreasuryReconciliation = () => {
             </div>)}
             <div style={{marginTop:10}}>
               <label style={{fontSize:11,fontWeight:600,color:C.textMuted}}>{isAr?"رصيد البنك الفعلي":"Actual Bank Balance (manual)"}</label>
-              <input value={bankInput} onChange={e=>setBankInput(e.target.value)} placeholder="Enter bank balance..." type="number"
+              <input value={bankInput} onChange={e=>setBankInput(e.target.value)} placeholder={isAr?"أدخل رصيد البنك...":"Enter bank balance..."} type="number"
                 style={{width:"100%",padding:"8px 10px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,marginTop:4,outline:"none",fontFamily:"monospace"}} />
             </div>
             <p style={{fontSize:10,color:C.textMuted,marginTop:6,fontStyle:"italic"}}>{isAr?"القاعدة الذهبية: حساب المجمع = محافظ + إيرادات + نقد صانع السوق":"Golden Rule: Pool Bank = Investor Wallets + Revenue + MM Cash"}</p>
@@ -9613,8 +9668,8 @@ const TreasuryReconciliation = () => {
               <div style={{marginTop:6,height:6,borderRadius:3,background:"#E2E8F0",overflow:"hidden"}}>
                 <div style={{height:6,borderRadius:3,background:m.physical===m.tokenized?C.greenSolid:"#C85C3E",width:"100%"}}/>
               </div>
-              <p style={{fontSize:11,marginTop:4,color:m.physical===m.tokenized?C.greenSolid:"#C85C3E",fontWeight:600}}>{m.physical===m.tokenized?"✓ Matched":"⚠ Mismatch"}</p>
-              <p style={{fontSize:10,color:C.textMuted}}>{m.bars} {isAr?"سبيكة":"bars"} · {linkedBars>0?linkedBars+" linked":"0 linked"}</p>
+              <p style={{fontSize:11,marginTop:4,color:m.physical===m.tokenized?C.greenSolid:"#C85C3E",fontWeight:600}}>{m.physical===m.tokenized?(isAr?"✓ متطابق":"✓ Matched"):(isAr?"⚠ عدم تطابق":"⚠ Mismatch")}</p>
+              <p style={{fontSize:10,color:C.textMuted}}>{m.bars} {isAr?"سبيكة":"bars"} · {linkedBars>0?`${linkedBars} ${isAr?"مرتبطة":"linked"}`:(isAr?"0 مرتبطة":"0 linked")}</p>
             </div>)}
           </div>
           <p style={{fontSize:11,color:C.textMuted,marginTop:12,fontStyle:"italic"}}>{isAr?"القاعدة الذهبية: الجرامات الرقمية = الجرامات الفعلية لكل معدن":"Golden Rule: Tokenized grams = Physical grams per metal"}</p>
@@ -9661,7 +9716,7 @@ const TreasuryReconciliation = () => {
           </div>
 
           <div style={{display:"flex",gap:8}}>
-            <Btn variant="gold" onClick={()=>runSweep(false)} disabled={balanced7<7}>{isAr?"تحويل تلقائي":"Auto Sweep"} {balanced7<7&&"(needs 7/7)"}</Btn>
+            <Btn variant="gold" onClick={()=>runSweep(false)} disabled={balanced7<7}>{isAr?"تحويل تلقائي":"Auto Sweep"} {balanced7<7&&(isAr?"(يتطلب 7/7)":"(needs 7/7)")}</Btn>
             <Btn variant="danger" onClick={()=>{if(confirm(isAr?"هل أنت متأكد من التحويل اليدوي؟":"Force manual sweep?"))runSweep(true);}}>{isAr?"تحويل يدوي":"Manual Override"}</Btn>
           </div>
         </div>
@@ -10246,7 +10301,7 @@ export default function App() {
               </div>
               <div style={{flex:1,textAlign:"start",overflow:"hidden"}}>
                 <p style={{fontSize:13,fontWeight:700,color:"#F5F0E8",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isAr?"عبدالعزيز":"Abdulaziz"}</p>
-                <p style={{fontSize:11,color:"#A89880",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Super Admin</p>
+                <p style={{fontSize:11,color:"#A89880",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isAr?"مدير أعلى":"Super Admin"}</p>
               </div>
               <span style={{fontSize:11,color:"#A89880",flexShrink:0}}>›</span>
             </button>}
@@ -10254,7 +10309,7 @@ export default function App() {
             {/* ── Quick Controls Row (dark + lang + collapse) ── */}
             <div style={{display:"flex",gap:open?4:6,justifyContent:open?"space-between":"center",flexDirection:open?"row":"column",alignItems:"center"}}>
               {/* Dark/Light */}
-              <button onClick={toggleDark} title={dark?"Light Mode":"Dark Mode"}
+              <button onClick={toggleDark} title={dark?(isAr?"الوضع الفاتح":"Light Mode"):(isAr?"الوضع الداكن":"Dark Mode")}
                 style={{flex:open?1:undefined,width:open?undefined:42,height:open?36:42,display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                   borderRadius:9,border:"none",cursor:"pointer",
                   background:dark?"rgba(212,168,120,0.18)":"rgba(255,255,255,0.06)",
@@ -10428,10 +10483,10 @@ export default function App() {
           {amlToast&&<div style={{position:"fixed",top:14,right:22,zIndex:99999,background:"linear-gradient(90deg,#8B3520,#C85C3E)",borderRadius:14,padding:"14px 20px",display:"flex",alignItems:"center",gap:12,boxShadow:"0 8px 32px rgba(220,38,38,0.4)",maxWidth:480,animation:"slideIn 0.3s ease-out"}}>
             <span style={{fontSize:24}}>🚨</span>
             <div style={{flex:1}}>
-              <p style={{fontSize:13,fontWeight:800,color:"#FFF"}}>{amlToast.count} New {amlToast.count>1?"Alerts":"Alert"} Detected</p>
+              <p style={{fontSize:13,fontWeight:800,color:"#FFF"}}>{isAr?`${amlToast.count} تنبيه جديد مكتشف`:`${amlToast.count} New ${amlToast.count>1?"Alerts":"Alert"} Detected`}</p>
               <p style={{fontSize:11,color:"#E8C5BA"}}>{amlToast.top.rule}: {amlToast.top.title} — {amlToast.top.name}</p>
             </div>
-            <button onClick={()=>{setAmlToast(null);setPage("auditlog");}} style={{padding:"6px 12px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:13,fontWeight:700,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>Review →</button>
+            <button onClick={()=>{setAmlToast(null);setPage("auditlog");}} style={{padding:"6px 12px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:13,fontWeight:700,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>{isAr?"مراجعة ←":"Review →"}</button>
           </div>}
           <style>{`@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
           {/* Global Search Overlay */}
