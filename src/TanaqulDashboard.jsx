@@ -505,7 +505,11 @@ const BADGE_AR = {
   // ═══ FIXED: Missing badge Arabic translations ═══
   MEDIUM:"متوسط", HIGH:"مرتفع", CRITICAL:"حرج", LOW:"منخفض",
   DAMAGED:"تالف", LEFT:"خارج الخزينة", INACTIVE:"غير نشط", CANCELED:"ملغى", IN_PROGRESS:"قيد التنفيذ",
+  PASS:"ناجح", FAIL:"فشل", ACTION:"إجراء مطلوب", MANUAL:"يدوي",
+  OPEN:"مفتوح", PARTIAL:"جزئي", FILLED:"مُنفذ", REJECTED:"مرفوض",
 };
+const statusText = (code, isAr) => { if(!code) return "—"; if(isAr) return BADGE_AR[code] || code.replace(/_/g," "); return code.replace(/_/g," "); };
+const notifTypeLabel = (type, isAr) => { const m = {aml:{en:"AML",ar:"مكافحة غسل الأموال"},withdrawal:{en:"Withdrawal",ar:"سحب"},appointment:{en:"Appointment",ar:"موعد"},kyc:{en:"KYC",ar:"تحقق الهوية"},system:{en:"System",ar:"النظام"}}; const l = m[type]; return l ? (isAr ? l.ar : l.en) : type; };
 const Badge = ({ label }) => {
   const { isAr } = useLang();
   const map = {
@@ -1183,7 +1187,7 @@ const Dashboard = () => {
   // Recent activity feed
   const activity = [
     ...matches.slice(-4).map(m=>({icon:"💰",text:`${m.metal} ${m.qty}g`,sub:isAr?`SAR ${fmtK(m.totalSAR)} — ${m.filledFor}`:`SAR ${fmtK(m.totalSAR)} — ${m.filledFor}`,time:m.date})),
-    ...appointments.filter(a=>a.status==="BOOKED").slice(-3).map(a=>({icon:"📅",text:a.investor,sub:`${a.type} · ${a.metal}`,time:a.date||a.slot})),
+    ...appointments.filter(a=>a.status==="BOOKED").slice(-3).map(a=>({icon:"📅",text:a.investor,sub:`${statusText(a.type,isAr)} · ${a.metal}`,time:a.date||a.slot})),
     ...withdrawals.filter(w=>w.status==="PENDING").slice(-2).map(w=>({icon:"💸",text:w.investor||w.name,sub:`SAR ${w.amount}`,time:w.date||"Today"})),
   ].sort((a,b)=>b.time?.localeCompare(a.time)||0).slice(0,8);
 
@@ -1764,7 +1768,7 @@ const STATUS_COLORS = {
 const ApptBadge = ({status}) => {
   const s = STATUS_COLORS[status] || {bg:"#F3F4F6",color:"#6B7280"};
   const { isAr: apptIsAr } = useLang();
-  const labels = apptIsAr?{BOOKED:"محجوز",EXPIRED:"منتهٍ",COMPLETED:"مكتمل",NO_SHOW:"لم يحضر",CANCELED:"ملغى",RESCHEDULED:"أُعيد جدولته"}:{BOOKED:"Booked",EXPIRED:"Expired",COMPLETED:"Completed",NO_SHOW:"No Show",CANCELED:"Canceled",RESCHEDULED:"Rescheduled"};
+  const labels = apptIsAr?{BOOKED:"محجوز",EXPIRED:"منتهٍ",COMPLETED:"مكتمل",NO_SHOW:"لم يحضر",CANCELED:"ملغى",RESCHEDULED:"أُعيد جدولته",IN_PROGRESS:"قيد التنفيذ"}:{BOOKED:"Booked",EXPIRED:"Expired",COMPLETED:"Completed",NO_SHOW:"No Show",CANCELED:"Canceled",RESCHEDULED:"Rescheduled",IN_PROGRESS:"In Progress"};
   return <span style={{padding:"3px 10px",borderRadius:20,fontSize:13,fontWeight:700,background:s.bg,color:s.color}}>{labels[status]||status}</span>;
 };
 
@@ -1952,7 +1956,7 @@ const Appointments = () => {
 
       {/* RESCHEDULE */}
       {modal==="reschedule"&&sel&&<Modal title={isAr?"إعادة جدولة الموعد":"Reschedule Appointment"} onClose={closeAll}>
-        <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>{isAr?"الموعد:":"Appointment:"} <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"} — {sel.type} — {sel.metal}</p>
+        <p style={{fontSize:14,color:C.textMuted,marginBottom:16}}>{isAr?"الموعد:":"Appointment:"} <b>{sel.id}</b> — {sel.nationalId||sel.investorId||"—"} — {statusText(sel.type,isAr)} — {sel.metal}</p>
         <div style={{display:"grid",gap:12,marginBottom:20}}>
           <div>
             <label style={{fontSize:13,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"التاريخ الجديد":"NEW DATE"}</label>
@@ -1985,10 +1989,10 @@ const Appointments = () => {
           {Icons.user(24,C.teal)}
           <div>
             <p style={{fontSize:19,fontWeight:700,color:C.navy}}>{sel.nationalId||sel.investorId||"—"}</p>
-            <p style={{fontSize:13,color:C.textMuted}}>{sel.investorPhone} • {sel.type} • {sel.metal} • {sel.quantity}</p>
+            <p style={{fontSize:13,color:C.textMuted}}>{sel.investorPhone} • {statusText(sel.type,isAr)} • {sel.metal} • {sel.quantity}</p>
           </div>
         </div>
-        {[[isAr?"رقم الموعد":"Appointment ID",sel.id],[isAr?"النوع":"Type",sel.type],[isAr?"المعدن":"Metal",sel.metal],[isAr?"الكمية":"Quantity",sel.quantity],[isAr?"الخزينة":"Vault",sel.vault],[isAr?"المجدول":"Scheduled",sel.date],[isAr?"الرسوم المدفوعة":"Fee Paid",sel.fee+(isAr?" ريال":" SAR")],[isAr?"طريقة الدفع":"Payment",sel.paymentMethod]].map(([k,v])=>(
+        {[[isAr?"رقم الموعد":"Appointment ID",sel.id],[isAr?"النوع":"Type",statusText(sel.type,isAr)],[isAr?"المعدن":"Metal",sel.metal],[isAr?"الكمية":"Quantity",sel.quantity],[isAr?"الخزينة":"Vault",sel.vault],[isAr?"المجدول":"Scheduled",sel.date],[isAr?"الرسوم المدفوعة":"Fee Paid",sel.fee+(isAr?" ريال":" SAR")],[isAr?"طريقة الدفع":"Payment",sel.paymentMethod]].map(([k,v])=>(
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontSize:14,color:C.textMuted}}>{k}</span>
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{v}</span>
@@ -2130,7 +2134,7 @@ const Appointments = () => {
               addAudit("COMPLETE_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — "+sel.metal+" "+sel.quantity);
               closeAll();
             }} style={{opacity:otpVal.length===6&&!otpExpired?1:0.5}}>
-              {isAr?`✓ تحقق وأكمل ${sel.type==="DEPOSIT"?"الإيداع":"السحب"}`:`✓ Verify & Complete ${sel.type}`}
+              {isAr?`✓ تحقق وأكمل ${sel.type==="DEPOSIT"?"الإيداع":"السحب"}`:`✓ Verify & Complete ${sel.type==="DEPOSIT"?"Deposit":"Withdrawal"}`}
             </Btn>
             <Btn variant="outline" onClick={()=>setStartStep(2)}>{isAr?"→ رجوع":"← Back"}</Btn>
           </div>
@@ -2142,9 +2146,9 @@ const Appointments = () => {
       {modal==="view"&&sel&&<Modal title={isAr?`الموعد — ${sel.id}`:`Appointment — ${sel.id}`} onClose={closeAll}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,background:C.bg,borderRadius:10,padding:"10px 14px"}}>
           <ApptBadge status={sel.status} />
-          <span style={{fontSize:14,color:C.textMuted}}>{sel.type} • {sel.date}</span>
+          <span style={{fontSize:14,color:C.textMuted}}>{statusText(sel.type,isAr)} • {sel.date}</span>
         </div>
-        {[[isAr?"رقم الموعد":"Appointment ID",sel.id],[isAr?"رقم الهوية":"National ID",sel.nationalId||"—"],[isAr?"الهاتف":"Phone",sel.investorPhone],[isAr?"النوع":"Type",sel.type],[isAr?"المعدن":"Metal",sel.metal],[isAr?"الكمية":"Quantity",sel.quantity],[isAr?"الخزينة":"Vault",sel.vault],[isAr?"المجدول":"Scheduled",sel.date],[isAr?"الرسوم":"Fee",sel.fee+(isAr?" ريال":" SAR")],[isAr?"طريقة الدفع":"Payment Method",sel.paymentMethod],[isAr?"الحالة":"Status",sel.status.replace("_"," ")]].map(([k,v])=>(
+        {[[isAr?"رقم الموعد":"Appointment ID",sel.id],[isAr?"رقم الهوية":"National ID",sel.nationalId||"—"],[isAr?"الهاتف":"Phone",sel.investorPhone],[isAr?"النوع":"Type",statusText(sel.type,isAr)],[isAr?"المعدن":"Metal",sel.metal],[isAr?"الكمية":"Quantity",sel.quantity],[isAr?"الخزينة":"Vault",sel.vault],[isAr?"المجدول":"Scheduled",sel.date],[isAr?"الرسوم":"Fee",sel.fee+(isAr?" ريال":" SAR")],[isAr?"طريقة الدفع":"Payment Method",sel.paymentMethod],[isAr?"الحالة":"Status",statusText(sel.status,isAr)]].map(([k,v])=>(
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontSize:14,color:C.textMuted}}>{k}</span>
             <span style={{fontSize:14,fontWeight:600,color:C.navy}}>{v}</span>
@@ -3738,7 +3742,7 @@ const AuditLog = () => {
                       </div>
                       <div>
                         <p style={{fontWeight:700,color:C.navy,fontSize:14}}>{r.name}</p>
-                        <p style={{fontSize:12,color:C.textMuted}}>{r.status}</p>
+                        <p style={{fontSize:12,color:C.textMuted}}>{statusText(r.status,isAr)}</p>
                       </div>
                     </div>
                   </td>
@@ -4020,7 +4024,7 @@ const AuditLog = () => {
                 </div>
                 <span style={{padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:800,
                   color:item.status==="PASS"?C.greenSolid:item.status==="FAIL"?"#C85C3E":"#D4943A",
-                  background:item.status==="PASS"?"#EFF5F2":item.status==="FAIL"?C.redBg:"#FDF4EC"}}>{item.status}</span>
+                  background:item.status==="PASS"?"#EFF5F2":item.status==="FAIL"?C.redBg:"#FDF4EC"}}>{statusText(item.status,isAr)}</span>
               </div>
             ))}
           </div>
@@ -4050,7 +4054,7 @@ const AuditLog = () => {
                 </div>
                 <span style={{padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:800,
                   color:item.status==="PASS"?C.greenSolid:item.status==="FAIL"?"#C85C3E":"#D4943A",
-                  background:item.status==="PASS"?"#EFF5F2":item.status==="FAIL"?C.redBg:"#FDF4EC"}}>{item.status}</span>
+                  background:item.status==="PASS"?"#EFF5F2":item.status==="FAIL"?C.redBg:"#FDF4EC"}}>{statusText(item.status,isAr)}</span>
               </div>
             ))}
           </div>
@@ -6665,8 +6669,8 @@ const AccountProfile = () => {
             <div key={entry.id||i} style={{display:"flex",gap:12,padding:"10px 14px",borderRadius:8,background:i%2===0?C.bg:"transparent",alignItems:"center"}}>
               <span style={{fontSize:10,fontFamily:"monospace",color:C.textMuted,flexShrink:0,minWidth:130}}>{entry.time}</span>
               <span style={{fontSize:11,fontWeight:700,color:entry.level==="CRITICAL"?"#C85C3E":entry.level==="WARN"?"#D4943A":C.teal,padding:"2px 8px",borderRadius:4,background:entry.level==="CRITICAL"?"#C85C3E12":entry.level==="WARN"?"#D4943A12":C.tealLight,flexShrink:0}}>{entry.level}</span>
-              <span style={{fontSize:13,fontWeight:600,color:C.navy,flex:1}}>{entry.action}</span>
-              <span style={{fontSize:11,color:C.textMuted}}>{entry.entityType}{entry.entityId?` · ${entry.entityId.slice(0,12)}`:""}</span>
+              <span style={{fontSize:13,fontWeight:600,color:C.navy,flex:1}}>{entry.action?(entry.action.replace(/[._]/g," ").replace(/\b\w/g,c=>c.toUpperCase())):""}</span>
+              <span style={{fontSize:11,color:C.textMuted}}>{isAr?({investor:"مستثمر",appointment:"موعد",bar:"سبيكة",withdrawal:"سحب",order:"أمر",admin:"مسؤول",settings:"إعدادات"}[entry.entityType]||entry.entityType):(entry.entityType||"")}{entry.entityId?` · ${entry.entityId.slice(0,12)}`:""}</span>
             </div>
           ))}
         </div>}
@@ -6699,7 +6703,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       if(results.length >= MAX) return;
       const haystack = `${inv.nameEn} ${inv.nameAr||""} ${inv.nationalId} ${inv.vaultKey} ${inv.status} ${inv.email||""}`.toLowerCase();
       if(haystack.includes(q)) results.push({
-        type:"investor",icon:"👤",label:inv.nameEn,sub:`${inv.nationalId} · ${inv.status} · SAR ${(inv.holdingsValue||0)?.toLocaleString()||0}`,
+        type:"investor",icon:"👤",label:inv.nameEn,sub:`${inv.nationalId} · ${statusText(inv.status,isAr)} · SAR ${(inv.holdingsValue||0)?.toLocaleString()||0}`,
         action:()=>{setPage("investors");setPageHint({search:inv.nationalId});onClose();}
       });
     });
@@ -6717,7 +6721,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       if(results.length >= MAX) return;
       const haystack = `${bar.id} ${bar.metal} ${bar.manufacturer||""} ${bar.status} ${bar.serial||bar.id}`.toLowerCase();
       if(haystack.includes(q)) results.push({
-        type:"bar",icon:"🏦",label:`${bar.id} — ${bar.metal} ${bar.weight||bar.weightGrams}g`,sub:`${bar.manufacturer||"—"} · ${bar.status}`,
+        type:"bar",icon:"🏦",label:`${bar.id} — ${bar.metal} ${bar.weight||bar.weightGrams}g`,sub:`${bar.manufacturer||"—"} · ${statusText(bar.status,isAr)}`,
         action:()=>{setPage("vault");onClose();}
       });
     });
@@ -6726,7 +6730,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       if(results.length >= MAX) return;
       const haystack = `${ord.id} ${ord.side} ${ord.metal} ${ord.nationalId} ${ord.status}`.toLowerCase();
       if(haystack.includes(q)) results.push({
-        type:"order",icon:"📋",label:`${ord.id} — ${ord.side} ${ord.metal}`,sub:`${ord.qty}g @ SAR ${ord.price} · ${ord.status}`,
+        type:"order",icon:"📋",label:`${ord.id} — ${statusText(ord.side,isAr)} ${ord.metal}`,sub:`${ord.qty}g @ SAR ${ord.price} · ${statusText(ord.status,isAr)}`,
         action:()=>{setPage("orderbook");onClose();}
       });
     });
@@ -6735,7 +6739,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       if(results.length >= MAX) return;
       const haystack = `${apt.id} ${apt.investorName||""} ${apt.metal||""} ${apt.type||""} ${apt.status} ${apt.date}`.toLowerCase();
       if(haystack.includes(q)) results.push({
-        type:"appointment",icon:"📅",label:`${apt.id} — ${apt.investorName||apt.nationalId}`,sub:`${apt.type||""} ${apt.metal||""} · ${apt.date} · ${apt.status}`,
+        type:"appointment",icon:"📅",label:`${apt.id} — ${apt.investorName||apt.nationalId}`,sub:`${statusText(apt.type,isAr)||""} ${apt.metal||""} · ${apt.date} · ${statusText(apt.status,isAr)}`,
         action:()=>{setPage("appointments");onClose();}
       });
     });
@@ -6856,27 +6860,27 @@ const InvestorTimeline = ({ investor, onClose }) => {
   transactions.forEach(tx => {
     if(tx.buyerNationalId===nid) events.push({date:tx.date, type:"transaction", icon:tx.type==="BUY"?"🟢":"💰",
       title:`${isAr?"شراء":"Buy"} ${tx.metal} — ${tx.amount}`,
-      detail:`SAR ${tx.total} · ${tx.method||"—"} · ${tx.status}`,
+      detail:`SAR ${tx.total} · ${tx.method||"—"} · ${statusText(tx.status,isAr)}`,
       color:tx.status==="COMPLETED"?C.greenSolid:"#D4943A"});
     if(tx.sellerNationalId===nid) events.push({date:tx.date, type:"transaction", icon:"🔴",
       title:`${isAr?"بيع":"Sell"} ${tx.metal} — ${tx.amount}`,
-      detail:`SAR ${tx.total} · ${tx.status}`,
+      detail:`SAR ${tx.total} · ${statusText(tx.status,isAr)}`,
       color:tx.status==="COMPLETED"?C.greenSolid:"#D4943A"});
   });
 
   // Orders
   orders.filter(o=>o.nationalId===nid).forEach(ord => {
     events.push({date:ord.createdAt||ord.date||investor.joined, type:"order", icon:ord.side==="BUY"?"📗":"📕",
-      title:`${isAr?"أمر":"Order"} ${ord.side} ${ord.metal} — ${ord.qty}g`,
-      detail:`@ SAR ${ord.price} · ${ord.status}`,
+      title:`${isAr?"أمر":"Order"} ${statusText(ord.side,isAr)} ${ord.metal} — ${ord.qty}g`,
+      detail:`@ SAR ${ord.price} · ${statusText(ord.status,isAr)}`,
       color:ord.status==="FILLED"?C.greenSolid:ord.status==="CANCELLED"?"#C85C3E":C.blueSolid});
   });
 
   // Appointments
   appointments.filter(a=>a.nationalId===nid||a.investorName===investor.nameEn).forEach(apt => {
     events.push({date:apt.date, type:"appointment", icon:apt.status==="NO_SHOW"?"❌":"📅",
-      title:`${isAr?"موعد":"Appointment"} ${apt.type||""} ${apt.metal||""}`,
-      detail:`${apt.time||"—"} · ${apt.vault||"—"} · ${apt.status}`,
+      title:`${isAr?"موعد":"Appointment"} ${statusText(apt.type,isAr)||""} ${apt.metal||""}`,
+      detail:`${apt.time||"—"} · ${apt.vault||"—"} · ${statusText(apt.status,isAr)}`,
       color:apt.status==="NO_SHOW"?"#C85C3E":apt.status==="BOOKED"?C.blueSolid:C.greenSolid});
   });
 
@@ -6884,7 +6888,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
   withdrawals.filter(w=>w.nationalId===nid||w.investor===investor.nameEn).forEach(wd => {
     events.push({date:wd.requestedAt||wd.date||investor.joined, type:"withdrawal", icon:"💸",
       title:`${isAr?"سحب":"Withdrawal"} SAR ${(wd.amount||0).toLocaleString()}`,
-      detail:`${wd.bank||"—"} · ${wd.status}`,
+      detail:`${wd.bank||"—"} · ${statusText(wd.status,isAr)}`,
       color:wd.status==="APPROVED"?C.greenSolid:wd.status==="PENDING"?"#D4943A":"#C85C3E"});
   });
 
@@ -6937,7 +6941,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
         </div>
         <div style={{flex:1}}>
           <p style={{fontSize:16,fontWeight:700,color:C.navy}}>{investor.nameEn}</p>
-          <p style={{fontSize:13,color:C.textMuted}}>{investor.nationalId} · {investor.vaultKey} · <b style={{color:investor.status==="ACTIVE"?C.greenSolid:"#C85C3E"}}>{investor.status}</b></p>
+          <p style={{fontSize:13,color:C.textMuted}}>{investor.nationalId} · {investor.vaultKey} · <b style={{color:investor.status==="ACTIVE"?C.greenSolid:"#C85C3E"}}>{statusText(investor.status,isAr)}</b></p>
         </div>
         <div style={{textAlign:"end"}}>
           <p style={{fontSize:16,fontWeight:700,color:C.gold}}>SAR {(investor.holdingsValue||0).toLocaleString()}</p>
@@ -7182,7 +7186,7 @@ const CommCenter = () => {
               <p style={{fontSize:12,color:C.textMuted,marginTop:2}}>{n.detail}</p>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <span style={{fontSize:10,color:C.textMuted}}>{n.type}</span>
+              <span style={{fontSize:10,color:C.textMuted}}>{notifTypeLabel(n.type,isAr)}</span>
               <p style={{fontSize:11,color:C.textMuted}}>{timeAgo(n.time)}</p>
               {!readSet.has(n.id)&&<div style={{width:8,height:8,borderRadius:4,background:n.severity==="critical"?C.red:C.gold,marginTop:4,marginLeft:"auto"}}/>}
             </div>
