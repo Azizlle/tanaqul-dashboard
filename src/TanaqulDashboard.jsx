@@ -1197,8 +1197,17 @@ const Dashboard = () => {
   const kycExpiring = investors.filter(i=>{if(!i.kycExpiry)return false;const d=(new Date(i.kycExpiry)-new Date())/(86400000);return d>0&&d<30;}).length;
   const unreadAml   = (amlAlerts||[]).filter(a=>!amlDismissed?.has(a.key)).length;
 
-  // 7-day volume sparkline data
-  const sparkData = [14200, 18500, 12800, 22100, 19400, 16700, volumeAll||21500];
+  // 7-day volume sparkline data — compute from actual matches per day
+  const spark7 = (() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().slice(0,10);
+      days.push(matches.filter(m=>m.date&&m.date.startsWith(ds)).reduce((a,m)=>a+(Number(m.totalSAR)||0),0));
+    }
+    return days;
+  })();
+  const sparkData = spark7;
   const sparkMax = Math.max(...sparkData);
   const sparkPts = sparkData.map((v,i)=>`${20+i*(260/6)},${120-((v/sparkMax)*100)}`).join(" ");
   const sparkArea = `${sparkPts} ${20+6*(260/6)},120 20,120`;
@@ -1249,7 +1258,7 @@ const Dashboard = () => {
         <div style={{background:C.white,borderRadius:16,border:`1px solid ${C.border}`,padding:"18px 22px",boxShadow:C.cardShadow}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div><span style={{fontSize:15,fontWeight:700,color:C.navy}}>{isAr?"حجم التداول — 7 أيام":"Trading Volume — 7 Days"}</span></div>
-            <span style={{background:"#6B908022",color:C.greenSolid,padding:"3px 10px",borderRadius:6,fontSize:12,fontWeight:700}}>↗ 12.3%</span>
+            {(()=>{const prev=sparkData.slice(0,3).reduce((a,v)=>a+v,0);const cur=sparkData.slice(4).reduce((a,v)=>a+v,0);const pct=prev>0?Math.round((cur-prev)/prev*100):0;const up=pct>=0;return <span style={{background:up?"#6B908022":"#C85C3E22",color:up?C.greenSolid:"#C85C3E",padding:"3px 10px",borderRadius:6,fontSize:12,fontWeight:700}}>{up?"↗":"↘"} {Math.abs(pct)}%</span>;})()}
           </div>
           <svg viewBox="0 0 300 140" style={{width:"100%",height:120}}>
             <defs><linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.gold} stopOpacity="0.35"/><stop offset="100%" stopColor={C.gold} stopOpacity="0.02"/></linearGradient></defs>
@@ -1341,7 +1350,7 @@ const Investors = () => {
         if(r && !r.ok) showToast("⚠️ Backend error — changes saved locally only","warn");
         // Refresh investor list after status change
         try {
-          const ir = await apiFetch("/investors");
+          const ir = await apiFetch("/investors?page=1&page_size=9999");
           if(ir&&ir.ok){ const id2=await ir.json(); const items=id2.items||id2.investors||[]; if(Array.isArray(items)&&items.length>0) setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} 
         } catch(e2){}
       }
@@ -1516,7 +1525,7 @@ const TransactionLog = () => {
   const { t, isAr } = useLang();
   const { matches=[] } = useAppData();
   const [txns, setTxns] = useState([]);
-  const liveTxRows = matches.map(m=>({id:m.id,investor:m.filledFor,buyerName:m.filledFor,sellerName:m.filledFor,type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
+  const liveTxRows = matches.map(m=>({id:m.id,investor:m.buyerName||m.filledFor,buyerName:m.buyerName||"",sellerName:m.sellerName||"",buyerNationalId:m.buyerNid||"",sellerNationalId:m.sellerNid||"",type:"MATCH",metal:m.metal,metalAmt:String(m.totalSAR),commission:String(m.commission),adminFee:String(m.adminFee||0),method:"Wallet",total:String(m.totalSAR),status:"COMPLETED",date:m.date}));
   const allTxns = [...liveTxRows, ...txns];
   const [typeF, setTypeF]     = useState("ALL");
   const [metalF, setMetalF]   = useState("ALL");
@@ -1531,7 +1540,7 @@ const TransactionLog = () => {
     // SEC: Sanitize values to prevent CSV formula injection (=, +, -, @, \t, \r)
     const sanitize = (v) => { const s=String(v||""); return /^[=+\-@\t\r]/.test(s) ? "'"+s : s; };
     const headers = ["Txn ID","Buyer","Buyer NID","Seller","Seller NID","Type","Metal","Amount","Commission","Admin Fee","Total","Payment","Status","Date"];
-    const csvRows = [headers.join(","), ...rows.map(r=>[r.id,r.buyerName||"",r.buyerNationalId||"",r.sellerName||"",r.sellerNationalId||"",r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.total,r.method,r.status,r.date].map(v=>`"${sanitize(v)}"`).join(","))];
+    const csvRows = [headers.join(","), ...rows.map(r=>[r.id,r.buyerName||"",r.buyerNationalId||r.buyerNid||"",r.sellerName||"",r.sellerNationalId||r.sellerNid||"",r.type,r.metal,r.metalAmt,r.commission,r.adminFee,r.total,r.method,r.status,r.date].map(v=>`"${sanitize(v)}"`).join(","))];
     const blob = new Blob([csvRows.join("\n")],{type:"text/csv"});
     const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="transactions.csv"; a.click();
     URL.revokeObjectURL(a.href); // SEC-MEM-01: prevent blob URL leak
@@ -1925,8 +1934,8 @@ const Appointments = () => {
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Cancelled by admin"})}); } catch(e) { console.error("Cancel appointment failed:", e); }
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Refresh appointments and investors from API
-              try { const ar=await apiFetch("/appointments"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
-              try { const ir=await apiFetch("/investors"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
+              try { const ar=await apiFetch("/appointments?page=1&page_size=9999"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",qty:a.quantity||"",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               const refundAmt = Math.max(0, sel.fee - cfee);
               if(refundAmt > 0) {
                 setWalletMovements(prev => [{
@@ -1962,7 +1971,7 @@ const Appointments = () => {
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/no-show", {method:"POST"}); } catch(e) {}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
               // Refresh investors from API (no-show count updated server-side)
-              try { const ir=await apiFetch("/investors"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               setInvestors(prev=>prev.map(inv=>{
                 return inv.nationalId===sel.nationalId ? {...inv,noShowCount:(inv.noShowCount||0)+1} : inv;
               }));
@@ -2134,15 +2143,14 @@ const Appointments = () => {
                 }
               } catch(e){ console.warn("Vault lifecycle error:",e); }
               // Update local state: mark COMPLETED
-              setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"IN_PROGRESS"}:a));
-              setTimeout(()=>setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"COMPLETED"}:a)),500);
+              setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"COMPLETED"}:a));
               // Bar lifecycle: deposit → LINKED, withdrawal → LEFT
               if(sel.type==="DEPOSIT"&&startData.barcode){
                 const existingBar = bars.find(b=>b.barcode===startData.barcode.trim());
                 if(existingBar&&existingBar.status==="LEFT"){
                   setBars(prev=>prev.map(b=>b.barcode===startData.barcode.trim()?{...b,status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10),leftOn:undefined}:b));
                 } else if(!existingBar){
-                  const newBar={id:"BAR-"+String(bars.length+1).padStart(3,"0"),metal:sel.metal,weight:sel.quantity,barcode:startData.barcode.trim(),manufacturer,vault:(sel.vault||"").replace(" Vault 1","").replace(" Vault",""),status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10)};
+                  const newBar={id:"BAR-TMP-"+Date.now(),metal:sel.metal,weight:sel.quantity||sel.qty||"",barcode:startData.barcode.trim(),manufacturer,vault:(sel.vault||"").replace(" Vault 1","").replace(" Vault",""),status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10)};
                   setBars(prev=>[...prev,newBar]);
                 }
               }
@@ -2150,7 +2158,7 @@ const Appointments = () => {
                 setBars(prev=>prev.map(b=>b.barcode===startData.barcode.trim()?{...b,status:"LEFT",leftOn:new Date().toISOString().slice(0,10),vault:"—"}:b));
               }
               // Refresh vault data from API
-              try{const vr=await apiFetch("/vault/bars");if(vr&&vr.ok){const vd=await vr.json();if(vd.items)setBars(vd.items.map(b=>({id:b.display_id||b.id,_uuid:String(b.id),metal:b.metal||"Gold",weight:b.weight||"",purity:b.purity||"999.9",barcode:b.barcode||"",serial:b.serial||"",manufacturer:b.manufacturer||"",vault:b.vault_location||"Riyadh",status:b.status||"FREE",depositor:b.depositor_id||"",depositedAt:b.deposited_at||""})));}}catch(e2){}
+              try{const vr=await apiFetch("/vault/bars?page=1&page_size=9999");if(vr&&vr.ok){const vd=await vr.json();const vlist=vd.items||vd.bars||(Array.isArray(vd)?vd:[]);if(vlist.length)setBars(vlist.map(b=>({id:b.display_id||b.id,_uuid:String(b.id),metal:b.metal||"Gold",weight:b.weight||"",purity:b.purity||"999.9",barcode:b.barcode||"",serial:b.serial||"",manufacturer:b.manufacturer||"",vault:b.vault_location||"Riyadh",status:b.status||"FREE",depositor:b.depositor_id||"",depositedAt:b.deposited_at||""})));}}catch(e2){}
               addAudit("COMPLETE_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — "+sel.metal+" "+sel.quantity);
               closeAll();
             }} style={{opacity:otpVal.length===6&&!otpExpired?1:0.5}}>
@@ -2249,7 +2257,7 @@ const Financials = () => {
     }));
     addAudit("WITHDRAWAL_"+type.toUpperCase(), row.id, (row.investor||"")+" — SAR "+row.amount);
     // Refresh withdrawals from API
-    try { const wr=await apiFetch("/withdrawals"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),investor:w.investor_name||w.national_id||"",bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requested:w.requested_at||"",processed:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
+    try { const wr=await apiFetch("/withdrawals?page=1&page_size=9999"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),investor:w.investor_name||w.national_id||"",bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requested:w.requested_at||"",processed:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
     const msgs = isAr?{approve:"✅ تمت الموافقة على السحب",reject:"✅ تم رفض السحب",processed:"✅ تم تحديده كمعالج",notify:"✅ تم إرسال الإشعار"}:{approve:"✅ Withdrawal approved",reject:"✅ Withdrawal rejected",processed:"✅ Marked as processed",notify:"✅ Notification sent"};
     showFinToast(msgs[type]);
     setWModal(null);
@@ -2378,13 +2386,13 @@ const Financials = () => {
             id: r.id || r.display_id || "—",
             investor: r.investor_name || r.investor_id || "—",
             investorId: r.investor_id || "",
-            goldGrams: parseFloat(r.gold_grams)||0,
-            silverGrams: parseFloat(r.silver_grams)||0,
+            goldGrams: parseFloat(r.gold_grams||r.gold_oz)||0,
+            silverGrams: parseFloat(r.silver_grams||r.silver_oz)||0,
             platinumGrams: parseFloat(r.platinum_grams)||0,
             goldFee: parseFloat(r.gold_fee)||0,
             silverFee: parseFloat(r.silver_fee)||0,
-            platFee: parseFloat(r.plat_fee)||0,
-            totalFee: parseFloat(r.fee_sar)||0,
+            platFee: parseFloat(r.plat_fee||r.platinum_fee)||0,
+            totalFee: parseFloat(r.total_fee||r.fee_sar)||0,
             status: r.status || "BILLED",
             dueDate: r.due_date || r.billing_date || "",
             billedDate: r.billing_date || r.created_at || "",
@@ -2554,8 +2562,8 @@ const Reports = () => {
   const apptTotal   = appointments.length;
   const noShowRate  = apptTotal>0 ? Math.round(apptNoShow/apptTotal*100) : 0;
   const complRate   = apptTotal>0 ? Math.round(apptDone/apptTotal*100) : 0;
-  const minted      = appBlockStats?.tokensMinted||0;
-  const burned      = appBlockStats?.tokensBurned||0;
+  const minted      = appBlockStats?.tokensMinted||appDashStats?.tokensMinted||0;
+  const burned      = appBlockStats?.tokensBurned||appDashStats?.tokensPendingBurn||0;
   const fmt0 = (n)=>(Number(n)||0).toLocaleString("en-SA",{maximumFractionDigits:0});
 
   const REPORT_DATA = {
@@ -2743,7 +2751,7 @@ const Blacklist = () => {
       id:"BL-"+String(Date.now()).slice(-6),
       name:form.name||"Unknown",
       nationalId:form.nationalId.trim(),
-      vaultKey:"—", reason:form.reason, bannedBy:"Admin",
+      vaultKey:"—", reason:form.reason, bannedBy:(()=>{try{return JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name||"Admin";}catch(e){return "Admin";}})(),
       date:new Date().toISOString().slice(0,10),
     };
     try {
@@ -2807,7 +2815,8 @@ const Blacklist = () => {
       {editRow&&<Modal title={(isAr?"تعديل — ":"Edit — ")+editRow.id} onClose={()=>setEditRow(null)}>
         <Inp label={isAr?"السبب":"Reason"} value={editRow.reason} onChange={v=>setEditRow({...editRow,reason:v})} placeholder={isAr?"تحديث السبب...":"Update reason..."} />
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>{
+          <Btn variant="gold" onClick={async ()=>{
+            try{const uid=editRow._uuid||editRow.id;await apiFetch("/blacklist/"+uid,{method:"PATCH",body:JSON.stringify({reason:editRow.reason})});}catch(e){}
             setBlacklist(prev=>prev.map(b=>b.id===editRow.id?{...b,reason:editRow.reason}:b));
             showBlToast("✅ Record updated"); setEditRow(null);
           }}>{isAr?"حفظ":"Save"}</Btn>
@@ -2932,10 +2941,10 @@ const Blocks = () => {
   const createGenesis = async () => {
     setGenesisLoading(true);
     try{
-      const r=await apiFetch("/blocks/genesis",{method:"POST"});
-      if(r&&r.ok){const d=await r.json();alert("Genesis Block #1 Created!\nHash: "+d.hash);
+      const r=await apiFetch("/blocks",{method:"POST"});
+      if(r&&r.ok){const d=await r.json();alert("Genesis Block Created!\nHash: "+(d.hash||""));
         // Refresh blocks
-        const br=await apiFetch("/blocks");if(br&&br.ok){const bd=await br.json();if(bd.items)setAppBlocks(bd.items.map(b=>({number:b.number,hash:b.hash||"",txCount:b.tx_count||0,commission:String(b.commission||0),tanaqulShare:String(b.tanaqul_share||0),creatorShare:String(b.creator_share||0),validatorsShare:String(b.validators_share||0),validator:b.validator_name||"Tanaqul",timestamp:b.created_at||"",size:b.size_bytes?(Number(b.size_bytes)/1048576).toFixed(2)+" MB":"0 MB"})));}
+        const br=await apiFetch("/blocks?page=1&page_size=9999");if(br&&br.ok){const bd=await br.json();const blist=bd.blocks||bd.items||bd;if(Array.isArray(blist))setAppBlocks(blist.map(b=>({number:b.number,hash:b.hash||"",txCount:b.tx_count||0,commission:String(b.commission||0),tanaqulShare:String(b.tanaqul_share||0),creatorShare:String(b.creator_share||0),validatorsShare:String(b.validators_share||0),validator:b.validator_name||"Tanaqul",timestamp:b.created_at||"",size:b.size_bytes?(Number(b.size_bytes)/1048576).toFixed(2)+" MB":"0 MB"})));}
       } else {const d=await r.json().catch(()=>({}));alert(d.detail||"Genesis already exists or error");}
     }catch(e){alert("Error: "+e.message);}
     setGenesisLoading(false);
@@ -5101,8 +5110,8 @@ const OrderBook = () => {
 
     // Try posting to backend
     try{
-      apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"BUY",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
-      apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"SELL",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
+      apiFetch("/orders",{method:"POST",body:JSON.stringify({type:"BUY",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,investor_id:"7031990530",payment_method:"Wallet"})});
+      apiFetch("/orders",{method:"POST",body:JSON.stringify({type:"SELL",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,investor_id:"7031990530",payment_method:"Wallet"})});
     }catch(e){}
   },[stabEnabled, bidEnabled, spreadWide, bestBid, bestAsk]);
 
@@ -5364,17 +5373,16 @@ const OrderBook = () => {
     // Post order to backend — backend handles matching
     try {
       const resp = await apiFetch("/orders", {method:"POST", body:JSON.stringify({
-        side:mmSide, metal:mmMetal, quantity_grams:mmQtyNum, price_per_gram:mmPriceNum,
-        order_type:"LIMIT", national_id:"7031990530",
-        payment_method:"Wallet", expiry_type:mmExpiry||"GTC",
-        is_market_maker:true,
+        type:mmSide, metal:mmMetal, quantity_grams:mmQtyNum, price_per_gram:mmPriceNum,
+        investor_id:"7031990530",
+        payment_method:"Wallet",
       })});
       if(resp && resp.ok) {
         const result = await resp.json();
         // Refresh orders and matches from API to get backend matching results
         const [ordResp, matchResp] = await Promise.all([
-          apiFetch("/orders"),
-          apiFetch("/matches"),
+          apiFetch("/orders?page=1&page_size=9999"),
+          apiFetch("/matches?page=1&page_size=9999"),
         ]);
         if(ordResp && ordResp.ok) {
           const od = await ordResp.json();
@@ -5950,7 +5958,7 @@ const UserManagement = () => {
   useEffect(()=>{
     if(!activityModal||activityModal._apiLogLoaded) return;
     const u = activityModal;
-    apiFetch("/audit-logs?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
+    apiFetch("/audit?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&d.items){
         const userLogs = d.items.filter(a=>a.admin_id===u.id||a.entity_id===u.id).map(a=>{
           let lbl; try { lbl = ACTION_LABELS[a.action]; } catch(e) { lbl = null; }
@@ -6485,7 +6493,7 @@ const AccountProfile = () => {
             roleAr: (me.role||"viewer")==="super_admin"?"مدير أعلى":(me.role||"viewer")==="admin"?"مدير":"مشاهد",
             joined: me.created_at?(me.created_at+"").slice(0,10):"",
             lastLogin: me.last_login?(me.last_login+"").slice(0,16).replace("T"," "):"",
-            phone: me.phone||me.recovery_phone||"",
+            phone: me.phone||"",
             recoveryPhone: me.recovery_phone||"",
             recoveryEmail: me.recovery_email||"",
             twoFA: me.two_fa_enabled||false,
@@ -6532,7 +6540,7 @@ const AccountProfile = () => {
       }catch(e){}
     }
     // Activity log — with human-readable descriptions
-    apiFetch("/audit-logs?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
+    apiFetch("/audit?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&d.items){
         // Filter out noise — only show meaningful actions
         const noiseActions = ["POST /api/v1/auth/refresh","GET /api/v1/","OPTIONS /api"];
@@ -7250,7 +7258,7 @@ const CommCenter = () => {
 
   const sendMessage = async (to, body, channel, schedule) => {
     try {
-      const res = await apiFetch("/sms/send", {method:"POST", body:JSON.stringify({to, body, channel, subject:compSubject, schedule_at:schedule||null})});
+      const res = await apiFetch("/sms/send", {method:"POST", body:JSON.stringify({to, message:body, channel, subject:compSubject, schedule_at:schedule||null})});
       if(res&&res.ok) {
         const d = await res.json();
         const msg = {id:d.message_id||"MSG-"+Date.now(),to,body,channel,sentAt:schedule||new Date().toISOString(),status:schedule?"SCHEDULED":"SENT",subject:compSubject};
@@ -7454,7 +7462,7 @@ const CommCenter = () => {
         </div>
         <Btn variant="gold" onClick={async ()=>{if(!compBody){showToast(isAr?"⚠️ الرسالة فارغة":"⚠️ Message is empty");return;}
           const count=bulkRecipients.length;
-          try{const r=await apiFetch("/sms/bulk",{method:"POST",body:JSON.stringify({body:compBody,channel:"SMS",filter_status:bulkFilter,subject:"Bulk"})});if(r&&r.ok){const d=await r.json();showToast(`✅ ${d.sent||count} ${isAr?"رسالة أُرسلت":"messages sent"}`);} else {showToast(isAr?"⚠️ خطأ":"⚠️ Error");}}catch(e){showToast(isAr?"⚠️ خطأ":"⚠️ Error");}
+          try{const recipients=bulkRecipients.map(i=>i.phone||i.nationalId).filter(Boolean);const r=await apiFetch("/sms/bulk",{method:"POST",body:JSON.stringify({recipients,message:compBody})});if(r&&r.ok){const d=await r.json();showToast(`✅ ${d.count||d.sent||count} ${isAr?"رسالة أُرسلت":"messages sent"}`);} else {showToast(isAr?"⚠️ خطأ":"⚠️ Error");}}catch(e){showToast(isAr?"⚠️ خطأ":"⚠️ Error");}
           setCompBody("");}}>{isAr?`إرسال إلى ${bulkRecipients.length} مستثمر`:`Send to ${bulkRecipients.length} investors`}</Btn>
         <p style={{fontSize:11,color:C.textMuted,marginTop:12}}>{isAr?"ملاحظة: يتطلب ربط بوابة SMS":"Note: Requires SMS gateway in Settings"}</p>
       </div>}
@@ -8057,6 +8065,7 @@ const NotificationSettings = () => {
 
 const Settings = ({ onLangChange }) => {
   const { t, isAr, commSplit, setCommSplit, gatewaySettings, setGatewaySettings, commissionRates, setCommissionRates, cancelFee, setCancelFee, storageFeeSettings, setStorageFeeSettings, reportingConfig, setReportingConfig } = useLang();
+  const { gold: _sfGold, silver: _sfSilver, plat: _sfPlat } = useLivePrices();
   // Load storage fee config from API on mount
   useEffect(()=>{
     apiFetch("/storage-fees/config").then(r=>r&&r.ok?r.json():null).then(d=>{
@@ -8273,9 +8282,9 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"معاينة الرسوم الحية (بأسعار السوق الحالية)":"Live Fee Preview (at current spot prices)"}>
           <div style={{background:C.navyDark,borderRadius:12,padding:"14px 18px"}}>
             {[
-              {metal:"Gold",   pct:storageFeeSettings?.goldAnnualPct||"0.5",    sarPerG:285,  color:C.gold},
-              {metal:"Silver", pct:storageFeeSettings?.silverAnnualPct||"0.75", sarPerG:3.4,  color:"#94A3B8"},
-              {metal:"Platinum",pct:storageFeeSettings?.platinumAnnualPct||"0.6",sarPerG:118, color:"#A78BFA"},
+              {metal:"Gold",   pct:storageFeeSettings?.goldAnnualPct||"0.5",    sarPerG:_sfGold?.priceSAR||285,  color:C.gold},
+              {metal:"Silver", pct:storageFeeSettings?.silverAnnualPct||"0.75", sarPerG:_sfSilver?.priceSAR||3.4,  color:"#94A3B8"},
+              {metal:"Platinum",pct:storageFeeSettings?.platinumAnnualPct||"0.6",sarPerG:_sfPlat?.priceSAR||118, color:"#A78BFA"},
             ].map(({metal,pct,sarPerG,color})=>{
               const cycle = storageFeeSettings?.billingCycle||"monthly";
               const div = cycle==="monthly"?12:cycle==="quarterly"?4:1;
@@ -10059,7 +10068,7 @@ export default function App() {
             investorId: a.investor_id || "", nationalId: a.national_id || "",
             investor: a.investor_name || a.investor_id || "",
             type: a.type || "DEPOSIT", metal: a.metal || "Gold",
-            qty: a.quantity || "", vault: a.vault_location || "Riyadh",
+            qty: a.quantity || "", quantity: a.quantity || "", vault: a.vault_location || "Riyadh",
             date: (a.scheduled_at || "").slice(0,10),
             time: (a.scheduled_at || "").slice(11,16),
             status: a.status || "BOOKED", fee: String(a.fee || 0),
@@ -10179,7 +10188,7 @@ export default function App() {
 
       // Fetch all endpoints in parallel for faster load
       const results = await Promise.allSettled(
-        endpoints.map(ep => apiFetch(ep.path).then(async resp => {
+        endpoints.map(ep => apiFetch(ep.path+(ep.path.includes("?")?"&":"?")+"page=1&page_size=9999").then(async resp => {
           if (resp && resp.ok) {
             const raw = await resp.json();
             const transformed = ep.transform(raw);
@@ -10227,7 +10236,7 @@ export default function App() {
     if (loggedIn) {
       fetchApiData();
       // Load audit logs from backend
-      apiFetch("/audit-logs?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
+      apiFetch("/audit?page=1&page_size=200").then(r=>r&&r.ok?r.json():null).then(d=>{
         if(d&&d.items&&d.items.length>0){
           // Only investor-related actions for the AML/Audit page
           const investorActions = [
