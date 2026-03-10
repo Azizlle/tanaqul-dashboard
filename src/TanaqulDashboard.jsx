@@ -563,7 +563,7 @@ const SectionHeader = ({ title, sub, action }) => {
   );
 };
 
-const Btn = ({ children, onClick, variant="primary", small }) => {
+const Btn = ({ children, onClick, variant="primary", small, style:extraStyle }) => {
   const s = {
     primary:{background:C.navy,color:C.white,border:"none"},
     gold:{background:C.gold,color:C.white,border:"none"},
@@ -572,7 +572,7 @@ const Btn = ({ children, onClick, variant="primary", small }) => {
     danger:{background:C.red,color:C.white,border:"none"},
     ghost:{background:"transparent",color:C.textMuted,border:"none"},
   };
-  return <button onClick={onClick} style={{...s[variant],borderRadius:8,cursor:"pointer",padding:small?"5px 12px":"8px 16px",fontSize:small?11:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.opacity="0.82"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>{children}</button>;
+  return <button onClick={onClick} style={{...s[variant],borderRadius:8,cursor:"pointer",padding:small?"5px 12px":"8px 16px",fontSize:small?11:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:5,whiteSpace:"nowrap",...extraStyle}} onMouseEnter={e=>e.currentTarget.style.opacity="0.82"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>{children}</button>;
 };
 
 const TTable = ({ cols, rows }) => {
@@ -583,7 +583,7 @@ const TTable = ({ cols, rows }) => {
         <thead><tr style={{background:C.navyDark}}>{cols.map((col,i)=><th key={i} style={{padding:"10px 14px",textAlign:"center",fontWeight:600,color:"#A89880",fontSize:12,letterSpacing:"0.06em",whiteSpace:"nowrap",textTransform:"uppercase"}}>{t(col.label)}</th>)}</tr></thead>
         <tbody>
           {rows.map((row,i)=>(
-            <tr key={i} style={{borderTop:`1px solid ${C.border}`,background:i%2===0?C.white:"#FAFBFC"}}>
+            <tr key={i} style={{borderTop:`1px solid ${C.border}`,background:i%2===0?C.white:C.bg}}>
               {cols.map((col,j)=><td key={j} style={{padding:"10px 14px",color:C.text,whiteSpace:"nowrap",textAlign:"center",verticalAlign:"middle"}}>{col.render?col.render(row[col.key],row):row[col.key]}</td>)}
             </tr>
           ))}
@@ -1532,8 +1532,8 @@ const TransactionLog = () => {
       (tx.sellerName||"").toLowerCase().includes(s));
   });
 
-  const totalVol   = rows.reduce((a,t)=>a+parseFloat(t.metalAmt.replace(/,/g,"")),0);
-  const totalComm  = rows.reduce((a,t)=>a+parseFloat(t.commission.replace(/,/g,"")),0);
+  const totalVol   = rows.reduce((a,t)=>a+parseFloat((t.metalAmt||"0").replace(/,/g,"")),0);
+  const totalComm  = rows.reduce((a,t)=>a+parseFloat((t.commission||"0").replace(/,/g,"")),0);
   const totalCount = rows.length;
 
   const fmtNum = n => (n||0).toLocaleString("en-SA", {maximumFractionDigits:0});
@@ -2126,7 +2126,7 @@ const Appointments = () => {
                 if(existingBar&&existingBar.status==="LEFT"){
                   setBars(prev=>prev.map(b=>b.barcode===startData.barcode.trim()?{...b,status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10),leftOn:undefined}:b));
                 } else if(!existingBar){
-                  const newBar={id:"BAR-"+String(bars.length+1).padStart(3,"0"),metal:sel.metal,weight:sel.quantity,barcode:startData.barcode.trim(),manufacturer,vault:sel.vault.replace(" Vault 1","").replace(" Vault",""),status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10)};
+                  const newBar={id:"BAR-"+String(bars.length+1).padStart(3,"0"),metal:sel.metal,weight:sel.quantity,barcode:startData.barcode.trim(),manufacturer,vault:(sel.vault||"").replace(" Vault 1","").replace(" Vault",""),status:"LINKED",depositor:sel.nationalId||sel.investorId||"—",deposited:new Date().toISOString().slice(0,10)};
                   setBars(prev=>[...prev,newBar]);
                 }
               }
@@ -2412,7 +2412,8 @@ const Financials = () => {
 
 // Mini sparkline bar chart
 const MiniBar = ({ data, color="#C4956A" }) => {
-  const max = Math.max(...data);
+  if(!data||data.length===0) return <div style={{height:52}}/>;
+  const max = Math.max(...data)||1;
   return (
     <div style={{display:"flex",alignItems:"flex-end",gap:3,height:52}}>
       {data.map((v,i)=>(
@@ -5087,7 +5088,7 @@ const OrderBook = () => {
       apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"BUY",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
       apiFetch("/orders",{method:"POST",body:JSON.stringify({side:"SELL",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,order_type:"LIMIT",national_id:"7031990530",is_market_maker:true,payment_method:"Wallet",expiry_type:"GTC"})});
     }catch(e){}
-  },[stabEnabled, bidEnabled, spreadWide, bestBid, bestAsk, orders]);
+  },[stabEnabled, bidEnabled, spreadWide, bestBid, bestAsk]);
 
   const openList      = orders.filter(o=>o.status==="OPEN"||o.status==="PARTIAL");
   const filledList    = orders.filter(o=>o.status==="FILLED");
@@ -5123,7 +5124,7 @@ const OrderBook = () => {
           :o
       ));
     }
-  },[bidEnabled]);
+  },[bidEnabled, orders, matches]);
 
   // ── Auto-cancel GTD orders past expiry ────────────────────────────────────
   useEffect(()=>{
@@ -5132,6 +5133,7 @@ const OrderBook = () => {
       o.expiry==="GTD"&&o.expiryDate&&o.expiryDate<today&&
       (o.status==="OPEN"||o.status==="PARTIAL")
     );
+    if(gtdExpired.length===0) return;
     gtdExpired.forEach(o=>{
       const actualExec = matches.filter(m=>m.buyOrder===o.id||m.sellOrder===o.id).reduce((a,m)=>a+m.totalSAR,0);
       issueRefund(o, o.filled||0, actualExec, `GTD Expired (${o.expiryDate}) — Refund`);
@@ -5141,7 +5143,7 @@ const OrderBook = () => {
         return {...o,status:"CANCELLED",cancelReason:"GTD expired"};
       return o;
     }));
-  },[]);
+  },[orders, matches]);
 
   // ── Core matching engine ───────────────────────────────────────────────────
   //
@@ -5367,7 +5369,7 @@ const OrderBook = () => {
             nationalId:o.national_id||"", investor:o.investor_display||o.investor_id||"",
             metal:o.metal||"Gold",
             side:o.type||o.side||"BUY", qty:Number(o.quantity_grams||0),
-            remaining:Number(o.remaining_quantity||o.quantity_grams-o.filled_quantity||0),
+            remaining:Number(o.remaining_quantity??(o.quantity_grams-o.filled_quantity)??0),
             filled:Number(o.filled_quantity||0),
             price:Number(o.price_per_gram||0), total:Number(o.total_sar||0),
             status:o.status||"OPEN", date:o.created_at||"",
@@ -5935,7 +5937,7 @@ const UserManagement = () => {
     apiFetch("/audit-logs?page=1&page_size=50").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&d.items){
         const userLogs = d.items.filter(a=>a.admin_id===u.id||a.entity_id===u.id).map(a=>{
-          const lbl = typeof ACTION_LABELS!=="undefined"&&ACTION_LABELS[a.action];
+          let lbl; try { lbl = ACTION_LABELS[a.action]; } catch(e) { lbl = null; }
           return {
             date:a.created_at?a.created_at.slice(0,16).replace("T"," "):"",
             action:lbl?lbl.en:(a.action||"").replace(/[._]/g," ").replace(/\b\w/g,c=>c.toUpperCase()),
@@ -8052,7 +8054,7 @@ const Settings = ({ onLangChange }) => {
     }).catch(()=>{});
     // Load commission split from blocks API
     apiFetch("/blocks/settings/split").then(r=>r&&r.ok?r.json():null).then(d=>{
-      if(d) setCommSplit({buying:commSplit.buying,selling:commSplit.selling,creator:Math.round(d.creator_percent)||20,validators:Math.round(d.validators_percent)||20});
+      if(d) setCommSplit(prev=>({...prev,creator:Math.round(d.creator_percent)||20,validators:Math.round(d.validators_percent)||20}));
     }).catch(()=>{});
     // Load commission rates from API
     apiFetch("/commission/rates").then(r=>r&&r.ok?r.json():null).then(d=>{
@@ -8812,8 +8814,9 @@ function LoginPage({ onLogin }) {
                     onFocus={e=>e.target.style.border="1.5px solid #C4956A"}
                     onBlur={e=>e.target.style.border="1.5px solid rgba(255,255,255,0.12)"} />
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginTop:8}}>{error}</p>}
-                  <button onClick={()=>{
+                  <button onClick={async()=>{
                     if(!recoveryPhone.trim()){setError(isAr?"أدخل رقم الهاتف":"Enter phone number");return;}
+                    try{await apiFetch("/auth/recovery/send",{method:"POST",body:JSON.stringify({phone:recoveryPhone.trim()})});}catch(e){}
                     setRecoverySent(true);setRecoveryTimer(60);setError("");
                   }} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg, #C4956A, #2D2418)",color:"#fff",border:"none",fontSize:17,fontWeight:700,cursor:"pointer",marginTop:16}}>
                     {isAr?"إرسال رمز التحقق":"Send Recovery Code"}
@@ -8836,7 +8839,7 @@ function LoginPage({ onLogin }) {
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginBottom:8,textAlign:"center"}}>{error}</p>}
                   <button onClick={async ()=>{
                     try {
-                      const res = await apiFetch("/auth/recovery/verify", {method:"POST", body:JSON.stringify({otp_code:recoveryOtp})});
+                      const res = await apiFetch("/auth/recovery/verify", {method:"POST", body:JSON.stringify({phone:recoveryPhone.trim(),otp_code:recoveryOtp})});
                       if(res && res.ok) { onLogin(); }
                       else { setError(isAr?"رمز خاطئ":"Invalid code"); setRecoveryOtp(""); }
                     } catch(e) { setError(isAr?"خطأ في التحقق":"Verification error"); }
@@ -10026,7 +10029,7 @@ export default function App() {
             purity: b.purity || "999.9", barcode: b.barcode || "",
             serial: b.serial || "", manufacturer: b.manufacturer || "",
             vault: b.vault_location || "Riyadh", status: b.status || "FREE",
-            depositor: b.depositor_id || "", depositedAt: b.deposited_at || "",
+            depositor: b.depositor_id || "", deposited: b.deposited_at || "",
           }));
         }},
         { path: "/appointments", setter: setAppAppointments, transform: (data) => {
@@ -10035,8 +10038,9 @@ export default function App() {
           return items.map(a => ({
             id: a.display_id || a.id, _uuid: String(a.id),
             investorId: a.investor_id || "", nationalId: a.national_id || "",
+            investor: a.investor_name || a.investor_id || "",
             type: a.type || "DEPOSIT", metal: a.metal || "Gold",
-            quantity: a.quantity || "", vault: a.vault_location || "Riyadh",
+            qty: a.quantity || "", vault: a.vault_location || "Riyadh",
             date: (a.scheduled_at || "").slice(0,10),
             time: (a.scheduled_at || "").slice(11,16),
             status: a.status || "BOOKED", fee: String(a.fee || 0),
@@ -10053,8 +10057,8 @@ export default function App() {
             nationalId: w.national_id || "", amount: String(w.amount || 0),
             investor: w.investor_name || w.national_id || "",
             bank: w.bank_info || "", iban: w.iban || "",
-            status: w.status || "PENDING", requestedAt: w.requested_at || "",
-            processedAt: w.processed_at || "", rejectReason: w.reject_reason || "",
+            status: w.status || "PENDING", requested: w.requested_at || "",
+            processed: w.processed_at || "", rejectReason: w.reject_reason || "",
           }));
         }},
         { path: "/wallet/movements", setter: setAppWalletMoves, transform: (data) => {
