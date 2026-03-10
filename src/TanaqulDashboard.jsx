@@ -6704,7 +6704,7 @@ const AccountProfile = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل الحفظ":"Failed to save")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,email:profile.email,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل الحفظ":"Failed to save")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
