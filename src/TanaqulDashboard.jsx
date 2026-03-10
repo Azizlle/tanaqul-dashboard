@@ -1068,20 +1068,35 @@ const PriceTicker = () => {
 const INITIAL_OB_ORDERS = [];
 
 // ─── Mini Order Book Widget (Dashboard) ──────────────────────────────────────
-const MiniOrderBook = ({ orders, isAr }) => {
+const MiniOrderBook = ({ orders, isAr, bidEnabled }) => {
   const [metal, setMetal] = useState("Gold");
   const MCOL = {Gold:C.gold,Silver:"#A89880",Platinum:C.purpleSolid};
   const METALS_AR = {Gold:"الذهب",Silver:"الفضة",Platinum:"البلاتين"};
 
   const open = orders.filter(o=>o.metal===metal&&(o.status==="OPEN"||o.status==="PARTIAL"));
-  const bids = open.filter(o=>o.side==="BUY") .sort((a,b)=>b.price-a.price).slice(0,5);
-  const asks = open.filter(o=>o.side==="SELL").sort((a,b)=>a.price-b.price).slice(0,5);
-  const bestBid = bids[0]?.price||null;
-  const bestAsk = asks[0]?.price||null;
+
+  // Aggregate by price level
+  const aggregate = (list) => {
+    const map = {};
+    list.forEach(o => {
+      const p = (o.price||0).toFixed(2);
+      if(!map[p]) map[p] = { price:o.price, totalQty:0, count:0 };
+      map[p].totalQty += (o.qty - o.filled);
+      map[p].count += 1;
+    });
+    return Object.values(map);
+  };
+
+  const rawBids = open.filter(o=>o.side==="BUY");
+  const rawAsks = open.filter(o=>o.side==="SELL");
+  const bidLevels = aggregate(rawBids).sort((a,b)=>b.price-a.price).slice(0,5);
+  const askLevels = aggregate(rawAsks).sort((a,b)=>a.price-b.price).slice(0,5);
+  const bestBid = bidLevels[0]?.price||null;
+  const bestAsk = askLevels[0]?.price||null;
   const spread  = bestBid&&bestAsk ? (bestAsk-bestBid).toFixed(2) : null;
 
-  const totalAskGrams = asks.reduce((s,o)=>s+(o.qty-o.filled),0);
-  const totalBidGrams = bids.reduce((s,o)=>s+(o.qty-o.filled),0);
+  const totalAskGrams = askLevels.reduce((s,l)=>s+l.totalQty,0);
+  const totalBidGrams = bidLevels.reduce((s,l)=>s+l.totalQty,0);
 
   return (
     <div style={{background:C.white,borderRadius:16,border:`1px solid ${C.border}`,padding:"18px 20px"}}>
@@ -1125,21 +1140,21 @@ const MiniOrderBook = ({ orders, isAr }) => {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
         <div>
           <p style={{fontSize:12,fontWeight:700,color:C.greenSolid,marginBottom:5,textAlign:"center"}}>{isAr?"شراء":"BIDS"}</p>
-          {bids.length===0?<p style={{fontSize:12,color:C.textMuted,textAlign:"center"}}>—</p>:bids.map((b,i)=>(
-            <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 6px",borderRadius:4,marginBottom:2,
+          {bidLevels.length===0?<p style={{fontSize:12,color:C.textMuted,textAlign:"center"}}>—</p>:bidLevels.map((lvl,i)=>(
+            <div key={lvl.price} style={{display:"flex",justifyContent:"space-between",padding:"3px 6px",borderRadius:4,marginBottom:2,
               background:`rgba(34,197,94,${0.12-i*0.02})`}}>
-              <span style={{fontSize:13,fontWeight:700,color:C.greenSolid}}>{(b.price||0).toFixed(2)}</span>
-              <span style={{fontSize:12,color:C.textMuted}}>{b.qty-b.filled}g{b.marketMaker&&<span style={{fontSize:10,color:C.gold,fontWeight:800}}> MM</span>}</span>
+              <span style={{fontSize:13,fontWeight:700,color:C.greenSolid}}>{(lvl.price||0).toFixed(2)}</span>
+              <span style={{fontSize:12,color:C.textMuted}}>{lvl.totalQty}g{bidEnabled&&lvl.count>1&&<span style={{fontSize:10,color:C.textMuted,marginLeft:3}}>({lvl.count})</span>}</span>
             </div>
           ))}
         </div>
         <div>
           <p style={{fontSize:12,fontWeight:700,color:"#C85C3E",marginBottom:5,textAlign:"center"}}>{isAr?"بيع":"ASKS"}</p>
-          {asks.length===0?<p style={{fontSize:12,color:C.textMuted,textAlign:"center"}}>—</p>:asks.map((a,i)=>(
-            <div key={a.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 6px",borderRadius:4,marginBottom:2,
+          {askLevels.length===0?<p style={{fontSize:12,color:C.textMuted,textAlign:"center"}}>—</p>:askLevels.map((lvl,i)=>(
+            <div key={lvl.price} style={{display:"flex",justifyContent:"space-between",padding:"3px 6px",borderRadius:4,marginBottom:2,
               background:`rgba(239,68,68,${0.12-i*0.02})`}}>
-              <span style={{fontSize:13,fontWeight:700,color:"#C85C3E"}}>{(a.price||0).toFixed(2)}</span>
-              <span style={{fontSize:12,color:C.textMuted}}>{a.qty-a.filled}g{a.marketMaker&&<span style={{fontSize:10,color:C.gold,fontWeight:800}}> MM</span>}</span>
+              <span style={{fontSize:13,fontWeight:700,color:"#C85C3E"}}>{(lvl.price||0).toFixed(2)}</span>
+              <span style={{fontSize:12,color:C.textMuted}}>{lvl.totalQty}g{bidEnabled&&lvl.count>1&&<span style={{fontSize:10,color:C.textMuted,marginLeft:3}}>({lvl.count})</span>}</span>
             </div>
           ))}
         </div>
@@ -1151,6 +1166,7 @@ const MiniOrderBook = ({ orders, isAr }) => {
 
 const Dashboard = () => {
   const { t, isAr } = useLang();
+  const { bidEnabled } = useBidEnabled();
   const { orders, matches, investors, appointments, withdrawals, bars, walletMovements, amlAlerts=[], cmaAlerts=[], amlDismissed=new Set(), appDashStats } = useAppData();
   const adminName = (() => { try { const a = JSON.parse(localStorage.getItem("tanaqul_admin")||"{}"); return a.name || "Admin"; } catch(e) { return "Admin"; } })();
   const s = appDashStats || {};
@@ -1278,7 +1294,7 @@ const Dashboard = () => {
       </div>}
       <SectionHeader title={isAr?"دفتر الأوامر":"Order Book"} sub={isAr?"نظرة لحظية — آخر 5 مستويات":"Live snapshot — top 5 levels"} />
       <div style={{marginBottom:28}}>
-        <MiniOrderBook orders={orders} isAr={isAr} />
+        <MiniOrderBook orders={orders} isAr={isAr} bidEnabled={bidEnabled} />
       </div>
       <SectionHeader title={isAr?"الخزنة والبلوكتشين":"Vault & Blockchain"} />
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:14,marginBottom:28}}>
@@ -2506,7 +2522,7 @@ const Reports = () => {
   const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
   const liveAUM     = liveGoldG*(gp?.priceSAR||839)+liveSilverG*(sp?.priceSAR||10.42)+livePlatG*(pp?.priceSAR||138.5);
-  const volAll      = matches.reduce((a,m)=>a+m.totalSAR,0);
+  const volAll      = matches.reduce((a,m)=>a+(Number(m.totalSAR)||0),0);
   const commAll     = matches.reduce((a,m)=>a+(Number(m.commission)||0),0);
   const adminAll    = matches.reduce((a,m)=>a+(Number(m.adminFee)||0),0);
   // ── Live computed report data from API state ─────────────────────────
@@ -5207,7 +5223,7 @@ const OrderBook = () => {
           // ASK-only mode: drop the whole order
           incomingStatus = "CANCELLED";
           incomingOrder  = {...incomingOrder, status:"CANCELLED", filled:0,
-            cancelReason:"ASK-only mode: no available grams"};
+            cancelReason:"No available grams"};
           issueRefund(incomingOrder, 0, 0, "No Grams Available — Full Refund");
         } else {
           // Bids ON: queue it
@@ -5222,7 +5238,7 @@ const OrderBook = () => {
         if(!bidEnabled){
           // ASK-only: drop remaining — show as PARTIAL but mark remainder dropped
           incomingOrder = {...incomingOrder, status:"PARTIAL", filled,
-            cancelReason:`ASK-only: ${remaining}g dropped — no more available grams`};
+            cancelReason:`${remaining}g dropped — no more available grams`};
           // Refund unfilled portion: commission only on filled grams, admin fee kept always
           const execSAR = newMatches.reduce((s,m)=>s+m.totalSAR, 0);
           issueRefund(incomingOrder, filled, execSAR, `Partial Fill — ${remaining}g Unfilled, Refunded`);
@@ -6356,7 +6372,7 @@ const UserManagement = () => {
       {activityModal&&(()=>{
         const u = activityModal;
         const role = roleOf(u.role);
-        const log = u.log||u._apiLog||[];
+        const log = u._apiLog||u.log||[];
         const actionTypes = [...new Set(log.map(e=>e.action))];
         const filtered = logFilter==="ALL"?log:log.filter(e=>e.action===logFilter);
         return (
@@ -10179,7 +10195,7 @@ export default function App() {
       // Fetch block network stats
       try {
         const bsResp = await apiFetch("/blocks/chain/stats");
-        if (bsResp.ok) {
+        if (bsResp && bsResp.ok) {
           const bs = await bsResp.json();
           setAppBlockStats({
             latest_block_number: bs.last_block?.number || 0,
