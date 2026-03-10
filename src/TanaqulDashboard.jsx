@@ -10214,7 +10214,7 @@ export default function App() {
       // Fetch dashboard stats
       try {
         const dsResp = await apiFetch("/dashboard/stats");
-        if (dsResp.ok) {
+        if (dsResp && dsResp.ok) {
           const ds = await dsResp.json();
           setAppDashStats(ds);
         }
