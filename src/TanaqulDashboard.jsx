@@ -1936,16 +1936,8 @@ const Appointments = () => {
               // Refresh appointments and investors from API
               try { const ar=await apiFetch("/appointments?page=1&page_size=9999"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",qty:a.quantity||"",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
               try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
-              const refundAmt = Math.max(0, sel.fee - cfee);
-              if(refundAmt > 0) {
-                setWalletMovements(prev => [{
-                  id: "WM-" + String(Date.now()).slice(-6) + String(Math.random()).slice(2,5),
-                  investor: sel.nationalId||sel.investorId||"—", nationalId: sel.nationalId, vaultKey: "—",
-                  type: "CREDIT", amount: refundAmt,
-                  reason: "Appointment Cancellation Refund — " + sel.id + " (" + cfee + " SAR fee kept)",
-                  date: new Date().toISOString().slice(0,16).replace("T"," "),
-                }, ...prev]);
-              }
+              // Refresh wallet movements from API to pick up server-created refund
+              try { const wr=await apiFetch("/wallet/movements?page=1&page_size=9999"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.movements||wd;if(Array.isArray(items))setWalletMovements(items.map(m=>({id:m.display_id||m.id,nationalId:m.national_id||"",investor:m.investor_name||m.national_id||"",vaultKey:m.vault_key||"",type:m.type||"CREDIT",amount:String(m.amount||0),reason:m.reason||"",date:m.created_at||""})));} } catch(e3){}
               addAudit("CANCEL_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — refund SAR "+refundAmt);
               closeAll();
             }}>{isAr?"نعم، إلغاء الموعد":"Yes, Cancel Appointment"}</Btn>
@@ -4985,17 +4977,8 @@ const OrderBook = () => {
                   : (method === "VISA" || method === "MASTERCARD") ? `${method} fee SAR ${gatewayFee} (${gatewaySettings.visaFee}%)`
                   : null;
 
-    const newEntry = {
-      id:       "WM-" + String(Date.now()).slice(-6) + String(Math.random()).slice(2,5),
-      investor: order.investor,
-      nationalId: order.nationalId,
-      vaultKey: "—",
-      type:     "CREDIT",
-      amount:   refundSAR,
-      reason:   reason + (gwLabel ? ` — ${gwLabel} kept` : ""),
-      date:     new Date().toISOString().slice(0,16).replace("T"," "),
-    };
-    setWalletMovements(prev => [newEntry, ...prev]);
+    // Refresh wallet movements from API to pick up server-created refund
+    apiFetch("/wallet/movements?page=1&page_size=9999").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){const items=d.items||d.movements||d;if(Array.isArray(items))setWalletMovements(items.map(m=>({id:m.display_id||m.id,nationalId:m.national_id||"",investor:m.investor_name||m.national_id||"",vaultKey:m.vault_key||"",type:m.type||"CREDIT",amount:String(m.amount||0),reason:m.reason||"",date:m.created_at||""})));}}).catch(()=>{});
   };
   const [tab, setTab]           = useState("open");
   const [metal, setMetal]       = useState("Gold");
@@ -6272,7 +6255,7 @@ const UserManagement = () => {
               const r=await apiFetch("/admin/users",{method:"POST",body:JSON.stringify({name_en:newUser.name,name_ar:newUser.nameAr,email:newUser.email,role:newUser.role.toLowerCase(),password:newUser.password})});
               if(r&&r.ok){
                 const apiUser=await r.json();
-                const realId=apiUser?.id||("USR-"+String(Date.now()).slice(-3));
+                const realId=apiUser?.id||apiUser?.display_id||"";
                 setUsers(p=>[...p,{id:realId,name:newUser.name,nameAr:newUser.nameAr,email:newUser.email,role:newUser.role,perms:allRolePerms[newUser.role]||[],twoFA:false,status:"ACTIVE",lastLogin:"—",sessions:0,created:new Date().toISOString().slice(0,10),log:[{date:new Date().toISOString().slice(0,16).replace("T"," "),action:"Account created",actionAr:"إنشاء الحساب",detail:"Created by Super Admin",ip:"—"}]}]);
                 setModal(null);
                 showToast(apiUser?.temp_password?(isAr?`✅ تم إنشاء المستخدم — كلمة المرور المؤقتة: ${apiUser.temp_password}`:`✅ User created — Temp password: ${apiUser.temp_password}`):(isAr?"✅ تم إضافة المستخدم":"✅ User added"));
@@ -8282,9 +8265,9 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"معاينة الرسوم الحية (بأسعار السوق الحالية)":"Live Fee Preview (at current spot prices)"}>
           <div style={{background:C.navyDark,borderRadius:12,padding:"14px 18px"}}>
             {[
-              {metal:"Gold",   pct:storageFeeSettings?.goldAnnualPct||"0.5",    sarPerG:_sfGold?.priceSAR||285,  color:C.gold},
-              {metal:"Silver", pct:storageFeeSettings?.silverAnnualPct||"0.75", sarPerG:_sfSilver?.priceSAR||3.4,  color:"#94A3B8"},
-              {metal:"Platinum",pct:storageFeeSettings?.platinumAnnualPct||"0.6",sarPerG:_sfPlat?.priceSAR||118, color:"#A78BFA"},
+              {metal:"Gold",   pct:storageFeeSettings?.goldAnnualPct||"0",    sarPerG:_sfGold?.priceSAR||0,  color:C.gold},
+              {metal:"Silver", pct:storageFeeSettings?.silverAnnualPct||"0", sarPerG:_sfSilver?.priceSAR||0,  color:"#94A3B8"},
+              {metal:"Platinum",pct:storageFeeSettings?.platinumAnnualPct||"0",sarPerG:_sfPlat?.priceSAR||0, color:"#A78BFA"},
             ].map(({metal,pct,sarPerG,color})=>{
               const cycle = storageFeeSettings?.billingCycle||"monthly";
               const div = cycle==="monthly"?12:cycle==="quarterly"?4:1;
@@ -9965,8 +9948,8 @@ export default function App() {
     mlroName:currentAdmin||"Admin", mlroNameAr:"",
     mlroTitle:"Money Laundering Reporting Officer", mlroTitleAr:"مسؤول الإبلاغ عن غسل الأموال",
     companyName:"Tanaqul Precious Metals Trading Co.", companyNameAr:"شركة تناقل لتجارة المعادن الثمينة",
-    companyLicense:"SAMA License No. 12345", companyLicenseAr:"ترخيص ساما رقم ١٢٣٤٥",
-    companyAddress:"King Fahd Road, Riyadh 12345, Saudi Arabia", companyAddressAr:"طريق الملك فهد، الرياض ١٢٣٤٥، المملكة العربية السعودية",
+    companyLicense:"", companyLicenseAr:"",
+    companyAddress:"", companyAddressAr:"",
     complianceCycle:"6",
   });
   // Persist reportingConfig to localStorage
@@ -10330,7 +10313,7 @@ export default function App() {
       id: "AUD-"+String(Date.now()).slice(-6),
       timestamp: new Date().toISOString().slice(0,16).replace("T"," "),
       admin: currentAdmin,
-      ip: "10.0.1."+Math.floor(Math.random()*254+1),
+      ip: "dashboard",
       action, entity, details,
     };
     setAuditLog(prev => {
