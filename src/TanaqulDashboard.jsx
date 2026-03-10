@@ -2233,7 +2233,7 @@ const Financials = () => {
     }));
     addAudit("WITHDRAWAL_"+type.toUpperCase(), row.id, (row.investor||"")+" — SAR "+row.amount);
     // Refresh withdrawals from API
-    try { const wr=await apiFetch("/withdrawals"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),investor:w.investor_name||w.national_id||"",bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requestedAt:w.requested_at||"",processedAt:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
+    try { const wr=await apiFetch("/withdrawals"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.withdrawals||[];if(Array.isArray(items)&&items.length>0)setWithdrawals(items.map(w=>({id:w.display_id||w.id,_uuid:String(w.id),nationalId:w.national_id||"",amount:String(w.amount||0),investor:w.investor_name||w.national_id||"",bank:w.bank_info||"",iban:w.iban||"",status:w.status||"PENDING",requested:w.requested_at||"",processed:w.processed_at||"",rejectReason:w.reject_reason||""})));} } catch(e){}
     const msgs = isAr?{approve:"✅ تمت الموافقة على السحب",reject:"✅ تم رفض السحب",processed:"✅ تم تحديده كمعالج",notify:"✅ تم إرسال الإشعار"}:{approve:"✅ Withdrawal approved",reject:"✅ Withdrawal rejected",processed:"✅ Marked as processed",notify:"✅ Notification sent"};
     showFinToast(msgs[type]);
     setWModal(null);
@@ -8062,10 +8062,13 @@ const Settings = ({ onLangChange }) => {
     }).catch(()=>{});
     // Load gateway settings from API
     apiFetch("/settings/gateway").then(r=>r&&r.ok?r.json():null).then(d=>{
-      if(d) setGatewaySettings(p=>({...p,
-        madaFee:String(d.mada_fee||p.madaFee), madaCap:String(d.mada_cap||p.madaCap),
-        visaFee:String(d.visa_fee||p.visaFee), sadadFee:String(d.sadad_fee||p.sadadFee),
-      }));
+      if(d) {
+        setGatewaySettings(p=>({...p,
+          madaFee:String(d.mada_fee||p.madaFee), madaCap:String(d.mada_cap||p.madaCap),
+          visaFee:String(d.visa_fee||p.visaFee), sadadFee:String(d.sadad_fee||p.sadadFee),
+        }));
+        if(d.wallet_deposit!==undefined) setWalletOn(d.wallet_deposit);
+      }
     }).catch(()=>{});
     // Load cancel fee from API
     apiFetch("/settings/cancel-fee").then(r=>r&&r.ok?r.json():null).then(d=>{
