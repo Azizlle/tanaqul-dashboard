@@ -8102,7 +8102,7 @@ const Settings = ({ onLangChange }) => {
     apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
     apiFetch("/settings/reporting").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.sarEmail!==undefined)setReportingConfig(d);}).catch(()=>{});
-    apiFetch("/settings/manufacturers").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d))setManufacturers(d);}).catch(()=>{});
+    apiFetch("/settings/manufacturers").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(Array.isArray(d))setManufacturers(d);else if(d.items&&Array.isArray(d.items))setManufacturers(d.items);else if(d.list&&Array.isArray(d.list))setManufacturers(d.list);}}).catch(()=>{});
     apiFetch("/settings/legal").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.terms_url)setTermsUrl(d.terms_url);if(d.platform_agreement_url)setPlatformAgreementUrl(d.platform_agreement_url);if(d.booking_terms_ar)setBookingTermsAr(d.booking_terms_ar);if(d.booking_terms_en)setBookingTermsEn(d.booking_terms_en);}}).catch(()=>{});
   },[]);
   const [tab,setTab]=useState("PLATFORM");
