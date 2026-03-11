@@ -9037,13 +9037,12 @@ function LoginPage({ onLogin }) {
   },[recoveryTimer]);
 
   useEffect(() => {
-    if (step === 3) {
-      // ⚠️ SECURITY: This sends the TOTP secret to quickchart.io (third party).
-      // Production: Generate QR code client-side using a library like 'qrcode' npm package.
-      const url = `otpauth://totp/Tanaqul%3AAziz?secret=${TOTP_SECRET}&issuer=Tanaqul&digits=6&period=30`;
-      setQrUrl(`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=200&margin=2`);
+    if (step === 3 && !qrUrl && setupSecret) {
+      // Fallback: generate QR URL only if API didn't provide one
+      const url = `otpauth://totp/Tanaqul%20Admin:${encodeURIComponent(email)}?secret=${setupSecret}&issuer=Tanaqul%20Admin&digits=6&period=30`;
+      setQrUrl(`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=220&margin=2`);
     }
-  }, [step]);
+  }, [step, qrUrl, setupSecret]);
 
   const handleCredentials = async (e) => {
     e.preventDefault();
