@@ -1343,18 +1343,18 @@ const Investors = () => {
   const doAction = (inv, act) => { setSel(inv); setAction(act); setReason(""); setNotifyMsg(""); };
 
   const confirmAction = async () => {
-    const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE"}[action];
-    const msgs = {suspend:"Investor suspended — appointments auto-cancelled",activate:"Investor reactivated",ban:"Investor banned — appointments auto-cancelled",unban:"Investor unbanned",notify:"Notification sent"};
+    const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE",approve:"ACTIVE",reject:"REJECTED"}[action];
+    const msgs = {suspend:"Investor suspended — appointments auto-cancelled",activate:"Investor reactivated",ban:"Investor banned — appointments auto-cancelled",unban:"Investor unbanned",notify:"Notification sent",approve:"Company investor approved",reject:"Company investor rejected"};
     try {
       const uid = sel._uuid || sel.id;
-      const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/unban"}[action];
+      const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/unban",approve:"/investors/"+uid+"/approve",reject:"/investors/"+uid+"/reject"}[action];
       if(endpoint) {
         const r = await apiFetch(endpoint, {method:"POST", body:JSON.stringify({reason:reason||"No reason provided"})});
         if(r && !r.ok) { showToast("⚠️ Backend error — action not applied"); setSel(null); setAction(""); return; }
         // Refresh investor list after status change
         try {
           const ir = await apiFetch("/investors?page=1&page_size=9999");
-          if(ir&&ir.ok){ const id2=await ir.json(); const items=id2.items||id2.investors||[]; if(Array.isArray(items)&&items.length>0) setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));}
+          if(ir&&ir.ok){ const id2=await ir.json(); const items=id2.items||id2.investors||[]; if(Array.isArray(items)&&items.length>0) setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||"",investorType:inv.investor_type||"INDIVIDUAL",companyNameEn:inv.company_name_en||"",companyNameAr:inv.company_name_ar||"",unifiedNationalNumber:inv.unified_national_number||"",authorizedPersonName:inv.authorized_person_name||"",authorizedPersonId:inv.authorized_person_id||"",authDocumentName:inv.auth_document_name||"",rejectReason:inv.reject_reason||""})));}
         } catch(e2){}
       }
       // Optimistic update (only after successful API call)
@@ -1393,11 +1393,12 @@ const Investors = () => {
           onPDF={()=>{/* PDF generation placeholder */}}
         />}
       />
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:22}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.investors(22,C.navy)} title={t("Total")} value={investors.length} />
         <StatCard icon={Icons.check(22,C.greenSolid)} title={t("Active")} value={investors.filter(i=>i.status==="ACTIVE").length} />
         <StatCard icon={Icons.pending(22,"#D4943A")} title={t("Suspended")} value={investors.filter(i=>i.status==="SUSPENDED").length} />
         <StatCard icon={Icons.blacklist(22,"#C85C3E")} title={t("Banned")} value={investors.filter(i=>i.status==="BANNED").length} />
+        <StatCard icon={Icons.pending(22,"#C4956A")} title={isAr?"شركات معلقة":"Pending Companies"} value={investors.filter(i=>["PENDING_DOCUMENT","PENDING_APPROVAL"].includes(i.status)).length} />
         <StatCard icon={Icons.aum(22,C.gold)} title={t("Total Holdings")} value={<SARAmount amount={(investors||[]).reduce((a,i)=>a+(parseFloat((i.holdingsValue||"0").toString().replace(/,/g,""))||0),0).toLocaleString("en-SA",{maximumFractionDigits:0})}/>} gold />
       </div>
 <div style={{display:"flex",gap:10,marginBottom:8,flexWrap:"wrap",alignItems:"center"}}>
@@ -1405,7 +1406,7 @@ const Investors = () => {
           style={{flex:1,minWidth:200,padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:16,outline:"none"}} />
       </div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:16}}>
-        {[["ALL","الكل"],["ACTIVE","نشط"],["SUSPENDED","موقوف"],["BANNED","محظور"]].map(([f,fAr])=>(
+        {[["ALL","الكل"],["ACTIVE","نشط"],["PENDING_DOCUMENT","بانتظار المستند"],["PENDING_APPROVAL","بانتظار الموافقة"],["REJECTED","مرفوض"],["SUSPENDED","موقوف"],["BANNED","محظور"]].map(([f,fAr])=>(
           <button key={f} onClick={()=>setFilter(f)} style={{padding:"7px 16px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",
             border:`1px solid ${filter===f?C.navy:C.border}`,background:filter===f?C.navy:C.white,color:filter===f?C.white:C.textMuted}}>{isAr?fAr:f}</button>
         ))}
@@ -1425,6 +1426,7 @@ const Investors = () => {
                 {soonExpiry&&<span style={{fontSize:11,fontWeight:700,color:"#D4943A",background:"#FDF4EC",borderRadius:4,padding:"1px 5px"}}>{isAr?"⚠ KYC قارب الانتهاء":"⚠ KYC expiring"}</span>}
                 {noShowWarn&&<span style={{fontSize:11,fontWeight:700,color:"#C85C3E",background:C.redBg,borderRadius:4,padding:"1px 5px"}}>{isAr?`🚫 ${row.noShowCount} عدم حضور`:`🚫 ${row.noShowCount} no-shows`}</span>}
                 {isBlacklisted&&<span style={{fontSize:11,fontWeight:700,color:C.purpleSolid,background:C.purpleBg,borderRadius:4,padding:"1px 5px"}}>{isAr?"🚫 محظور":"🚫 Blacklisted"}</span>}
+                {row.investorType==="COMPANY"&&<span style={{fontSize:11,fontWeight:700,color:"#1565C0",background:"#E3F2FD",borderRadius:4,padding:"1px 5px"}}>{isAr?"🏢 شركة":"🏢 Company"}</span>}
               </div>
             </div>
           );
@@ -1440,6 +1442,9 @@ const Investors = () => {
             {row.status==="ACTIVE"&&<><Btn small variant="ghost" onClick={()=>doAction(row,"suspend")}>{t("Suspend")}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"ban")}>{t("Ban")}</Btn></>}
             {row.status==="SUSPENDED"&&<><Btn small variant="teal" onClick={()=>doAction(row,"activate")}>{t("Activate")}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"ban")}>{t("Ban")}</Btn></>}
             {row.status==="BANNED"&&<Btn small variant="teal" onClick={()=>doAction(row,"unban")}>{t("Unban")}</Btn>}
+            {row.status==="PENDING_APPROVAL"&&<><Btn small variant="teal" onClick={()=>doAction(row,"approve")}>{isAr?"موافقة":"Approve"}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"reject")}>{isAr?"رفض":"Reject"}</Btn></>}
+            {row.status==="REJECTED"&&<Btn small variant="outline" onClick={()=>doAction(row,"view")}>{isAr?"عرض":"View"}</Btn>}
+            {row.status==="PENDING_DOCUMENT"&&<Btn small variant="outline" onClick={()=>doAction(row,"view")}>{isAr?"عرض":"View"}</Btn>}
             <Btn small variant="ghost" onClick={()=>doAction(row,"notify")}>{t("Notify")}</Btn>
             <Btn small variant="outline" onClick={()=>doAction(row,"timeline")} style={{color:C.purpleSolid,borderColor:C.purpleSolid}}>📜 {isAr?"السجل":"Timeline"}</Btn>
           </div>
@@ -1451,7 +1456,14 @@ const Investors = () => {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>
           {[[isAr?"المعرف":"ID",sel.id],[isAr?"الاسم العربي":"Arabic Name",sel.nameAr],[isAr?"مفتاح الخزنة":"Vault Key",sel.vaultKey],[isAr?"الحالة":"Status",sel.status],
             [isAr?"تاريخ الانضمام":"Joined",sel.joined],[isAr?"ذهب":"Gold",sel.gold+"g"],[isAr?"فضة":"Silver",sel.silver+"g"],[isAr?"بلاتين":"Platinum",sel.platinum+"g"],
-            [isAr?"الممتلكات":"Holdings",sel.holdingsValue],[isAr?"رقم الهوية":"National ID",sel.nationalId||"—"],[isAr?"المحفظة":"Wallet",sel.wallet]].map(([k,v])=>(
+            [isAr?"الممتلكات":"Holdings",sel.holdingsValue],[isAr?"رقم الهوية":"National ID",sel.nationalId||"—"],[isAr?"المحفظة":"Wallet",sel.wallet],...(sel.investorType==="COMPANY" ? [
+  [isAr?"نوع الحساب":"Account Type",isAr?"شركة":"Company"],
+  [isAr?"اسم الشركة":"Company Name",sel.companyNameEn],
+  [isAr?"اسم الشركة (عربي)":"Company Name (AR)",sel.companyNameAr],
+  [isAr?"الرقم الوطني الموحد":"Unified National Number",sel.unifiedNationalNumber],
+  [isAr?"الشخص المفوض":"Authorized Person",sel.authorizedPersonName],
+  [isAr?"هوية المفوض":"Auth Person ID",sel.authorizedPersonId],
+] : [])].map(([k,v])=>(
             <div key={k} style={{display:"flex",flexDirection:"column",padding:"9px 10px",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:12,color:C.textMuted,fontWeight:600,textTransform:"uppercase"}}>{k}</span>
               <span style={{fontSize:16,fontWeight:600,color:C.navy,marginTop:2,wordBreak:"break-all"}}>{v}</span>
@@ -1463,25 +1475,28 @@ const Investors = () => {
           {sel.status==="BANNED"&&<Btn variant="teal" onClick={()=>setAction("unban")}>{t("Unban")}</Btn>}
           {sel.status==="ACTIVE"&&<Btn variant="ghost" onClick={()=>setAction("suspend")}>{t("Suspend")}</Btn>}
           {sel.status==="SUSPENDED"&&<Btn variant="teal" onClick={()=>setAction("activate")}>{t("Activate")}</Btn>}
+          {sel.authDocumentName&&<Btn variant="outline" onClick={async()=>{try{const uid=sel._uuid||sel.id;const r=await apiFetch("/investors/"+uid+"/document");if(r&&r.ok){const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=sel.authDocumentName;a.click();URL.revokeObjectURL(url);}}catch(e){showToast("⚠️ Error downloading document");}}}>{isAr?"📄 تحميل المستند":"📄 Download Doc"}</Btn>}
           <Btn variant="outline" onClick={()=>doAction(sel,"notify")}>{isAr?"إرسال إشعار":"Send Notification"}</Btn>
           <Btn variant="ghost" onClick={()=>{setSel(null);setAction(null);}}>{isAr?"إغلاق":"Close"}</Btn>
         </div>
       </Modal>}
 
       {/* Confirm Action Modals */}
-      {["suspend","ban","unban","activate"].includes(action)&&sel&&<Modal
-        title={{suspend:isAr?"تعليق المستثمر":"Suspend Investor",ban:isAr?"حظر المستثمر":"Ban Investor",unban:isAr?"رفع الحظر عن المستثمر":"Unban Investor",activate:isAr?"إعادة تفعيل المستثمر":"Reactivate Investor"}[action]}
+      {["suspend","ban","unban","activate","approve","reject"].includes(action)&&sel&&<Modal
+        title={{suspend:isAr?"تعليق المستثمر":"Suspend Investor",ban:isAr?"حظر المستثمر":"Ban Investor",unban:isAr?"رفع الحظر عن المستثمر":"Unban Investor",activate:isAr?"إعادة تفعيل المستثمر":"Reactivate Investor",approve:isAr?"الموافقة على الشركة":"Approve Company",reject:isAr?"رفض الشركة":"Reject Company"}[action]}
         onClose={()=>{setSel(null);setAction(null);}}>
-        <div style={{background:{suspend:"#FDF4EC",ban:C.redBg,unban:"#EFF5F2",activate:"#EFF5F2"}[action],borderRadius:10,padding:"10px 14px",marginBottom:14}}>
-          <p style={{fontSize:15,color:{suspend:"#8B6540",ban:"#C85C3E",unban:C.greenSolid,activate:C.greenSolid}[action],fontWeight:600}}>
+        <div style={{background:{suspend:"#FDF4EC",ban:C.redBg,unban:"#EFF5F2",activate:"#EFF5F2",approve:"#EFF5F2",reject:C.redBg}[action],borderRadius:10,padding:"10px 14px",marginBottom:14}}>
+          <p style={{fontSize:15,color:{suspend:"#8B6540",ban:"#C85C3E",unban:C.greenSolid,activate:C.greenSolid,approve:C.greenSolid,reject:"#C85C3E"}[action],fontWeight:600}}>
             {action==="suspend"&&<>{isAr?"المستثمر يمكنه تسجيل الدخول لكن لا يمكنه الشراء أو البيع أو اتخاذ إجراءات.":"Investor can still login but cannot buy, sell or take actions."} <br/><span style={{fontSize:13,color:"#8B6540"}}>{isAr?"⚠️ ملاحظة: الأوامر المفتوحة ستبقى في دفتر الأوامر — قم بإلغائها يدوياً.":"⚠️ Note: Any open orders will remain in the Order Book — cancel them manually in Order Book."}</span></>}
             {action==="ban"&&(isAr?"الحظر مرتبط برقم الهوية. لا يمكنه تسجيل الدخول أو إعادة التسجيل.":"Ban is tied to National ID. Investor cannot login or re-register.")}
             {action==="unban"&&(isAr?"سيتم استعادة حالة المستثمر إلى نشط.":"Investor will be restored to ACTIVE status.")}
             {action==="activate"&&(isAr?"سيتم إعادة تفعيل المستثمر بالكامل.":"Investor will be fully reactivated.")}
+            {action==="approve"&&(isAr?"سيتم تفعيل حساب الشركة بالكامل.":"Company account will be fully activated.")}
+            {action==="reject"&&(isAr?"سيتم رفض المستند وإبلاغ الشركة بالسبب. يمكنهم إعادة رفع مستند جديد.":"Document will be rejected and the company will be notified with the reason. They can re-upload a new document.")}
           </p>
         </div>
         <p style={{fontSize:15,color:C.navy,fontWeight:600,marginBottom:6}}>{isAr?"المستثمر:":"Investor:"} <span style={{color:C.teal}}>{sel.nameEn}</span> ({sel.id})</p>
-        {(action==="suspend"||action==="ban")&&(
+        {(action==="suspend"||action==="ban"||action==="reject")&&(
           <div style={{marginBottom:14}}>
             <label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5}}>{isAr?"السبب (مطلوب)":"REASON (required)"}</label>
             <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder={isAr?"أدخل السبب...":"Enter reason..."}
@@ -1489,8 +1504,8 @@ const Investors = () => {
           </div>
         )}
         <div style={{display:"flex",gap:8}}>
-          <Btn variant={{suspend:"ghost",ban:"danger",unban:"teal",activate:"teal"}[action]}
-            onClick={()=>{if((action==="suspend"||action==="ban")&&!reason.trim()){showToast("⚠️ Please enter a reason");return;}confirmAction();}}>
+          <Btn variant={{suspend:"ghost",ban:"danger",unban:"teal",activate:"teal",approve:"teal",reject:"danger"}[action]}
+            onClick={()=>{if((action==="suspend"||action==="ban"||action==="reject")&&!reason.trim()){showToast("⚠️ Please enter a reason");return;}confirmAction();}}>
             {isAr?"تأكيد":"Confirm"} {action.charAt(0).toUpperCase()+action.slice(1)}
           </Btn>
           <Btn variant="outline" onClick={()=>{setSel(null);setAction(null);}}>{t("Cancel")}</Btn>
@@ -1938,7 +1953,7 @@ const Appointments = () => {
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Refresh appointments and investors from API
               try { const ar=await apiFetch("/appointments?page=1&page_size=9999"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",qty:a.quantity||"",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||"",investorPhone:a.investor_phone||""})));} } catch(e2){}
-              try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||"",investorType:inv.investor_type||"INDIVIDUAL",companyNameEn:inv.company_name_en||"",companyNameAr:inv.company_name_ar||"",unifiedNationalNumber:inv.unified_national_number||"",authorizedPersonName:inv.authorized_person_name||"",authorizedPersonId:inv.authorized_person_id||"",authDocumentName:inv.auth_document_name||"",rejectReason:inv.reject_reason||""})));} } catch(e2){}
               // Refresh wallet movements from API to pick up server-created refund
               try { const wr=await apiFetch("/wallet/movements?page=1&page_size=9999"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.movements||wd;if(Array.isArray(items))setWalletMovements(items.map(m=>({id:m.display_id||m.id,nationalId:m.national_id||"",investor:m.investor_name||m.national_id||"",vaultKey:m.vault_key||"",type:m.type||"CREDIT",amount:String(m.amount||0),reason:m.reason||"",date:m.created_at||""})));} } catch(e3){}
               addAudit("CANCEL_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — refund SAR "+(sel.fee - cfee));
@@ -1966,7 +1981,7 @@ const Appointments = () => {
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/no-show", {method:"POST"}); } catch(e) {}
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"NO_SHOW"}:a));
               // Refresh investors from API (no-show count updated server-side)
-              try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
+              try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||"",investorType:inv.investor_type||"INDIVIDUAL",companyNameEn:inv.company_name_en||"",companyNameAr:inv.company_name_ar||"",unifiedNationalNumber:inv.unified_national_number||"",authorizedPersonName:inv.authorized_person_name||"",authorizedPersonId:inv.authorized_person_id||"",authDocumentName:inv.auth_document_name||"",rejectReason:inv.reject_reason||""})));} } catch(e2){}
               setInvestors(prev=>prev.map(inv=>{
                 return inv.nationalId===sel.nationalId ? {...inv,noShowCount:(inv.noShowCount||0)+1} : inv;
               }));
@@ -8287,7 +8302,7 @@ const Settings = ({ onLangChange }) => {
     // Load all other settings from API
     apiFetch("/settings/platform").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.name)setPlatform(d);}).catch(()=>{});
     apiFetch("/settings/blockchain").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.network_name)setNetName(d.network_name);if(d.protocol)setProtocol(d.protocol);if(d.contract)setContract(d.contract);if(d.max_mb)setMaxMB(String(d.max_mb));if(d.max_hrs)setMaxHrs(String(d.max_hrs));if(d.quorum)setQuorum(String(d.quorum));if(d.explorer_public!==undefined)setExplorerOn(d.explorer_public);if(d.explorer_url)setExplorerUrl(d.explorer_url);}}).catch(()=>{});
-    apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.test_fee)setTestFee(String(d.test_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));if(d.weekend_days)setWeekendDays(d.weekend_days);}}).catch(()=>{});
+    apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.deposit_fee)setTestFee(String(d.deposit_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));if(d.weekend_days)setWeekendDays(d.weekend_days);}}).catch(()=>{});
     apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
     apiFetch("/settings/reporting").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.sarEmail!==undefined)setReportingConfig(d);}).catch(()=>{});
@@ -8930,7 +8945,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(madaFee||1.5),mada_cap:parseFloat(madaCap||15),visa_fee:parseFloat(visaFee||2.5),sadad_fee:parseFloat(sadadFee||0),mada_limit:parseFloat(madaLimit||50000),visa_limit:parseFloat(visaLimit||0),wallet_deposit:walletOn})});}catch(e){}
           try{await apiFetch("/settings/platform",{method:"PUT",body:JSON.stringify(platform)});}catch(e){}
           try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn,explorer_url:explorerUrl})});}catch(e){}
-          try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),test_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
+          try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),deposit_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
           try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode})});}catch(e){}
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
           try{await apiFetch("/settings/reporting",{method:"PUT",body:JSON.stringify(reportingConfig)});}catch(e){}
@@ -10439,6 +10454,14 @@ export default function App() {
             kycExpiry: inv.kyc_expiry ? inv.kyc_expiry.slice(0,10) : "",
             noShowCount: inv.no_show_count || 0,
             email: inv.email || "", phone: inv.phone || "",
+            investorType: inv.investor_type || "INDIVIDUAL",
+            companyNameEn: inv.company_name_en || "",
+            companyNameAr: inv.company_name_ar || "",
+            unifiedNationalNumber: inv.unified_national_number || "",
+            authorizedPersonName: inv.authorized_person_name || "",
+            authorizedPersonId: inv.authorized_person_id || "",
+            authDocumentName: inv.auth_document_name || "",
+            rejectReason: inv.reject_reason || "",
           }));
         }},
         { path: "/vault/bars", setter: setAppBars, transform: (data) => {
