@@ -6862,18 +6862,18 @@ const AccountProfile = () => {
 
       {/* Personal Info Tab — 2 column grid */}
       {tab==="INFO"&&<div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:24,boxShadow:C.cardShadow}}>
+        <p style={{fontSize:13,color:C.textMuted,marginBottom:14,fontStyle:"italic"}}>{isAr?"الاسم والبريد والدور يتم تعيينهم من قبل المدير الأعلى ولا يمكن تعديلهم.":"Name, email, and role are set by the super admin and cannot be changed."}</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
-          <Inp label={isAr?"الاسم الكامل (إنجليزي)":"Full Name (English)"} value={profile.name} onChange={v=>setProfile(p=>({...p,name:v}))} />
-          <Inp label={isAr?"الاسم الكامل (عربي)":"Full Name (Arabic)"} value={profile.nameAr} onChange={v=>setProfile(p=>({...p,nameAr:v}))} />
-          <Inp label={isAr?"البريد الإلكتروني":"Email"} value={profile.email} onChange={v=>setProfile(p=>({...p,email:v}))} />
+          <Inp label={isAr?"الاسم الكامل (إنجليزي)":"Full Name (English)"} value={profile.name} onChange={()=>{}} disabled />
+          <Inp label={isAr?"الاسم الكامل (عربي)":"Full Name (Arabic)"} value={profile.nameAr} onChange={()=>{}} disabled />
+          <Inp label={isAr?"البريد الإلكتروني":"Email"} value={profile.email} onChange={()=>{}} disabled />
           <Inp label={isAr?"الدور":"Role"} value={isAr?profile.roleAr:profile.role} onChange={()=>{}} disabled />
         </div>
         <div style={{borderTop:`1px solid ${C.border}`,marginTop:16,paddingTop:16}}>
-          <p style={{fontSize:15,fontWeight:700,color:C.navy,marginBottom:12}}>{isAr?"أرقام الهاتف":"Phone Numbers"}</p>
+          <p style={{fontSize:15,fontWeight:700,color:C.navy,marginBottom:12}}>{isAr?"رقم الهاتف":"Phone Number"}</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
-            {/* Primary Phone */}
             <div>
-              <Inp label={isAr?"رقم الهاتف الأساسي":"Primary Phone"} value={profile.phone} onChange={v=>{setProfile(p=>({...p,phone:v,phoneVerified:false}));}} />
+              <Inp label={isAr?"رقم الهاتف":"Phone"} value={profile.phone} onChange={v=>{setProfile(p=>({...p,phone:v,phoneVerified:false}));}} />
               <div style={{display:"flex",alignItems:"center",gap:8,marginTop:-4,marginBottom:10}}>
                 {profile.phoneVerified
                   ?<span style={{fontSize:12,fontWeight:700,color:C.greenSolid,background:"#EFF5F2",padding:"3px 8px",borderRadius:6}}>✅ {isAr?"تم التحقق":"Verified"}</span>
@@ -6881,15 +6881,8 @@ const AccountProfile = () => {
                 }
               </div>
             </div>
-            {/* Recovery Phone */}
-            <div>
-              <Inp label={isAr?"هاتف الاسترداد":"Recovery Phone"} value={profile.recoveryPhone} onChange={v=>{setProfile(p=>({...p,recoveryPhone:v,recoveryPhoneVerified:false}));}} />
-              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:-4,marginBottom:10}}>
-                {profile.recoveryPhoneVerified
-                  ?<span style={{fontSize:12,fontWeight:700,color:C.greenSolid,background:"#EFF5F2",padding:"3px 8px",borderRadius:6}}>✅ {isAr?"تم التحقق":"Verified"}</span>
-                  :<button onClick={()=>sendOtp("recovery")} style={{fontSize:12,fontWeight:700,color:"#C85C3E",background:C.redBg,padding:"3px 10px",borderRadius:6,border:"none",cursor:"pointer"}}>{isAr?"تحقق الآن":"Verify Now"}</button>
-                }
-              </div>
+            <div style={{display:"flex",alignItems:"flex-end",paddingBottom:10}}>
+              <p style={{fontSize:13,color:C.textMuted,lineHeight:"1.4"}}>{isAr?"يُستخدم رقم الهاتف لاسترداد الحساب من صفحة تسجيل الدخول":"Phone number is used for account recovery from the login page"}</p>
             </div>
           </div>
         </div>
@@ -6898,12 +6891,12 @@ const AccountProfile = () => {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
             <Inp label={isAr?"بريد الاسترداد":"Recovery Email"} value={profile.recoveryEmail} onChange={v=>setProfile(p=>({...p,recoveryEmail:v}))} />
             <div style={{display:"flex",alignItems:"flex-end",paddingBottom:10}}>
-              <p style={{fontSize:13,color:C.textMuted,lineHeight:"1.4"}}>{isAr?"يُستخدم بريد وهاتف الاسترداد لاستعادة الحساب في حال فقدان كلمة المرور أو المصادقة الثنائية":"Recovery email and phone are used to restore access if you lose your password or 2FA device"}</p>
+              <p style={{fontSize:13,color:C.textMuted,lineHeight:"1.4"}}>{isAr?"يُستخدم بريد الاسترداد ورقم الهاتف لاستعادة الحساب في حال فقدان كلمة المرور أو المصادقة الثنائية من صفحة تسجيل الدخول":"Recovery email and phone are used to restore access from the login page if you lose your password or 2FA device"}</p>
             </div>
           </div>
         </div>
         <div style={{display:"flex",gap:8,marginTop:12,alignItems:"center"}}>
-          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({name:profile.name,name_ar:profile.nameAr,email:profile.email,phone:profile.phone,recovery_phone:profile.recoveryPhone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل الحفظ":"Failed to save")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async ()=>{try{const r=await apiFetch("/profile",{method:"PATCH",body:JSON.stringify({phone:profile.phone,recovery_email:profile.recoveryEmail})});if(r&&r.ok){showSaved();showToast(isAr?"✅ تم حفظ البيانات":"✅ Profile saved");}else{const d=await r.json().catch(()=>({}));showToast("❌ "+(d.detail||(isAr?"فشل الحفظ":"Failed to save")));}}catch(e){showToast(isAr?"❌ خطأ في الاتصال":"❌ Connection error");}}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           {saved&&<span style={{fontSize:14,color:C.greenSolid,fontWeight:600}}>✅</span>}
         </div>
       </div>}
@@ -9216,29 +9209,31 @@ function LoginPage({ onLogin }) {
               </button>
               <div style={{textAlign:"center",marginTop:14}}>
                 <button type="button" onClick={()=>{setStep(4);setError("");}} style={{background:"none",border:"none",color:"#8C7E6F",fontSize:13,fontWeight:600,cursor:"pointer",textDecoration:"underline"}}>
-                  {isAr?"لا أستطيع الدخول؟ استرداد بالهاتف":"Can't login? Recover by phone"}
+                  {isAr?"لا أستطيع الدخول؟ استرداد الحساب":"Can't login? Account recovery"}
                 </button>
               </div>
             </form>
           )}
 
-          {/* STEP 4 — Phone Recovery */}
+          {/* STEP 4 — Account Recovery (Phone or Email) */}
           {step === 4 && (
             <div>
-              <button onClick={()=>{setStep(1);setError("");}} style={{background:"none",border:"none",color:"#8C7E6F",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:14}}>← {isAr?"رجوع":"Back"}</button>
+              <button onClick={()=>{setStep(1);setError("");setRecoverySent(false);setRecoveryOtp("");}} style={{background:"none",border:"none",color:"#8C7E6F",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:14}}>← {isAr?"رجوع":"Back"}</button>
               <p style={{fontSize:22,fontWeight:700,color:"#FFFFFF",marginBottom:4,textAlign:"center"}}>{isAr?"استرداد الحساب":"Account Recovery"}</p>
-              <p style={{fontSize:14,color:"rgba(255,255,255,0.6)",marginBottom:20,textAlign:"center"}}>{isAr?"أدخل رقم الهاتف المسجّل لاسترداد حسابك":"Enter your registered phone number to recover access"}</p>
+              <p style={{fontSize:14,color:"rgba(255,255,255,0.6)",marginBottom:20,textAlign:"center"}}>{isAr?"أدخل رقم الهاتف أو بريد الاسترداد المسجّل":"Enter your registered phone or recovery email"}</p>
               {!recoverySent?(
                 <div>
-                  <label style={LBL}>{isAr?"رقم الهاتف المسجّل":"Registered Phone"}</label>
-                  <input type="tel" value={recoveryPhone} onChange={e=>setRecoveryPhone(e.target.value)}
-                    placeholder="+966 5X XXX XXXX" style={INP}
+                  <label style={LBL}>{isAr?"رقم الهاتف أو بريد الاسترداد":"Phone or Recovery Email"}</label>
+                  <input type="text" value={recoveryPhone} onChange={e=>setRecoveryPhone(e.target.value)}
+                    placeholder={isAr?"+966 5X XXX XXXX أو email@example.com":"+966 5X XXX XXXX or email@example.com"} style={INP}
                     onFocus={e=>e.target.style.border="1.5px solid #C4956A"}
                     onBlur={e=>e.target.style.border="1.5px solid rgba(255,255,255,0.12)"} />
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginTop:8}}>{error}</p>}
                   <button onClick={async()=>{
-                    if(!recoveryPhone.trim()){setError(isAr?"أدخل رقم الهاتف":"Enter phone number");return;}
-                    try{await apiFetch("/auth/recovery/send",{method:"POST",body:JSON.stringify({phone:recoveryPhone.trim()})});}catch(e){}
+                    if(!recoveryPhone.trim()){setError(isAr?"أدخل رقم الهاتف أو البريد":"Enter phone or email");return;}
+                    const val=recoveryPhone.trim();
+                    const isEmail=val.includes("@");
+                    try{await apiFetch("/auth/recovery/send",{method:"POST",body:JSON.stringify(isEmail?{recovery_email:val}:{phone:val})});}catch(e){}
                     setRecoverySent(true);setRecoveryTimer(60);setError("");
                   }} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg, #C4956A, #2D2418)",color:"#fff",border:"none",fontSize:17,fontWeight:700,cursor:"pointer",marginTop:16}}>
                     {isAr?"إرسال رمز التحقق":"Send Recovery Code"}
@@ -9260,9 +9255,11 @@ function LoginPage({ onLogin }) {
                   </p>
                   {error&&<p style={{color:"#E8826A",fontSize:14,marginBottom:8,textAlign:"center"}}>{error}</p>}
                   <button onClick={async ()=>{
+                    const val=recoveryPhone.trim();
+                    const isEmail=val.includes("@");
                     try {
-                      const res = await apiFetch("/auth/recovery/verify", {method:"POST", body:JSON.stringify({phone:recoveryPhone.trim(),otp_code:recoveryOtp})});
-                      if(res && res.ok) { onLogin(); }
+                      const res = await apiFetch("/auth/recovery/verify", {method:"POST", body:JSON.stringify(isEmail?{recovery_email:val,otp_code:recoveryOtp}:{phone:val,otp_code:recoveryOtp})});
+                      if(res && res.ok) { const d=await res.json().catch(()=>({})); if(d.access_token){localStorage.setItem("tanaqul_token",d.access_token);if(d.refresh_token)localStorage.setItem("tanaqul_refresh",d.refresh_token);} onLogin(); }
                       else { setError(isAr?"رمز خاطئ":"Invalid code"); setRecoveryOtp(""); }
                     } catch(e) { setError(isAr?"خطأ في التحقق":"Verification error"); }
                   }} style={{width:"100%",padding:"14px",borderRadius:12,background:"linear-gradient(135deg, #C4956A, #2D2418)",color:"#fff",border:"none",fontSize:17,fontWeight:700,cursor:"pointer"}}>
