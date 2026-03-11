@@ -2192,11 +2192,23 @@ const Appointments = () => {
 
 const Financials = () => {
   const { t, isAr } = useLang();
-  const { withdrawals=[], setWithdrawals=()=>{}, matches=[], walletMovements=[], addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
+  const { withdrawals=[], setWithdrawals=()=>{}, matches=[], walletMovements=[], appointments=[], addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
   const [tab,setTab]=useState("ORDERS");
   const [storageFeeConfig, setStorageFeeConfig] = useState({gold_rate_percent:0.5,silver_rate_percent:0.75,platinum_rate_percent:0.6,grace_period_days:5});
   const [storageFeeHistory, setStorageFeeHistory] = useState([]);
   const [sfLoading, setSfLoading] = useState(false);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [subLoading, setSubLoading] = useState(false);
+  // Fetch subscriptions when tab is active
+  useEffect(()=>{
+    if(tab==="SUBSCRIPTIONS"){
+      setSubLoading(true);
+      apiFetch("/subscriptions").then(r=>r&&r.ok?r.json():null).then(d=>{
+        if(d?.items) setSubscriptions(d.items);
+        else if(Array.isArray(d)) setSubscriptions(d);
+      }).catch(()=>{}).finally(()=>setSubLoading(false));
+    }
+  },[tab]);
   // Storage fee config available via fetchApiData global refresh — no local fetch needed
   useEffect(()=>{
     if(tab==="STORAGE FEES"){
@@ -2229,6 +2241,15 @@ const Financials = () => {
   const commAll   = matches.reduce((a,m)=>a+(Number(m.commission)||0),0);
   const adminAll  = matches.reduce((a,m)=>a+(Number(m.adminFee)||0),0);
   const walBal    = (walletMovements||[]).reduce((a,w)=>{const raw=w?.amount;const amt=typeof raw==="number"?raw:(parseFloat(String(raw||"0").replace(/,/g,""))||0);return a+(w.type==="CREDIT"?amt:-amt);},0);
+  // Appointment fee income (from completed/booked appointments)
+  const apptFeeIncome = (appointments||[]).filter(a=>a.status!=="CANCELED"&&a.status!=="REJECTED").reduce((a,ap)=>a+(parseFloat(ap.fee)||0),0);
+  const apptFeeVat = apptFeeIncome * 0.15;
+  const apptFeeTotal = apptFeeIncome + apptFeeVat;
+  const depositAppts = (appointments||[]).filter(a=>a.type==="DEPOSIT"&&a.status!=="CANCELED"&&a.status!=="REJECTED");
+  const withdrawAppts = (appointments||[]).filter(a=>a.type==="WITHDRAWAL"&&a.status!=="CANCELED"&&a.status!=="REJECTED");
+  // Subscription income
+  const subIncome = subscriptions.filter(s=>s.status==="ACTIVE"||s.status==="active").reduce((a,s)=>a+(parseFloat(s.price_monthly||s.amount)||0),0);
+  const subVat = subIncome * 0.15;
 
   const doWithdrawal = (row, type) => { setWModal({type,row}); setWReason(""); };
 
@@ -2268,12 +2289,17 @@ const Financials = () => {
         <StatCard icon={Icons.commission(22,C.gold)} title={isAr?"العمولة اليوم":"Commission Today"} value={<SARAmount amount={fmtK(commToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(commAll)} gold />
         <StatCard icon={Icons.settings(22,C.textMuted)} title={isAr?"رسوم الإدارة اليوم":"Admin Fees Today"} value={<SARAmount amount={fmtK(adminToday)}/>} sub={(isAr?"الكل: ":"All: ")+fmtK(adminAll)} />
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:14}}>
         <StatCard icon={Icons.pending(22,"#D4943A")} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={withdrawals.filter(w=>w.status==="PENDING").length+(isAr?" طلب":" requests")} />
         <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walBal))}/>} />
         <StatCard icon={Icons.vault(22,"#7C3AED")} title={isAr?"رسوم التخزين (هذه الدورة)":"Storage Fees (This Cycle)"} value={<SARAmount amount={fmtK(storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.total_fee||r.fee_sar)||0),0))}/>} sub={storageFeeHistory.filter(r=>r.status==="OVERDUE").length>0?"⚠️ "+storageFeeHistory.filter(r=>r.status==="OVERDUE").length+" overdue":""} />
       </div>
-      <TabBar tabs={isAr?[{id:"ORDERS",label:"الطلبات"},{id:"WALLET MOVEMENTS",label:"حركات المحفظة"},{id:"WITHDRAWAL REQUESTS",label:"طلبات السحب"},{id:"STORAGE FEES",label:"رسوم التخزين"}]:["ORDERS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS","STORAGE FEES"]} active={tab} onChange={setTab} />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
+        <StatCard icon={<span style={{fontSize:18}}>🏦</span>} title={isAr?"إيرادات رسوم المواعيد":"Appointment Fee Income"} value={<SARAmount amount={fmtK(apptFeeIncome)}/>} sub={(isAr?"+ ض.ق.م: ":"+ VAT: ")+fmtK(apptFeeVat)+" → "+fmtK(apptFeeTotal)} gold />
+        <StatCard icon={<span style={{fontSize:18}}>⭐</span>} title={isAr?"إيرادات الاشتراكات":"Subscription Income"} value={<SARAmount amount={fmtK(subIncome)}/>} sub={(isAr?"مشتركون نشطون: ":"Active subs: ")+subscriptions.filter(s=>s.status==="ACTIVE"||s.status==="active").length} gold />
+        <StatCard icon={<span style={{fontSize:18}}>📊</span>} title={isAr?"إجمالي الإيرادات":"Total Revenue"} value={<SARAmount amount={fmtK(commAll+adminAll+apptFeeIncome+subIncome)}/>} sub={isAr?"العمولات + الرسوم + المواعيد + الاشتراكات":"Commission + Fees + Appointments + Subs"} />
+      </div>
+      <TabBar tabs={isAr?[{id:"ORDERS",label:"الطلبات"},{id:"PURCHASE SLIPS",label:"إيصالات الشراء"},{id:"WALLET MOVEMENTS",label:"حركات المحفظة"},{id:"WITHDRAWAL REQUESTS",label:"طلبات السحب"},{id:"APPOINTMENT FEES",label:"رسوم المواعيد"},{id:"SUBSCRIPTIONS",label:"الاشتراكات"},{id:"STORAGE FEES",label:"رسوم التخزين"}]:["ORDERS","PURCHASE SLIPS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS","APPOINTMENT FEES","SUBSCRIPTIONS","STORAGE FEES"]} active={tab} onChange={setTab} />
       {tab==="ORDERS"&&<>
         {matches.length>0&&<div style={{background:C.greenBg,borderRadius:10,padding:"8px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:14,fontWeight:700,color:C.greenSolid}}>{isAr?`✅ ${matches.length} تطابق مباشر من جلسة التداول اليوم`:`✅ ${matches.length} live match${matches.length!==1?"es":""} from today's trading session`}</span>
@@ -2288,6 +2314,81 @@ const Financials = () => {
         {key:"method",label:isAr?"طريقة الدفع":"Method"},{key:"total",label:isAr?"الإجمالي":"Total",render:v=><SARAmount amount={v}/>},
         {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},{key:"date",label:isAr?"التاريخ":"Date"},
       ]} rows={txRows} /></>}
+      {tab==="PURCHASE SLIPS"&&<>
+        <div style={{background:"#FFF8E1",border:"1px solid #FFE082",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:12}}>
+          <span style={{fontSize:18}}>🧾</span>
+          <div>
+            <p style={{fontSize:14,fontWeight:700,color:"#E65100",margin:"0 0 4px"}}>{isAr?"إيصالات شراء وبيع المعادن — عمولة + ض.ق.م 15%":"Metal Purchase & Sale Slips — Commission + 15% VAT"}</p>
+            <p style={{fontSize:12,color:"#BF360C",margin:0}}>{isAr?"كل عملية تداول تتضمن عمولة المنصة + 15% ضريبة قيمة مضافة على العمولة. الإلغاء يعني استرداد كامل.":"Each trade includes platform commission + 15% VAT on commission. Dropped orders are fully refunded."}</p>
+          </div>
+        </div>
+        {/* Summary cards */}
+        {(()=>{
+          const buyTrades = matches.filter(m=>m.side==="BUY"||!m.side);
+          const sellTrades = matches.filter(m=>m.side==="SELL");
+          const totalComm = matches.reduce((a,m)=>a+(Number(m.commission)||0),0);
+          const totalVat = totalComm * 0.15;
+          return <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+            {[
+              {label:isAr?"عمليات الشراء":"Buy Trades",val:String(buyTrades.length),color:"#166534",bg:"#F0FDF4"},
+              {label:isAr?"عمليات البيع":"Sell Trades",val:String(sellTrades.length),color:"#9333EA",bg:"#FAF5FF"},
+              {label:isAr?"إجمالي العمولات":"Total Commission",val:"SAR "+fmtK(totalComm),color:C.gold,bg:C.cream},
+              {label:isAr?"ض.ق.م على العمولات":"VAT on Commission",val:"SAR "+fmtK(totalVat),color:"#E65100",bg:"#FFF8E1"},
+            ].map(c=>(
+              <div key={c.label} style={{background:c.bg,borderRadius:10,padding:"12px 16px",border:`1px solid ${c.color}22`}}>
+                <p style={{fontSize:11,fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:0.5,margin:"0 0 4px"}}>{c.label}</p>
+                <p style={{fontSize:20,fontWeight:700,color:c.color,margin:0,fontFamily:"'DM Mono',monospace"}}>{c.val}</p>
+              </div>
+            ))}
+          </div>;
+        })()}
+        <TTable cols={[
+          {key:"id",label:isAr?"رقم العملية":"Trade ID"},
+          {key:"investor",label:isAr?"المستثمر":"Investor",render:(v,row)=>row.filledFor||v},
+          {key:"side",label:isAr?"النوع":"Side",render:v=><span style={{padding:"2px 10px",borderRadius:4,fontSize:11,fontWeight:700,background:v==="BUY"?"#F0FDF4":"#FFF8E1",color:v==="BUY"?"#166534":"#9A3412",border:`1px solid ${v==="BUY"?"#86EFAC":"#FFE082"}`}}>{v==="BUY"?(isAr?"شراء":"BUY"):(isAr?"بيع":"SELL")}</span>},
+          {key:"metal",label:isAr?"المعدن":"Metal"},
+          {key:"grams",label:isAr?"الكمية (جم)":"Qty (g)",render:v=><span style={{fontFamily:"monospace",fontWeight:600}}>{v}g</span>},
+          {key:"price",label:isAr?"سعر الجرام":"Price/g",render:v=><SARAmount amount={(Number(v)||0).toFixed(2)}/>},
+          {key:"metalCost",label:isAr?"قيمة المعدن":"Metal Cost",render:v=><SARAmount amount={(Number(v)||0).toFixed(2)}/>},
+          {key:"commission",label:isAr?"العمولة":"Commission",render:v=><span style={{color:C.gold,fontFamily:"'DM Mono',monospace"}}>SAR {(Number(v)||0).toFixed(2)}</span>},
+          {key:"vat",label:isAr?"ض.ق.م 15%":"VAT 15%",render:v=><span style={{color:"#E65100",fontFamily:"'DM Mono',monospace"}}>SAR {(Number(v)||0).toFixed(2)}</span>},
+          {key:"grandTotal",label:isAr?"الإجمالي":"Grand Total",render:v=><span style={{fontWeight:700,fontFamily:"'DM Mono',monospace"}}>SAR {(Number(v)||0).toFixed(2)}</span>},
+          {key:"status",label:isAr?"الحالة":"Status",render:v=>{
+            const isDropped = v==="DROPPED"||v==="CANCELLED";
+            const isRefunded = v==="REFUNDED";
+            return <span style={{padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700,
+              background:isDropped?C.redBg:isRefunded?"#E0F2FE":C.greenBg,
+              color:isDropped?C.red:isRefunded?"#0369A1":C.green,
+              border:`1px solid ${isDropped?C.red:isRefunded?"#7DD3FC":C.green}33`
+            }}>{isDropped?(isAr?"ملغي / مسترد":"Dropped / Refunded"):isRefunded?(isAr?"مسترد":"Refunded"):(isAr?"مكتمل":"Completed")}</span>;
+          }},
+          {key:"date",label:isAr?"التاريخ":"Date"},
+        ]} rows={matches.map(m=>{
+          const grams = Number(m.grams||m.quantity||0);
+          const price = Number(m.pricePerGram||m.price||0);
+          const metalCost = Number(m.totalSAR||0);
+          const comm = Number(m.commission||0);
+          const vat = comm * 0.15;
+          const isBuy = (m.side||"BUY")==="BUY";
+          const grandTotal = isBuy ? metalCost + comm + vat : metalCost - comm - vat;
+          return {
+            id: m.id||m.display_id||"—",
+            investor: m.filledFor||m.investor||"—",
+            filledFor: m.filledFor,
+            side: m.side||"BUY",
+            metal: m.metal||"Gold",
+            grams: grams,
+            price: price,
+            metalCost: metalCost,
+            commission: comm,
+            vat: vat,
+            grandTotal: grandTotal,
+            status: m.status||"COMPLETED",
+            date: m.date||"",
+          };
+        })} />
+        {matches.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted,fontSize:14}}>{isAr?"لا توجد عمليات تداول بعد":"No trades recorded yet"}</div>}
+      </>}
       {tab==="WALLET MOVEMENTS"&&<TTable cols={[
         {key:"id",label:isAr?"المعرف":"ID"},{key:"investor",label:isAr?"المستثمر":"Investor"},
         {key:"vaultKey",label:isAr?"مفتاح الخزنة":"Vault Key",render:v=><span style={{fontFamily:"monospace",fontSize:12,color:C.teal}}>{v}</span>},
@@ -2317,6 +2418,98 @@ const Financials = () => {
         ]} rows={withdrawals} />
       </>}
 
+      {/* ─── APPOINTMENT FEES TAB ─── */}
+      {tab==="APPOINTMENT FEES"&&<>
+        <div style={{background:"#FFF8E1",border:"1px solid #FFE082",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:12}}>
+          <span style={{fontSize:18}}>🏦</span>
+          <div>
+            <p style={{fontSize:14,fontWeight:700,color:"#E65100",margin:"0 0 4px"}}>{isAr?"رسوم المواعيد + ضريبة القيمة المضافة 15%":"Appointment Fees + 15% VAT"}</p>
+            <p style={{fontSize:12,color:"#BF360C",margin:0}}>
+              {isAr?"رسوم ثابتة تُحصّل عند حجز موعد إيداع أو سحب معدن. الرسوم مستقلة وغير مرتبطة بالوزن. سحب النقد مجاني وفقاً للأنظمة السعودية.":"Flat fees charged when booking a metal deposit or withdrawal appointment. Fees are standalone, not gram-related. Cash withdrawal is FREE per Saudi regulations."}
+            </p>
+          </div>
+        </div>
+        {/* Summary cards */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+          {[
+            {label:isAr?"إيداع معدن (عدد)":"Metal Deposits",val:String(depositAppts.length),color:"#166534",bg:"#F0FDF4"},
+            {label:isAr?"سحب معدن (عدد)":"Metal Withdrawals",val:String(withdrawAppts.length),color:"#9333EA",bg:"#FAF5FF"},
+            {label:isAr?"إجمالي الرسوم قبل الضريبة":"Total Fees (excl. VAT)",val:"SAR "+fmtK(apptFeeIncome),color:C.gold,bg:C.cream},
+            {label:isAr?"الإجمالي شامل الضريبة":"Total (incl. 15% VAT)",val:"SAR "+fmtK(apptFeeTotal),color:"#E65100",bg:"#FFF8E1"},
+          ].map(c=>(
+            <div key={c.label} style={{background:c.bg,borderRadius:10,padding:"12px 16px",border:`1px solid ${c.color}22`}}>
+              <p style={{fontSize:11,fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:0.5,margin:"0 0 4px"}}>{c.label}</p>
+              <p style={{fontSize:20,fontWeight:700,color:c.color,margin:0,fontFamily:"'DM Mono',monospace"}}>{c.val}</p>
+            </div>
+          ))}
+        </div>
+        <TTable cols={[
+          {key:"id",label:isAr?"رقم الموعد":"Appt ID"},
+          {key:"investor",label:isAr?"المستثمر":"Investor"},
+          {key:"type",label:isAr?"النوع":"Type",render:v=><Badge label={v==="DEPOSIT"?(isAr?"إيداع معدن":"Metal Deposit"):(isAr?"سحب معدن":"Metal Withdrawal")}/>},
+          {key:"metal",label:isAr?"المعدن":"Metal"},
+          {key:"fee",label:isAr?"الرسوم":"Fee",render:v=><SARAmount amount={v}/>},
+          {key:"vat",label:isAr?"ض.ق.م 15%":"VAT 15%",render:v=><span style={{color:"#E65100",fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(v)*0.15).toFixed(2)}</span>},
+          {key:"total",label:isAr?"الإجمالي":"Total (incl. VAT)",render:(_,row)=><span style={{fontWeight:700,color:C.gold,fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(row.fee||0)*1.15).toFixed(2)}</span>},
+          {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+          {key:"date",label:isAr?"التاريخ":"Date"},
+        ]} rows={(appointments||[]).filter(a=>a.status!=="CANCELED"&&a.status!=="REJECTED").map(a=>({
+          id:a.id, investor:a.investor, type:a.type, metal:a.metal||"Gold",
+          fee:String(a.fee||0), vat:String(a.fee||0), total:String((parseFloat(a.fee||0)*1.15).toFixed(2)),
+          status:a.status, date:a.date,
+        }))} />
+        {(appointments||[]).filter(a=>a.status!=="CANCELED"&&a.status!=="REJECTED").length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted,fontSize:14}}>{isAr?"لا توجد مواعيد مسجلة بعد":"No appointments recorded yet"}</div>}
+      </>}
+
+      {/* ─── SUBSCRIPTIONS TAB ─── */}
+      {tab==="SUBSCRIPTIONS"&&<>
+        <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:12}}>
+          <span style={{fontSize:18}}>⭐</span>
+          <div>
+            <p style={{fontSize:14,fontWeight:700,color:"#166534",margin:"0 0 4px"}}>{isAr?"إيرادات الاشتراكات + ضريبة القيمة المضافة 15%":"Subscription Revenue + 15% VAT"}</p>
+            <p style={{fontSize:12,color:"#15803D",margin:0}}>
+              {isAr?"اشتراكات شهرية للمركز الذكي (تنبيهات، شراء/بيع تلقائي، مساعد AI). كل فاتورة اشتراك تتضمن ضريبة 15%.":"Monthly Smart Hub subscriptions (alerts, auto-trade, AI assistant). Each subscription invoice includes 15% VAT."}
+            </p>
+          </div>
+        </div>
+        {/* Summary cards */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+          {[
+            {label:isAr?"مشتركون نشطون":"Active Subscribers",val:String(subscriptions.filter(s=>s.status==="ACTIVE"||s.status==="active").length),color:"#166534",bg:"#F0FDF4"},
+            {label:isAr?"إيرادات شهرية":"Monthly Revenue",val:"SAR "+fmtK(subIncome),color:C.gold,bg:C.cream},
+            {label:isAr?"ض.ق.م شهرية":"Monthly VAT",val:"SAR "+fmtK(subVat),color:"#E65100",bg:"#FFF8E1"},
+            {label:isAr?"الإجمالي شامل الضريبة":"Total (incl. VAT)",val:"SAR "+fmtK(subIncome+subVat),color:"#9333EA",bg:"#FAF5FF"},
+          ].map(c=>(
+            <div key={c.label} style={{background:c.bg,borderRadius:10,padding:"12px 16px",border:`1px solid ${c.color}22`}}>
+              <p style={{fontSize:11,fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:0.5,margin:"0 0 4px"}}>{c.label}</p>
+              <p style={{fontSize:20,fontWeight:700,color:c.color,margin:0,fontFamily:"'DM Mono',monospace"}}>{c.val}</p>
+            </div>
+          ))}
+        </div>
+        <TTable cols={[
+          {key:"id",label:isAr?"المعرف":"ID"},
+          {key:"investor",label:isAr?"المستثمر":"Investor"},
+          {key:"plan",label:isAr?"الباقة":"Plan"},
+          {key:"price",label:isAr?"السعر الشهري":"Monthly Price",render:v=><SARAmount amount={v}/>},
+          {key:"vat",label:isAr?"ض.ق.م 15%":"VAT 15%",render:v=><span style={{color:"#E65100",fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(v)*0.15).toFixed(2)}</span>},
+          {key:"total",label:isAr?"الإجمالي":"Total",render:(_,row)=><span style={{fontWeight:700,color:C.gold,fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(row.price||0)*1.15).toFixed(2)}</span>},
+          {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+          {key:"startedAt",label:isAr?"تاريخ البدء":"Started"},
+          {key:"expiresAt",label:isAr?"ينتهي في":"Expires"},
+        ]} rows={subscriptions.map(s=>({
+          id:s.id||s.display_id||"—",
+          investor:s.investor_name||s.investor_id||"—",
+          plan:isAr?(s.plan_name_ar||s.plan_name||"—"):(s.plan_name_en||s.plan_name||"—"),
+          price:String(s.price_monthly||s.amount||0),
+          vat:String(s.price_monthly||s.amount||0),
+          status:s.status||"ACTIVE",
+          startedAt:(s.started_at||s.created_at||"").slice(0,10),
+          expiresAt:(s.expires_at||"").slice(0,10)||"—",
+        }))} />
+        {subLoading&&<div style={{textAlign:"center",padding:20,color:C.textMuted,fontSize:14}}>{isAr?"جاري التحميل…":"Loading…"}</div>}
+        {!subLoading&&subscriptions.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted,fontSize:14}}>{isAr?"لا توجد اشتراكات بعد. أنشئ باقات من الإعدادات → المركز الذكي.":"No subscriptions yet. Create plans from Settings → Smart Hub."}</div>}
+      </>}
+
       {/* ─── STORAGE FEES TAB ─── */}
       {tab==="STORAGE FEES"&&<>
         {/* Info banner */}
@@ -2325,7 +2518,7 @@ const Financials = () => {
           <div>
             <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>{isAr?"رسوم تخزين الخزينة":"Vault Storage Fees"}</p>
             <p style={{fontSize:12,color:"#6D28D9",margin:0}}>
-              {isAr?"رسوم حفظ سنوية تُفرض لكل دورة فوترة بناءً على قيمة الحيازات بالسعر الفوري.":"Annual custody fees charged per billing cycle based on holdings value at spot price."}
+              {isAr?"رسوم حفظ سنوية تُفرض لكل جرام بعد انتهاء فترة السماح. تُطبّق فقط على التوكنات المحفوظة في الخزنة لأكثر من فترة السماح.":"Annual custody fees charged per gram after grace period. Only applies to tokens held in the vault beyond the grace period."}
               Gold: {storageFeeConfig.gold_rate_percent}%/yr &nbsp;·&nbsp;
               Silver: {storageFeeConfig.silver_rate_percent}%/yr &nbsp;·&nbsp;
               Platinum: {(storageFeeConfig.platinum_rate_percent||storageFeeConfig.plat_rate_percent||0.6)}%/yr &nbsp;·&nbsp;
@@ -8385,7 +8578,8 @@ const Settings = ({ onLangChange }) => {
               <div key={plan.id||idx} style={{background:C.white,borderRadius:12,border:`2px solid ${plan.is_popular?C.gold:C.border}`,padding:16,position:"relative"}}>
                 {plan.is_popular&&<div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:C.gold,color:C.navy,fontSize:11,fontWeight:700,padding:"2px 12px",borderRadius:20}}>{isAr?"الأكثر شيوعاً":"POPULAR"}</div>}
                 <h4 style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:4}}>{isAr?plan.name_ar:plan.name_en}</h4>
-                <p style={{fontSize:28,fontWeight:800,color:C.gold,marginBottom:8}}>{parseFloat(plan.price_monthly||0).toLocaleString()} <span style={{fontSize:14,fontWeight:500,color:C.textMuted}}>{isAr?"ر.س/شهر":"SAR/mo"}</span></p>
+                <p style={{fontSize:28,fontWeight:800,color:C.gold,marginBottom:2}}>{parseFloat(plan.price_monthly||0).toLocaleString()} <span style={{fontSize:14,fontWeight:500,color:C.textMuted}}>{isAr?"ر.س/شهر":"SAR/mo"}</span></p>
+                <p style={{fontSize:12,color:"#E65100",fontWeight:600,marginBottom:8}}>{isAr?"شامل الضريبة:":"Incl. VAT:"} {(parseFloat(plan.price_monthly||0)*1.15).toFixed(2)} {isAr?"ر.س":"SAR"}</p>
                 <ul style={{fontSize:13,color:C.textMuted,listStyle:"none",padding:0,margin:"0 0 12px"}}>
                   {(isAr?plan.features_ar:plan.features_en||[]).map((f,i)=><li key={i} style={{padding:"3px 0",display:"flex",gap:6,alignItems:"center"}}>✓ {f}</li>)}
                 </ul>
@@ -8647,13 +8841,21 @@ const Settings = ({ onLangChange }) => {
             desks={slotDesks} setDesks={setSlotDesks}
           />
         </G>
-        <G title={isAr?"رسوم المواعيد":"Appointment Fees"}>
+        <G title={isAr?"رسوم المواعيد + ضريبة القيمة المضافة":"Appointment Fees + VAT"}>
           <div style={{background:C.purpleBg,borderRadius:10,padding:"10px 14px",marginBottom:12}}>
-            <p style={{fontSize:13,color:C.blueSolid}}>{isAr?"💡 تُحصّل هذه الرسوم عند حجز الموعد. يُسترد المبلغ ناقص 50 ريال عند الإلغاء. عدم الحضور = لا استرداد.":"💡 These fees are charged when the investor books an appointment. Cancellation refunds 50 SAR less. No Show = no refund."}</p>
+            <p style={{fontSize:13,color:C.blueSolid}}>{isAr?"💡 تُحصّل هذه الرسوم عند حجز الموعد. يُسترد المبلغ ناقص غرامة الإلغاء. عدم الحضور = لا استرداد. سحب النقد من المحفظة مجاني وفقاً للأنظمة السعودية.":"💡 These fees are charged when the investor books an appointment. Cancellation refunds minus penalty. No Show = no refund. Cash withdrawal from wallet is FREE per Saudi regulations."}</p>
           </div>
-          <Inp label={isAr?"رسوم الفحص — مواعيد الإيداع (ريال)":"Testing Fee — Deposit Appointments (SAR)"} value={testFee} onChange={setTestFee} />
-          <Inp label={isAr?"رسوم المناولة — مواعيد السحب (ريال)":"Handling Fee — Withdrawal Appointments (SAR)"} value={handFee} onChange={setHandFee} />
+          <div style={{background:"#FFF8E1",border:"1px solid #FFE082",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
+            <p style={{fontSize:13,color:"#E65100",fontWeight:600}}>{isAr?"⚖️ الأسعار أدناه قبل الضريبة. يُضاف 15% ضريبة قيمة مضافة تلقائياً عند إصدار الفاتورة.":"⚖️ Prices below are before VAT. 15% VAT is automatically added when invoicing."}</p>
+          </div>
+          <Inp label={isAr?"رسوم إيداع المعدن (ريال — قبل الضريبة)":"Metal Deposit Fee (SAR — before VAT)"} value={testFee} onChange={setTestFee} />
+          {testFee&&<p style={{fontSize:12,color:C.gold,fontWeight:600,margin:"-4px 0 8px 0"}}>{isAr?"شامل الضريبة:":"Incl. VAT:"} SAR {(parseFloat(testFee||0)*1.15).toFixed(2)}</p>}
+          <Inp label={isAr?"رسوم سحب المعدن (ريال — قبل الضريبة)":"Metal Withdrawal Fee (SAR — before VAT)"} value={handFee} onChange={setHandFee} />
+          {handFee&&<p style={{fontSize:12,color:C.gold,fontWeight:600,margin:"-4px 0 8px 0"}}>{isAr?"شامل الضريبة:":"Incl. VAT:"} SAR {(parseFloat(handFee||0)*1.15).toFixed(2)}</p>}
           <Inp label={isAr?"غرامة الإلغاء (ريال)":"Cancellation Penalty (SAR)"} value={cancelFee} onChange={setCancelFee} />
+          <div style={{background:"#E8F5E9",border:"1px solid #A5D6A7",borderRadius:10,padding:"10px 14px",marginTop:12}}>
+            <p style={{fontSize:13,color:"#2E7D32",fontWeight:600}}>{isAr?"✓ سحب النقد من المحفظة إلى الحساب البنكي — مجاني (تنظيم سعودي)":"✓ Cash withdrawal from wallet to bank — FREE (Saudi regulation)"}</p>
+          </div>
         </G>
       </div>}
       {tab==="MANUFACTURERS"&&<G title={isAr?"الشركات المصنعة":"Manufacturers"}>
