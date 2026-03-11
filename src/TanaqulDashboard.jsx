@@ -46,7 +46,8 @@ const apiLogin = async (email, password, totp_code) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await resp.json();
+  let data;
+  try { data = await resp.json(); } catch(_) { data = {}; }
   if (resp.ok) {
     if (data.requires_2fa_setup) {
       return { ok: false, status: 206, detail: "2FA_SETUP_REQUIRED", qr_code: data.qr_code, secret: data.secret };
@@ -57,7 +58,7 @@ const apiLogin = async (email, password, totp_code) => {
     localStorage.setItem("tanaqul_refresh", data.refresh_token);
     return { ok: true, data };
   }
-  return { ok: false, status: resp.status, detail: data.detail, qr_code: data.qr_code, secret: data.secret };
+  return { ok: false, status: resp.status, detail: data.detail || "Login failed", qr_code: data.qr_code, secret: data.secret };
 };
 
 // ─── Language Context ─────────────────────────────────────────────────────────
@@ -829,16 +830,16 @@ async function fetchFromProvider(providerId, apiKey) {
         `https://globalmetals.xignite.com/xGlobalMetals.json/GetRealTimeMetalQuote?Symbol=${symbol}&_Token=${apiKey}`
       );
       if (!r.ok) throw new Error(`Xignite HTTP ${r.status}`);
-      return r.json();
+      return r.json().catch(() => null);
     };
     const [gold, silver, plat] = await Promise.all([getQuote("XAUSAR"), getQuote("XAGSAR"), getQuote("XPTSAR")]);
-    const gSAR = toGram(gold.Last   * TROY_OZ_TO_GRAMS || 0);
-    const sSAR = toGram(silver.Last * TROY_OZ_TO_GRAMS || 0);
-    const pSAR = toGram(plat.Last   * TROY_OZ_TO_GRAMS || 0);
+    const gSAR = toGram((gold?.Last ?? 0)   * TROY_OZ_TO_GRAMS);
+    const sSAR = toGram((silver?.Last ?? 0) * TROY_OZ_TO_GRAMS);
+    const pSAR = toGram((plat?.Last ?? 0)   * TROY_OZ_TO_GRAMS);
     return {
-      XAU:{ symbol:"XAU",name:"Gold",    color:"#D4A017",priceSAR:gSAR,priceUSD:toUSD(gSAR),change:chg(gSAR,"XAU"),high:toGram(gold.High*TROY_OZ_TO_GRAMS||0),  low:toGram(gold.Low*TROY_OZ_TO_GRAMS||0),  open:toGram(gold.Open*TROY_OZ_TO_GRAMS||0)   },
-      XAG:{ symbol:"XAG",name:"Silver",  color:"#A89880",priceSAR:sSAR,priceUSD:toUSD(sSAR),change:chg(sSAR,"XAG"),high:toGram(silver.High*TROY_OZ_TO_GRAMS||0),low:toGram(silver.Low*TROY_OZ_TO_GRAMS||0),open:toGram(silver.Open*TROY_OZ_TO_GRAMS||0) },
-      XPT:{ symbol:"XPT",name:"Platinum",color:"#C4956A",priceSAR:pSAR,priceUSD:toUSD(pSAR),change:chg(pSAR,"XPT"),high:toGram(plat.High*TROY_OZ_TO_GRAMS||0),  low:toGram(plat.Low*TROY_OZ_TO_GRAMS||0),  open:toGram(plat.Open*TROY_OZ_TO_GRAMS||0)   },
+      XAU:{ symbol:"XAU",name:"Gold",    color:"#D4A017",priceSAR:gSAR,priceUSD:toUSD(gSAR),change:chg(gSAR,"XAU"),high:toGram((gold?.High??0)*TROY_OZ_TO_GRAMS),  low:toGram((gold?.Low??0)*TROY_OZ_TO_GRAMS),  open:toGram((gold?.Open??0)*TROY_OZ_TO_GRAMS)   },
+      XAG:{ symbol:"XAG",name:"Silver",  color:"#A89880",priceSAR:sSAR,priceUSD:toUSD(sSAR),change:chg(sSAR,"XAG"),high:toGram((silver?.High??0)*TROY_OZ_TO_GRAMS),low:toGram((silver?.Low??0)*TROY_OZ_TO_GRAMS),open:toGram((silver?.Open??0)*TROY_OZ_TO_GRAMS) },
+      XPT:{ symbol:"XPT",name:"Platinum",color:"#C4956A",priceSAR:pSAR,priceUSD:toUSD(pSAR),change:chg(pSAR,"XPT"),high:toGram((plat?.High??0)*TROY_OZ_TO_GRAMS),  low:toGram((plat?.Low??0)*TROY_OZ_TO_GRAMS),  open:toGram((plat?.Open??0)*TROY_OZ_TO_GRAMS)   },
     };
   }
 
@@ -851,7 +852,7 @@ async function fetchFromProvider(providerId, apiKey) {
     if (r.status === 401) throw new Error("Invalid API key");
     if (!r.ok) throw new Error(`ICE HTTP ${r.status}`);
     const data = await r.json();
-    const find = (sym) => data.find(d => d.symbol === sym) || {};
+    const find = (sym) => (Array.isArray(data) ? data : []).find(d => d.symbol === sym) || {};
     const gd = find("XAUSAR"), sd = find("XAGSAR"), pd = find("XPTSAR");
     const gSAR = toGram((gd.lastPrice||0)*USD_TO_SAR);
     const sSAR = toGram((sd.lastPrice||0)*USD_TO_SAR);
@@ -1173,9 +1174,9 @@ const Dashboard = () => {
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
 
   const fmtK = n => (n||0).toLocaleString("en-SA",{maximumFractionDigits:0});
-  const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
-  const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
-  const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+parseFloat(b.weight),0);
+  const goldGrams   = bars.filter(b=>b.metal==="Gold"   && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+(parseFloat(b.weight)||0),0);
+  const silverGrams = bars.filter(b=>b.metal==="Silver" && (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+(parseFloat(b.weight)||0),0);
+  const platGrams   = bars.filter(b=>b.metal==="Platinum"&& (b.status==="LINKED"||b.status==="FREE")).reduce((s2,b)=>s2+(parseFloat(b.weight)||0),0);
   const liveAUM = (goldGrams*(gp?.priceSAR||839) + silverGrams*(sp?.priceSAR||10.42) + platGrams*(pp?.priceSAR||138.5));
   const liveAUMStr = fmtK(liveAUM);
 
@@ -1208,7 +1209,7 @@ const Dashboard = () => {
     return days;
   })();
   const sparkData = spark7;
-  const sparkMax = Math.max(...sparkData);
+  const sparkMax = Math.max(...sparkData) || 1;
   const sparkPts = sparkData.map((v,i)=>`${20+i*(260/6)},${120-((v/sparkMax)*100)}`).join(" ");
   const sparkArea = `${sparkPts} ${20+6*(260/6)},120 20,120`;
   const dayLabels = isAr?["سبت","أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة"]:["Sat","Sun","Mon","Tue","Wed","Thu","Fri"];
@@ -1218,7 +1219,7 @@ const Dashboard = () => {
     ...matches.slice(-4).map(m=>({icon:"💰",text:`${m.metal} ${m.qty}g`,sub:isAr?`SAR ${fmtK(m.totalSAR)} — ${m.filledFor}`:`SAR ${fmtK(m.totalSAR)} — ${m.filledFor}`,time:m.date})),
     ...appointments.filter(a=>a.status==="BOOKED").slice(-3).map(a=>({icon:"📅",text:a.investor,sub:`${statusText(a.type,isAr)} · ${a.metal}`,time:a.date||a.slot})),
     ...withdrawals.filter(w=>w.status==="PENDING").slice(-2).map(w=>({icon:"💸",text:w.investor||w.name,sub:`SAR ${w.amount}`,time:w.date||"Today"})),
-  ].sort((a,b)=>b.time?.localeCompare(a.time)||0).slice(0,8);
+  ].sort((a,b)=>(b.time??"").localeCompare(a.time??"")||0).slice(0,8);
 
   return (
     <div>
@@ -1258,7 +1259,7 @@ const Dashboard = () => {
         <div style={{background:C.white,borderRadius:16,border:`1px solid ${C.border}`,padding:"18px 22px",boxShadow:C.cardShadow}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div><span style={{fontSize:15,fontWeight:700,color:C.navy}}>{isAr?"حجم التداول — 7 أيام":"Trading Volume — 7 Days"}</span></div>
-            {(()=>{const prev=sparkData.slice(0,3).reduce((a,v)=>a+v,0);const cur=sparkData.slice(4).reduce((a,v)=>a+v,0);const pct=prev>0?Math.round((cur-prev)/prev*100):0;const up=pct>=0;return <span style={{background:up?"#6B908022":"#C85C3E22",color:up?C.greenSolid:"#C85C3E",padding:"3px 10px",borderRadius:6,fontSize:12,fontWeight:700}}>{up?"↗":"↘"} {Math.abs(pct)}%</span>;})()}
+            {(()=>{const prev=sparkData.slice(0,3).reduce((a,v)=>a+v,0);const cur=sparkData.slice(3).reduce((a,v)=>a+v,0);const pct=prev>0?Math.round((cur-prev)/prev*100):0;const up=pct>=0;return <span style={{background:up?"#6B908022":"#C85C3E22",color:up?C.greenSolid:"#C85C3E",padding:"3px 10px",borderRadius:6,fontSize:12,fontWeight:700}}>{up?"↗":"↘"} {Math.abs(pct)}%</span>;})()}
           </div>
           <svg viewBox="0 0 300 140" style={{width:"100%",height:120}}>
             <defs><linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.gold} stopOpacity="0.35"/><stop offset="100%" stopColor={C.gold} stopOpacity="0.02"/></linearGradient></defs>
@@ -1347,14 +1348,14 @@ const Investors = () => {
       const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/unban"}[action];
       if(endpoint) {
         const r = await apiFetch(endpoint, {method:"POST", body:JSON.stringify({reason:reason||"No reason provided"})});
-        if(r && !r.ok) showToast("⚠️ Backend error — changes saved locally only","warn");
+        if(r && !r.ok) { showToast("⚠️ Backend error — action not applied"); setSel(null); setAction(""); return; }
         // Refresh investor list after status change
         try {
           const ir = await apiFetch("/investors?page=1&page_size=9999");
-          if(ir&&ir.ok){ const id2=await ir.json(); const items=id2.items||id2.investors||[]; if(Array.isArray(items)&&items.length>0) setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} 
+          if(ir&&ir.ok){ const id2=await ir.json(); const items=id2.items||id2.investors||[]; if(Array.isArray(items)&&items.length>0) setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));}
         } catch(e2){}
       }
-      // Optimistic update
+      // Optimistic update (only after successful API call)
       setInvestors(prev => prev.map(i => i.id===sel.id ? {...i, status:newStatus} : i));
       if(action==="suspend" || action==="ban") {
         setAppointments(prev => prev.map(a => {
@@ -1714,7 +1715,7 @@ const Vault = () => {
         if(nr&&nr.ok){const d=await nr.json();setTokenStats({floating:d.tokens?.floating||0,linked:d.tokens?.linked||0,total:d.tokens?.total_active||0});}
       }catch(e){}
     })();
-  },[bars]);
+  },[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [barsModal,setBarsModal]=useState(null);
   const [vaultToast,setVaultToast]=useState("");
@@ -2268,7 +2269,7 @@ const Financials = () => {
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
         <StatCard icon={Icons.pending(22,"#D4943A")} title={isAr?"طلبات السحب المعلقة":"Pending Withdrawals"} value={withdrawals.filter(w=>w.status==="PENDING").length+(isAr?" طلب":" requests")} />
         <StatCard icon={Icons.wallet(22,C.teal)} title={isAr?"أرصدة المحافظ":"Wallet Balances"} value={<SARAmount amount={fmtK(Math.abs(walBal))}/>} />
-        <StatCard icon={Icons.vault(22,"#7C3AED")} title={isAr?"رسوم التخزين (هذه الدورة)":"Storage Fees (This Cycle)"} value={<SARAmount amount={fmtK(storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.fee_sar)||0),0))}/>} sub={storageFeeHistory.filter(r=>r.status==="OVERDUE").length>0?"⚠️ "+storageFeeHistory.filter(r=>r.status==="OVERDUE").length+" overdue":""} />
+        <StatCard icon={Icons.vault(22,"#7C3AED")} title={isAr?"رسوم التخزين (هذه الدورة)":"Storage Fees (This Cycle)"} value={<SARAmount amount={fmtK(storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.total_fee||r.fee_sar)||0),0))}/>} sub={storageFeeHistory.filter(r=>r.status==="OVERDUE").length>0?"⚠️ "+storageFeeHistory.filter(r=>r.status==="OVERDUE").length+" overdue":""} />
       </div>
       <TabBar tabs={isAr?[{id:"ORDERS",label:"الطلبات"},{id:"WALLET MOVEMENTS",label:"حركات المحفظة"},{id:"WITHDRAWAL REQUESTS",label:"طلبات السحب"},{id:"STORAGE FEES",label:"رسوم التخزين"}]:["ORDERS","WALLET MOVEMENTS","WITHDRAWAL REQUESTS","STORAGE FEES"]} active={tab} onChange={setTab} />
       {tab==="ORDERS"&&<>
@@ -2333,8 +2334,8 @@ const Financials = () => {
         {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
           {(()=>{
-            const sfTotal = storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.fee_sar)||0),0);
-            const sfOverdue = storageFeeHistory.filter(r=>r.status==="OVERDUE").reduce((a,r)=>a+(parseFloat(r.fee_sar)||0),0);
+            const sfTotal = storageFeeHistory.reduce((a,r)=>a+(parseFloat(r.total_fee||r.fee_sar)||0),0);
+            const sfOverdue = storageFeeHistory.filter(r=>r.status==="OVERDUE").reduce((a,r)=>a+(parseFloat(r.total_fee||r.fee_sar)||0),0);
             const sfCount = storageFeeHistory.length;
             return [
               {label:isAr?"إجمالي الفواتير":"Total Billed",val:"SAR "+fmtK(sfTotal),color:"#5B21B6",bg:"#F3F0FF"},
@@ -2518,9 +2519,9 @@ const Reports = () => {
   const { matches, investors, walletMovements, bars, withdrawals, appointments, appBlockStats, orders, amlAlerts=[], cmaAlerts=[], amlDismissed=new Set(), validators, blacklist, auditLog, appDashStats } = useAppData();
   const { gold: gp, silver: sp, plat: pp } = useLivePrices();
   const fmtK = n => (n||0).toLocaleString("en-SA",{maximumFractionDigits:0});
-  const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
-  const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
-  const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+parseFloat(b.weight),0);
+  const liveGoldG   = bars.filter(b=>b.metal==="Gold"   &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+(parseFloat(b.weight)||0),0);
+  const liveSilverG = bars.filter(b=>b.metal==="Silver" &&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+(parseFloat(b.weight)||0),0);
+  const livePlatG   = bars.filter(b=>b.metal==="Platinum"&&(b.status==="LINKED"||b.status==="FREE")).reduce((s,b)=>s+(parseFloat(b.weight)||0),0);
   const liveAUM     = liveGoldG*(gp?.priceSAR||839)+liveSilverG*(sp?.priceSAR||10.42)+livePlatG*(pp?.priceSAR||138.5);
   const volAll      = matches.reduce((a,m)=>a+(Number(m.totalSAR)||0),0);
   const commAll     = matches.reduce((a,m)=>a+(Number(m.commission)||0),0);
@@ -5016,15 +5017,21 @@ const OrderBook = () => {
 
   // Debounced save when spread % or cap changes (saves 1s after last keystroke)
   const stabSaveTimer = useRef(null);
+  const stabEnabledRef = useRef(stabEnabled);
+  const maxSpreadPctRef = useRef(maxSpreadPct);
+  const stabCapSARRef = useRef(stabCapSAR);
+  stabEnabledRef.current = stabEnabled;
+  maxSpreadPctRef.current = maxSpreadPct;
+  stabCapSARRef.current = stabCapSAR;
   const handleSpreadPctChange = (val) => {
     setMaxSpreadPct(val);
     clearTimeout(stabSaveTimer.current);
-    stabSaveTimer.current = setTimeout(() => saveStabSettings(stabEnabled, val, stabCapSAR), 1000);
+    stabSaveTimer.current = setTimeout(() => saveStabSettings(stabEnabledRef.current, val, stabCapSARRef.current), 1000);
   };
   const handleCapChange = (val) => {
     setStabCapSAR(val);
     clearTimeout(stabSaveTimer.current);
-    stabSaveTimer.current = setTimeout(() => saveStabSettings(stabEnabled, maxSpreadPct, val), 1000);
+    stabSaveTimer.current = setTimeout(() => saveStabSettings(stabEnabledRef.current, maxSpreadPctRef.current, val), 1000);
   };
   // Market Maker state
   const [mmOpen, setMmOpen]         = useState(false);
@@ -5087,12 +5094,10 @@ const OrderBook = () => {
     setSynLog(p=>[synBuy,synSell,...p]);
     addAudit("STABILIZER_INJECT", synBuy.id, `BUY ${synQty}g @ ${synBidPrice} + SELL ${synQty}g @ ${synAskPrice} — spread ${spreadPct}%`);
 
-    // Try posting to backend
-    try{
-      apiFetch("/orders",{method:"POST",body:JSON.stringify({type:"BUY",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,investor_id:"7031990530",payment_method:"Wallet"})});
-      apiFetch("/orders",{method:"POST",body:JSON.stringify({type:"SELL",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,investor_id:"7031990530",payment_method:"Wallet"})});
-    }catch(e){}
-  },[stabEnabled, bidEnabled, spreadWide, bestBid, bestAsk]);
+    // Try posting to backend (fire-and-forget with error suppression)
+    apiFetch("/orders",{method:"POST",body:JSON.stringify({type:"BUY",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synBidPrice,investor_id:"7031990530",payment_method:"Wallet"})}).catch(()=>{});
+    apiFetch("/orders",{method:"POST",body:JSON.stringify({type:"SELL",metal:metal||"Gold",quantity_grams:synQty,price_per_gram:synAskPrice,investor_id:"7031990530",payment_method:"Wallet"})}).catch(()=>{});
+  },[stabEnabled, bidEnabled, spreadWide, bestBid, bestAsk, maxSpreadPct, stabCapSAR]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openList      = orders.filter(o=>o.status==="OPEN"||o.status==="PARTIAL");
   const filledList    = orders.filter(o=>o.status==="FILLED");
@@ -5128,26 +5133,28 @@ const OrderBook = () => {
           :o
       ));
     }
-  },[bidEnabled, orders, matches]);
+  },[bidEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-cancel GTD orders past expiry ────────────────────────────────────
+  // ── Auto-cancel GTD orders past expiry (runs once on mount) ───────────────
   useEffect(()=>{
     const today = new Date().toISOString().slice(0,10);
-    const gtdExpired = orders.filter(o=>
-      o.expiry==="GTD"&&o.expiryDate&&o.expiryDate<today&&
-      (o.status==="OPEN"||o.status==="PARTIAL")
-    );
-    if(gtdExpired.length===0) return;
-    gtdExpired.forEach(o=>{
-      const actualExec = matches.filter(m=>m.buyOrder===o.id||m.sellOrder===o.id).reduce((a,m)=>a+m.totalSAR,0);
-      issueRefund(o, o.filled||0, actualExec, `GTD Expired (${o.expiryDate}) — Refund`);
+    setOrders(prev => {
+      const gtdExpired = prev.filter(o=>
+        o.expiry==="GTD"&&o.expiryDate&&o.expiryDate<today&&
+        (o.status==="OPEN"||o.status==="PARTIAL")
+      );
+      if(gtdExpired.length===0) return prev;
+      gtdExpired.forEach(o=>{
+        const actualExec = matches.filter(m=>m.buyOrder===o.id||m.sellOrder===o.id).reduce((a,m)=>a+m.totalSAR,0);
+        issueRefund(o, o.filled||0, actualExec, `GTD Expired (${o.expiryDate}) — Refund`);
+      });
+      return prev.map(o=>{
+        if(o.expiry==="GTD"&&o.expiryDate&&o.expiryDate<today&&(o.status==="OPEN"||o.status==="PARTIAL"))
+          return {...o,status:"CANCELLED",cancelReason:"GTD expired"};
+        return o;
+      });
     });
-    setOrders(p=>p.map(o=>{
-      if(o.expiry==="GTD"&&o.expiryDate&&o.expiryDate<today&&(o.status==="OPEN"||o.status==="PARTIAL"))
-        return {...o,status:"CANCELLED",cancelReason:"GTD expired"};
-      return o;
-    }));
-  },[orders, matches]);
+  },[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Core matching engine ───────────────────────────────────────────────────
   //
@@ -5317,7 +5324,7 @@ const OrderBook = () => {
     if(mmSide==="SELL"){
       const freeGrams = bars
         .filter(b=>b.metal===mmMetal&&b.status==="FREE")
-        .reduce((sum,b)=>sum+parseFloat(b.weight),0);
+        .reduce((sum,b)=>sum+(parseFloat(b.weight)||0),0);
       if(mmQtyNum > freeGrams){
         showMatchToast(isAr?`⚠️ مخزون غير كافٍ — متاح ${freeGrams}غ فقط`:`⚠️ Insufficient inventory — only ${freeGrams}g FREE bars available for ${mmMetal}`);
         return;
@@ -6190,7 +6197,7 @@ const UserManagement = () => {
         {filteredAudit.length===0?(
           <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"40px",textAlign:"center"}}>
             <p style={{fontSize:38,marginBottom:12}}>📋</p>
-            <p style={{fontSize:16,color:C.textMuted}}>{isAr?"لا توجد إجراءات مسجلة بعد":"No actions recorded yet — they appear here as admins work"}</p>
+            <p style={{fontSize:16,color:C.textMuted}}>{auditLog.length===0?(isAr?"لا توجد إجراءات مسجلة بعد":"No actions recorded yet — they appear here as admins work"):(isAr?"لا توجد نتائج تطابق الفلتر":"No results match the current filter")}</p>
           </div>
         ):(
           <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden"}}>
@@ -7228,7 +7235,7 @@ const CommCenter = () => {
     const todayAppts = (appointments||[]).filter(a=>a.date===today&&a.status==="BOOKED");
     if(todayAppts.length>0) notifs.push({id:"N-TODAY",type:isAr?"📅 اليوم":"📅 Today",icon:"📅",title:isAr?`${todayAppts.length} موعد اليوم`:`${todayAppts.length} appointment${todayAppts.length>1?"s":""} today`,detail:isAr?"تحقق من جدول الخزنة":"Check vault schedule",time:now-100000,page:"appointments",severity:"info"});
     setNotifications(notifs);
-  },[amlAlerts,cmaAlerts,amlDismissed,withdrawals,appointments,investors]);
+  },[amlAlerts,cmaAlerts,amlDismissed,withdrawals,appointments,investors,isAr]);
 
   const unread = notifications.filter(n=>!readSet.has(n.id)).length;
   const markRead = (id) => setReadSet(p=>new Set([...p,id]));
@@ -8983,8 +8990,10 @@ const HeaderPills = () => {
   }, []);
 
   const blockAge = (() => {
-    const last = new Date(Date.now() - 29*60*1000); // ~29 min ago
-    const diff = Math.max(0, Math.floor((new Date() - last) / 1000));
+    const lastTs = appBlockStats?.last_block_at || appBlockStats?.latest_block_time;
+    const last = lastTs ? new Date(lastTs) : null;
+    if (!last || isNaN(last.getTime())) return "—";
+    const diff = Math.max(0, Math.floor((Date.now() - last) / 1000));
     const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
     if (h > 0) return `${h}h ${m}m`;
     if (m > 0) return `${m}m ${s}s`;
@@ -9104,7 +9113,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     const intlBanks = wdBanks.filter(b=>b&&(b.includes("International")||b.includes("SWIFT")||b.includes("USD")));
     if(intlBanks.length >= 1 && totalWithdrawn > 50000) push("R17","MEDIUM","Cross-Border Withdrawal Pattern",`International withdrawal detected: SAR ${(totalWithdrawn||0).toLocaleString()} across ${wdBanks.length} accounts.`,"WITHDRAWAL");
     // R18: Off-Hours Trading — unusual activity outside Saudi business hours (7 AM – 11 PM)
-    const offHoursTx = txns.filter(tx=>{const h=parseInt((tx.date||"").split(" ")[1]||"12");return h<7||h>=23;});
+    const offHoursTx = txns.filter(tx=>{const d=tx.date||"";const h=parseInt((d.includes("T")?d.split("T")[1]:d.split(" ")[1])||"12");return h<7||h>=23;});
     if(offHoursTx.length >= 2) push("R18","LOW","Off-Hours Trading Activity",`${offHoursTx.length} transactions outside business hours (before 7 AM or after 11 PM). May indicate automated or non-resident activity.`,"BEHAVIOR");
   });
 
@@ -9204,7 +9213,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
   investors.forEach(inv => {
     const nid = inv.nationalId;
     if(nid === "SYSTEM") return;
-    const invOrders = orders.filter(o=>o.nationalId===nid&&o.status!=="CANCELLED").sort((a,b)=>new Date(a.placed)-new Date(b.placed));
+    const invOrders = orders.filter(o=>o.nationalId===nid&&o.status!=="CANCELLED").sort((a,b)=>(new Date(a.placed||0)-new Date(b.placed||0))||0);
     // Check BUY side — successively higher prices
     const buys = invOrders.filter(o=>o.side==="BUY");
     if(buys.length >= 3) {
@@ -9264,7 +9273,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
   investors.forEach(inv => {
     const nid = inv.nationalId;
     const txns = allTxns.filter(tx=>(tx.buyerNationalId===nid||tx.sellerNationalId===nid)&&tx.status==="COMPLETED")
-      .sort((a,b)=>new Date(a.date)-new Date(b.date));
+      .sort((a,b)=>(new Date(a.date||0)-new Date(b.date||0))||0);
     if(txns.length < 3) return;
     // Check for BUY cluster followed by SELL cluster
     const buys = txns.filter(tx=>tx.buyerNationalId===nid);
@@ -9290,7 +9299,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
   // Orders placed in last minutes of trading near close
   const closeTime = "23:59";
   orders.filter(o=>o.placed&&o.nationalId!=="SYSTEM").forEach(o => {
-    const time = o.placed.split(" ")[1];
+    const time = (o.placed.includes("T")?o.placed.split("T")[1]:o.placed.split(" ")[1]);
     if(time && time >= "23:50" && o.status !== "CANCELLED") {
       push("CMA-08","MEDIUM",o.nationalId,o.investor,
         "Near-Close Order (Art 3.b.6 Review)",
@@ -9352,7 +9361,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
   investors.forEach(inv => {
     const nid = inv.nationalId;
     if(nid === "SYSTEM") return;
-    const invOrders = orders.filter(o=>o.nationalId===nid&&o.status!=="CANCELLED").sort((a,b)=>new Date(a.placed)-new Date(b.placed));
+    const invOrders = orders.filter(o=>o.nationalId===nid&&o.status!=="CANCELLED").sort((a,b)=>(new Date(a.placed||0)-new Date(b.placed||0))||0);
     // Large orders placed in quick succession on same side
     const recentOrds = invOrders.filter(o=>new Date(o.placed)>new Date(Date.now()-3600000)); // last hour
     if(recentOrds.length >= 4) {
@@ -10106,7 +10115,7 @@ export default function App() {
             investorId: o.investor_display || o.investor_id || "",
             nationalId: o.national_id || "", investor: o.investor_display || o.investor_id || "",
             metal: o.metal || "Gold", side: o.type || o.side || "BUY",
-            qty: Number(o.quantity_grams || 0), remaining: Number(o.remaining_quantity || o.quantity_grams - o.filled_quantity || 0),
+            qty: Number(o.quantity_grams || 0), remaining: Number(o.remaining_quantity ?? ((Number(o.quantity_grams)||0) - (Number(o.filled_quantity)||0))) || 0,
             filled: Number(o.filled_quantity || 0),
             price: Number(o.price_per_gram || 0), total: Number(o.total_sar || 0),
             status: o.status || "OPEN", date: o.created_at || "",
