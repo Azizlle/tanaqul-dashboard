@@ -2112,7 +2112,7 @@ const Appointments = () => {
                   // Step 3: Mint tokens
                   if(regData.bar_id){
                     const mintRes=await apiFetch("/vault/deposit/mint",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:regData.bar_id})});
-                    if(mintRes&&mintRes.ok){const mintData=await mintRes.json();console.log("✅ Minted:",mintData);}
+                    if(mintRes&&mintRes.ok){await mintRes.json();}
                   }
                   // Step 4: Complete appointment
                   try{await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});}catch(e){}
@@ -2125,7 +2125,7 @@ const Appointments = () => {
                   // Step 3: Burn tokens
                   if(barData.bar_id){
                     const burnRes=await apiFetch("/vault/withdraw/burn",{method:"POST",body:JSON.stringify({appointment_id:uid,bar_id:barData.bar_id})});
-                    if(burnRes&&burnRes.ok){const burnData=await burnRes.json();console.log("✅ Burned:",burnData);}
+                    if(burnRes&&burnRes.ok){await burnRes.json();}
                   }
                   // Step 4: Complete appointment
                   try{await apiFetch("/appointments/"+uid+"/complete",{method:"POST"});}catch(e){}
@@ -2739,21 +2739,17 @@ const Blacklist = () => {
     if(!/^[12]\d{9}$/.test(form.nationalId.trim())){showBlToast("⚠️ Invalid National ID — must be 10 digits starting with 1 or 2");return;}
     if(!form.reason.trim()){showBlToast("⚠️ Reason required");return;}
     if(blacklist.some(b=>b.nationalId===form.nationalId.trim())){showBlToast("⚠️ This National ID is already banned");return;}
-    const newEntry = {
-      id:"BL-"+String(Date.now()).slice(-6),
-      name:form.name||"Unknown",
-      nationalId:form.nationalId.trim(),
-      vaultKey:"—", reason:form.reason, bannedBy:(()=>{try{return JSON.parse(localStorage.getItem("tanaqul_admin")||"{}").name||"Admin";}catch(e){return "Admin";}})(),
-      date:new Date().toISOString().slice(0,10),
-    };
     try {
       const res = await apiFetch("/blacklist", {method:"POST", body:JSON.stringify({national_id:form.nationalId.trim(),name:form.name||"Unknown",reason:form.reason})});
-      if(res&&res.ok){const data=await res.json();if(data?.id) newEntry._uuid=String(data.id);}
-    } catch(e) {}
-    setBlacklist(prev=>[newEntry,...prev]);
-    addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
-    showBlToast("✅ User banned by National ID");
-    setShowAdd(false); setForm({nationalId:"",name:"",reason:""});
+      if(res&&res.ok){
+        const data=await res.json();
+        const newEntry = {id:data.display_id||data.id,_uuid:String(data.id),name:data.name||form.name||"Unknown",nationalId:data.national_id||form.nationalId.trim(),vaultKey:data.vault_key||"—",reason:data.reason||form.reason,bannedBy:data.banned_by||"Admin",date:(data.created_at||new Date().toISOString()).slice(0,10)};
+        setBlacklist(prev=>[newEntry,...prev]);
+        addAudit("BLACKLIST_ADD", newEntry.id, form.nationalId+" — "+form.reason);
+        showBlToast("✅ User banned by National ID");
+        setShowAdd(false); setForm({nationalId:"",name:"",reason:""});
+      } else { const err=await res.json().catch(()=>({})); showBlToast("❌ "+(err.detail||"Failed to blacklist")); return; }
+    } catch(e) { showBlToast("❌ Connection error"); return; }
   };
 
   const unban = async (id) => {
@@ -8587,14 +8583,10 @@ async function generateTOTP(secret, digits = 6, period = 30) {
 // Production: Use server-side session management (JWT/httpOnly cookies) + MFA via
 // authenticator app (secret stored server-side only) + bcrypt password hashing.
 // ════════════════════════════════════════════════════════════════════════════════
-// ⚠️ SECURITY: These credentials are DEMO ONLY. In production:
-// 1. Remove all hardcoded credentials
-// 2. Use environment variables exclusively (VITE_ADMIN_EMAIL, VITE_ADMIN_PASS)
-// 3. Implement server-side authentication (OAuth2 / SAML / OIDC)
-// 4. Never store plaintext passwords in source code
-const TOTP_SECRET = import.meta?.env?.VITE_TOTP_SECRET || "JBSWY3DPEHPK3PXP";
-const ADMIN_EMAIL = import.meta?.env?.VITE_ADMIN_EMAIL || "admin@tanaqul.sa";
-const ADMIN_PASS  = import.meta?.env?.VITE_ADMIN_PASS  || "Tanaqul@2026";
+// Authentication is handled server-side via JWT. These are only used for client-side hints.
+const TOTP_SECRET = import.meta?.env?.VITE_TOTP_SECRET || "";
+const ADMIN_EMAIL = import.meta?.env?.VITE_ADMIN_EMAIL || "";
+const ADMIN_PASS  = import.meta?.env?.VITE_ADMIN_PASS  || "";
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 function LoginPage({ onLogin }) {
@@ -9916,9 +9908,9 @@ const TreasuryReconciliation = () => {
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("tanaqul_token"));
   const [currentAdmin, setCurrentAdmin] = useState(() => {
-    try { const t=localStorage.getItem("tanaqul_token"); if(!t) return "admin@tanaqul.sa";
-      const payload=JSON.parse(atob(t.split(".")[1])); return payload.email||payload.sub||"admin@tanaqul.sa";
-    } catch(e){ return "admin@tanaqul.sa"; }
+    try { const t=localStorage.getItem("tanaqul_token"); if(!t) return "";
+      const payload=JSON.parse(atob(t.split(".")[1])); return payload.email||payload.sub||"";
+    } catch(e){ return ""; }
   });
   const [page,     setPage_]     = useState(() => {
     const hash = window.location.hash.replace("#","");
