@@ -8,7 +8,7 @@
  *   const dashboard = await api.dashboard.stats();
  */
 
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1";
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://api.tanaqul.app/api/v1";
 
 // ─── Token Management ───────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
 
 // ─── API Configuration ────────────────────────────────────────────────────────
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://tanaqul-production.up.railway.app/api/v1";
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || "https://api.tanaqul.app/api/v1";
 
 // Helper: API fetch with auth token
 const apiFetch = async (path, options = {}) => {
@@ -9793,11 +9793,11 @@ const SystemHealth = () => {
         <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:12}}>{t("Infrastructure","البنية التحتية")}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
           {[
-            {label:t("Railway","Railway"),val:t("Backend Host","استضافة الخلفية"),url:"tanaqul-production.up.railway.app"},
+            {label:t("Railway","Railway"),val:t("Backend Host","استضافة الخلفية"),url:"api.tanaqul.app"},
             {label:t("Vercel","Vercel"),val:t("Frontend Host","استضافة الواجهة"),url:"tanaqul-dashboard.vercel.app"},
             {label:t("PostgreSQL","PostgreSQL"),val:db.size||"—",url:"Railway managed"},
             {label:t("Explorer","المستكشف"),val:t("Public","عام"),url:"tanaqul-dashboard.vercel.app/explorer.html"},
-            {label:t("Swagger Docs","وثائق API"),val:t("Interactive","تفاعلي"),url:"tanaqul-production.up.railway.app/docs"},
+            {label:t("Swagger Docs","وثائق API"),val:t("Interactive","تفاعلي"),url:"api.tanaqul.app/docs"},
             {label:t("GitHub","GitHub"),val:t("Source Code","الكود المصدري"),url:"github.com/Azizlle/tanaqul"},
           ].map(i=><div key={i.label} style={{background:C.bg,borderRadius:10,padding:"12px 14px"}}>
             <p style={{fontSize:12,fontWeight:700,color:C.navy}}>{i.label}</p>
