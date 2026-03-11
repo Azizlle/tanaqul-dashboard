@@ -6121,7 +6121,10 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   useEffect(()=>{
     apiFetch("/admin/users").then(r=>r&&r.ok?r.json():null).then(d=>{
-      const items = d?.items || d?.users || (Array.isArray(d)?d:[]);
+      const rawItems = d?.items || d?.users || (Array.isArray(d)?d:[]);
+      // Deduplicate by email — keep first occurrence only
+      const seen = new Set();
+      const items = rawItems.filter(u => { if(!u.email || seen.has(u.email)) return false; seen.add(u.email); return true; });
       if(items.length) setUsers(items.filter(u=>u.role!=="deleted").map(u=>{
         const role = (u.role||"viewer").toUpperCase();
         return {
