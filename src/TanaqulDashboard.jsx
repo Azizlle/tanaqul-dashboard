@@ -9017,6 +9017,7 @@ function LoginPage({ onLogin }) {
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [qrUrl, setQrUrl]       = useState("");
+  const [setupSecret, setSetupSecret] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [timer, setTimer]       = useState(30);
   const [recoveryPhone, setRecoveryPhone] = useState("");
@@ -9063,6 +9064,7 @@ function LoginPage({ onLogin }) {
       }
       if (result.status === 206 && result.detail === "2FA_SETUP_REQUIRED") {
         setQrUrl(result.qr_code || "");
+        setSetupSecret(result.secret || "");
         setLoading(false);
         setStep(3);
         return;
@@ -9329,11 +9331,11 @@ function LoginPage({ onLogin }) {
                 {isAr ? "امسح رمز QR بتطبيق Google Authenticator" : "Scan this QR with Google Authenticator"}
               </p>
               <div style={{textAlign:"center", marginBottom:16}}>
-                {qrUrl && <img src={qrUrl} alt="QR" style={{borderRadius:12, width:160, border:`2px solid ${C.gold}44`}} />}
+                {qrUrl && <img src={qrUrl} alt="QR" style={{borderRadius:12, width:220, height:220, border:`2px solid ${C.gold}44`}} />}
               </div>
               <div style={{background:"rgba(255,255,255,0.04)", borderRadius:10, padding:"10px 14px", marginBottom:18, textAlign:"center"}}>
                 <p style={{fontSize:12, color:C.silverText, marginBottom:4}}>{isAr?"أو أدخل المفتاح يدوياً:":"Or enter key manually:"}</p>
-                <p style={{fontFamily:"monospace", fontSize:16, color:C.gold, letterSpacing:"0.1em"}}>{TOTP_SECRET}</p>
+                <p style={{fontFamily:"monospace", fontSize:14, color:C.gold, letterSpacing:"0.1em", wordBreak:"break-all", userSelect:"all", cursor:"pointer"}}>{setupSecret || TOTP_SECRET || "—"}</p>
               </div>
               <div style={{marginBottom:18}}>
                 <input type="text" value={code}
