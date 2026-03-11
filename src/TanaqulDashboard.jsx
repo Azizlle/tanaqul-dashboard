@@ -80,7 +80,7 @@ const AppDataContext = createContext({
 });
 const useAppData = () => useContext(AppDataContext);
 
-const LangContext = createContext({ lang:"en", t: k=>k, isAr: false, switchLang:()=>{}, bidEnabled:true, setBidEnabled:()=>{}, tradingOpen:true, setTradingOpen:()=>{}, commSplit:{buying:30,selling:30,creator:20,validators:20}, setCommSplit:()=>{}, gatewaySettings:{madaFee:"1.5",madaCap:"10.00",visaFee:"2.5",sadadFee:"5.00"}, setGatewaySettings:()=>{}, commissionRates:{buyer:"1.0",seller:"1.0"}, setCommissionRates:()=>{}, cancelFee:"50", setCancelFee:()=>{}, storageFeeSettings:{goldAnnualPct:"0.5",silverAnnualPct:"0.75",platinumAnnualPct:"0.6",billingCycle:"monthly",minFee:"5"}, setStorageFeeSettings:()=>{}, reportingConfig:{sarEmail:"",cmaEmail:"",sarEnabled:false,cmaEnabled:false,mlroName:"",mlroTitle:"",companyName:"",companyLicense:"",companyAddress:"",sarCc:"",cmaCc:""}, setReportingConfig:()=>{} });
+const LangContext = createContext({ lang:"en", t: k=>k, isAr: false, switchLang:()=>{}, bidEnabled:true, setBidEnabled:()=>{}, tradingOpen:true, setTradingOpen:()=>{}, commSplit:{buying:30,selling:30,creator:20,validators:20}, setCommSplit:()=>{}, gatewaySettings:{madaFee:"0.008",madaCap:"100.00",visaFee:"0.025",sadadFee:"5.00"}, setGatewaySettings:()=>{}, commissionRates:{buyer:"1.0",seller:"1.0"}, setCommissionRates:()=>{}, cancelFee:"50", setCancelFee:()=>{}, storageFeeSettings:{goldAnnualPct:"0.5",silverAnnualPct:"0.75",platinumAnnualPct:"0.6",billingCycle:"monthly",minFee:"5"}, setStorageFeeSettings:()=>{}, reportingConfig:{sarEmail:"",cmaEmail:"",sarEnabled:false,cmaEnabled:false,mlroName:"",mlroTitle:"",companyName:"",companyLicense:"",companyAddress:"",sarCc:"",cmaCc:""}, setReportingConfig:()=>{} });
 const useLang = () => useContext(LangContext);
 const useBidEnabled = () => { const { bidEnabled, setBidEnabled } = useContext(LangContext); return { bidEnabled, setBidEnabled }; };
 const usePlatform = () => { const ctx = useContext(LangContext); return { tradingOpen: ctx.tradingOpen, setTradingOpen: ctx.setTradingOpen, commSplit: ctx.commSplit, setCommSplit: ctx.setCommSplit }; };
@@ -456,37 +456,37 @@ const TanaqulLogo = ({ size=36 }) => (
 
 // ─── Theme System — Light & Dark modes ──────────────────────────────────────
 const LIGHT_THEME = {
-  navy:"#2D2418", navyDark:"#1E1810", navyLight:"#3D3225",
-  teal:"#6B9080", tealLight:"#EFF5F2",
-  gold:"#C4956A", goldLight:"#FDF4EC", goldDim:"#8B6540",
-  white:"#FFFFFF", bg:"#FAF8F5", border:"#E8E0D4",
-  text:"#2D2418", textMuted:"#8C7E6F",
-  green:"#6B9080", red:"#C85C3E", orange:"#D4943A",
-  cream:"#F5F0E8", sand:"#E8DFD1", warmShadow:"rgba(45,36,24,0.08)",
-  accent:"#C4956A", sidebar:"#2A2015", sidebarHover:"rgba(196,149,106,0.12)",
-  sidebarActive:"rgba(196,149,106,0.18)", sidebarBorder:"rgba(196,149,106,0.15)",
-  cardShadow:"0 2px 12px rgba(45,36,24,0.06)",
-  greenSolid:"#4A7A68", greenBg:"#F0F5F1",
-  purpleSolid:"#7B6BA5", purpleBg:"#F0EDF7",
-  redBg:"#FBEAE5", blueSolid:"#5B7FA5", orangeBg:"#FDF4EC",
+  navy:"#0F172A", navyDark:"#020617", navyLight:"#1E293B",
+  teal:"#0D9488", tealLight:"#F0FDFA",
+  gold:"#B8860B", goldLight:"#FEF9E7", goldDim:"#92700C",
+  white:"#FFFFFF", bg:"#F8FAFC", border:"#E2E8F0",
+  text:"#0F172A", textMuted:"#64748B",
+  green:"#059669", red:"#DC2626", orange:"#D97706",
+  cream:"#F1F5F9", sand:"#E2E8F0", warmShadow:"rgba(15,23,42,0.06)",
+  accent:"#B8860B", sidebar:"#0F172A", sidebarHover:"rgba(184,134,11,0.08)",
+  sidebarActive:"rgba(184,134,11,0.14)", sidebarBorder:"rgba(148,163,184,0.12)",
+  cardShadow:"0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)",
+  greenSolid:"#059669", greenBg:"#ECFDF5",
+  purpleSolid:"#7C3AED", purpleBg:"#F5F3FF",
+  redBg:"#FEF2F2", blueSolid:"#2563EB", orangeBg:"#FFFBEB",
   silverText:"#475569",
   _mode:"light",
 };
 const DARK_THEME = {
-  navy:"#E8E0D4", navyDark:"#1A1510", navyLight:"#F5F0E8",
-  teal:"#8BB5A2", tealLight:"#1E2D26",
-  gold:"#D4A878", goldLight:"#2A2015", goldDim:"#D4A878",
-  white:"#1E1A15", bg:"#151210", border:"#3D3225",
-  text:"#E8E0D4", textMuted:"#A89880",
-  green:"#8BB5A2", red:"#E8826A", orange:"#E8B476",
-  cream:"#2A2418", sand:"#3D3225", warmShadow:"rgba(0,0,0,0.3)",
-  accent:"#D4A878", sidebar:"#151210", sidebarHover:"rgba(212,168,120,0.12)",
-  sidebarActive:"rgba(212,168,120,0.22)", sidebarBorder:"rgba(212,168,120,0.15)",
-  cardShadow:"0 2px 16px rgba(0,0,0,0.25)",
-  greenSolid:"#6DAF8F", greenBg:"#1A2E24",
-  purpleSolid:"#9B8DC5", purpleBg:"#252035",
-  redBg:"#2E1A15", blueSolid:"#7BA3C5", orangeBg:"#2E2415",
-  silverText:"#A0AEC0",
+  navy:"#F1F5F9", navyDark:"#0B1120", navyLight:"#E2E8F0",
+  teal:"#2DD4BF", tealLight:"#0D2D2A",
+  gold:"#D4A017", goldLight:"#1C1A10", goldDim:"#D4A017",
+  white:"#111827", bg:"#0B1120", border:"#1E293B",
+  text:"#F1F5F9", textMuted:"#94A3B8",
+  green:"#34D399", red:"#F87171", orange:"#FBBF24",
+  cream:"#1E293B", sand:"#1E293B", warmShadow:"rgba(0,0,0,0.4)",
+  accent:"#D4A017", sidebar:"#0B1120", sidebarHover:"rgba(212,160,23,0.08)",
+  sidebarActive:"rgba(212,160,23,0.16)", sidebarBorder:"rgba(148,163,184,0.1)",
+  cardShadow:"0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
+  greenSolid:"#34D399", greenBg:"#052E16",
+  purpleSolid:"#A78BFA", purpleBg:"#1E1533",
+  redBg:"#2D1215", blueSolid:"#60A5FA", orangeBg:"#2D2410",
+  silverText:"#CBD5E1",
   _mode:"dark",
 };
 // ThemeContext — provides C and toggle
@@ -554,41 +554,41 @@ const StatCard = ({ title, value, sub, icon, gold }) => {
 const SectionHeader = ({ title, sub, action }) => {
   const { t, isAr } = useLang();
   return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
       <div style={{textAlign:"start"}}>
-        <h2 style={{fontSize:25,fontWeight:700,color:C.navy}}>{t(title)}</h2>
-        {sub && <p style={{fontSize:14,color:C.textMuted,marginTop:2}}>{t(sub)}</p>}
+        <h2 style={{fontSize:24,fontWeight:800,color:C.navy,letterSpacing:"-0.02em"}}>{t(title)}</h2>
+        {sub && <p style={{fontSize:13,color:C.textMuted,marginTop:4,fontWeight:400}}>{t(sub)}</p>}
       </div>
       {action}
     </div>
   );
 };
 
-const Btn = ({ children, onClick, variant="primary", small, style:extraStyle }) => {
+const Btn = ({ children, onClick, variant="primary", small, style:extraStyle, disabled }) => {
   const s = {
-    primary:{background:C.navy,color:C.white,border:"none"},
-    gold:{background:C.gold,color:C.white,border:"none"},
-    teal:{background:C.teal,color:C.white,border:"none"},
-    outline:{background:"transparent",color:C.navy,border:`1px solid ${C.border}`},
-    danger:{background:C.red,color:C.white,border:"none"},
+    primary:{background:C.navy,color:"#FFFFFF",border:"none"},
+    gold:{background:`linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,color:"#FFFFFF",border:"none"},
+    teal:{background:C.teal,color:"#FFFFFF",border:"none"},
+    outline:{background:"transparent",color:C.navy,border:`1.5px solid ${C.border}`},
+    danger:{background:C.red,color:"#FFFFFF",border:"none"},
     ghost:{background:"transparent",color:C.textMuted,border:"none"},
   };
-  return <button onClick={onClick} style={{...s[variant],borderRadius:8,cursor:"pointer",padding:small?"5px 12px":"8px 16px",fontSize:small?11:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:5,whiteSpace:"nowrap",...extraStyle}} onMouseEnter={e=>e.currentTarget.style.opacity="0.82"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} style={{...s[variant],borderRadius:10,cursor:disabled?"not-allowed":"pointer",padding:small?"6px 14px":"10px 20px",fontSize:small?12:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6,whiteSpace:"nowrap",transition:"all 0.15s",opacity:disabled?0.5:1,letterSpacing:"0.01em",...extraStyle}} onMouseEnter={e=>{if(!disabled)e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.1)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none"}}>{children}</button>;
 };
 
 const TTable = ({ cols, rows }) => {
   const { t, isAr } = useLang();
   return (
-    <div style={{overflowX:"auto",borderRadius:12,border:`1px solid ${C.border}`}}>
+    <div style={{overflowX:"auto",borderRadius:14,border:`1px solid ${C.border}`,boxShadow:C.cardShadow}}>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
-        <thead><tr style={{background:C.navyDark}}>{cols.map((col,i)=><th key={i} style={{padding:"10px 14px",textAlign:"center",fontWeight:600,color:"#A89880",fontSize:12,letterSpacing:"0.06em",whiteSpace:"nowrap",textTransform:"uppercase"}}>{t(col.label)}</th>)}</tr></thead>
+        <thead><tr style={{background:C.cream}}>{cols.map((col,i)=><th key={i} style={{padding:"12px 16px",textAlign:"center",fontWeight:700,color:C.textMuted,fontSize:11,letterSpacing:"0.08em",whiteSpace:"nowrap",textTransform:"uppercase",borderBottom:`2px solid ${C.border}`}}>{t(col.label)}</th>)}</tr></thead>
         <tbody>
           {rows.map((row,i)=>(
-            <tr key={i} style={{borderTop:`1px solid ${C.border}`,background:i%2===0?C.white:C.bg}}>
-              {cols.map((col,j)=><td key={j} style={{padding:"10px 14px",color:C.text,whiteSpace:"nowrap",textAlign:"center",verticalAlign:"middle"}}>{col.render?col.render(row[col.key],row):row[col.key]}</td>)}
+            <tr key={i} style={{borderTop:`1px solid ${C.border}`,background:C.white,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background=C.cream} onMouseLeave={e=>e.currentTarget.style.background=C.white}>
+              {cols.map((col,j)=><td key={j} style={{padding:"12px 16px",color:C.text,whiteSpace:"nowrap",textAlign:"center",verticalAlign:"middle",fontSize:13}}>{col.render?col.render(row[col.key],row):row[col.key]}</td>)}
             </tr>
           ))}
-          {rows.length===0&&<tr><td colSpan={cols.length} style={{padding:28,textAlign:"center",color:C.textMuted}}>{t("No records found")}</td></tr>}
+          {rows.length===0&&<tr><td colSpan={cols.length} style={{padding:36,textAlign:"center",color:C.textMuted,fontSize:14}}>{t("No records found")}</td></tr>}
         </tbody>
       </table>
     </div>
@@ -598,13 +598,13 @@ const TTable = ({ cols, rows }) => {
 const Modal = ({ title, children, onClose }) => {
   const { t, isAr } = useLang();
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{background:C.white,borderRadius:20,width:"100%",maxWidth:520,maxHeight:"85vh",overflow:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.25)",direction:isAr?"rtl":"ltr"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 22px",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,background:C.white,zIndex:1}}>
-          <h3 style={{fontSize:22,fontWeight:700,color:C.navy}}>{t(title)}</h3>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:26,cursor:"pointer",color:C.textMuted}}>×</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{background:C.white,borderRadius:20,width:"100%",maxWidth:540,maxHeight:"85vh",overflow:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.2)",direction:isAr?"rtl":"ltr",border:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 24px",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,background:C.white,zIndex:1,borderRadius:"20px 20px 0 0"}}>
+          <h3 style={{fontSize:20,fontWeight:800,color:C.navy,letterSpacing:"-0.01em"}}>{t(title)}</h3>
+          <button onClick={onClose} style={{background:C.cream,border:"none",width:32,height:32,borderRadius:8,fontSize:18,cursor:"pointer",color:C.textMuted,display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background=C.border} onMouseLeave={e=>e.currentTarget.style.background=C.cream}>×</button>
         </div>
-        <div style={{padding:22}}>{children}</div>
+        <div style={{padding:24}}>{children}</div>
       </div>
     </div>
   );
@@ -622,8 +622,8 @@ const Inp = ({ label, value, onChange, placeholder, type="text" }) => {
   }, [value]);
   const handleChange = (val) => { committed.current = val; onChange(val); };
   return (
-    <div style={{marginBottom:14}}>
-      {label&&<label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5,textAlign:"start"}}>{label}</label>}
+    <div style={{marginBottom:16}}>
+      {label&&<label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:6,textAlign:"start",textTransform:"uppercase",letterSpacing:"0.04em"}}>{label}</label>}
       <input
         ref={ref}
         type={type}
@@ -632,7 +632,9 @@ const Inp = ({ label, value, onChange, placeholder, type="text" }) => {
         onBlur={e => handleChange(e.target.value)}
         placeholder={placeholder}
         dir={isAr?"rtl":"ltr"}
-        style={{width:"100%",padding:"8px 11px",borderRadius:8,fontSize:19,border:`1px solid ${C.border}`,color:C.text,outline:"none",boxSizing:"border-box",textAlign:"start"}}
+        style={{width:"100%",padding:"10px 14px",borderRadius:10,fontSize:15,border:`1.5px solid ${C.border}`,color:C.text,outline:"none",boxSizing:"border-box",textAlign:"start",background:C.white,transition:"border-color 0.15s"}}
+        onFocus={e=>e.target.style.borderColor=C.gold}
+        onBlurCapture={e=>e.target.style.borderColor=C.border}
       />
     </div>
   );
@@ -641,9 +643,9 @@ const Inp = ({ label, value, onChange, placeholder, type="text" }) => {
 const Sel = ({ label, value, onChange, options }) => {
   const { isAr } = useLang();
   return (
-    <div style={{marginBottom:14}}>
-      {label&&<label style={{display:"block",fontSize:13,fontWeight:600,color:C.textMuted,marginBottom:5,textAlign:"start"}}>{label}</label>}
-      <select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"8px 11px",borderRadius:8,fontSize:19,border:`1px solid ${C.border}`,color:C.text,outline:"none",background:C.white,boxSizing:"border-box",direction:isAr?"rtl":"ltr",textAlign:"start"}}>
+    <div style={{marginBottom:16}}>
+      {label&&<label style={{display:"block",fontSize:12,fontWeight:600,color:C.textMuted,marginBottom:6,textAlign:"start",textTransform:"uppercase",letterSpacing:"0.04em"}}>{label}</label>}
+      <select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:10,fontSize:15,border:`1.5px solid ${C.border}`,color:C.text,outline:"none",background:C.white,boxSizing:"border-box",direction:isAr?"rtl":"ltr",textAlign:"start",cursor:"pointer"}}>
         {options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -653,11 +655,11 @@ const Sel = ({ label, value, onChange, options }) => {
 const TabBar = ({ tabs, active, onChange }) => {
   const { t } = useLang();
   return (
-    <div style={{display:"flex",gap:3,marginBottom:18,background:C.bg,padding:3,borderRadius:10,width:"fit-content",flexWrap:"wrap"}}>
+    <div style={{display:"flex",gap:4,marginBottom:20,background:C.cream,padding:4,borderRadius:12,width:"fit-content",flexWrap:"wrap",border:`1px solid ${C.border}`}}>
       {tabs.map(tab=>{
         const id    = typeof tab==="object"?tab.id:tab;
         const label = typeof tab==="object"?tab.label:t(tab);
-        return <button key={id} onClick={()=>onChange(id)} style={{padding:"7px 15px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",border:"none",background:active===id?C.white:"transparent",color:active===id?C.navy:C.textMuted,boxShadow:active===id?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.15s",whiteSpace:"nowrap"}}>{label}</button>;
+        return <button key={id} onClick={()=>onChange(id)} style={{padding:"8px 18px",borderRadius:9,fontSize:13,fontWeight:active===id?700:500,cursor:"pointer",border:"none",background:active===id?C.white:"transparent",color:active===id?C.navy:C.textMuted,boxShadow:active===id?C.cardShadow:"none",transition:"all 0.18s",whiteSpace:"nowrap",letterSpacing:"0.01em"}}>{label}</button>;
       })}
     </div>
   );
@@ -1650,10 +1652,10 @@ const TransactionLog = () => {
 
       {/* Export + pagination */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-        <span style={{fontSize:14,color:C.textMuted}}>{isAr?`${rows.length} معاملة — صفحة ${page} من ${Math.ceil(rows.length/PAGE_SIZE)}`:`${rows.length} transactions — page ${page} of ${Math.ceil(rows.length/PAGE_SIZE)||1}`}</span>
+        <span style={{fontSize:14,color:C.textMuted}}>{isAr?`${rows.length} معاملة — صفحة ${page} من ${Math.ceil(rows.length/PAGE_SIZE)||1}`:`${rows.length} transactions — page ${page} of ${Math.ceil(rows.length/PAGE_SIZE)||1}`}</span>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <Btn small variant="outline" onClick={()=>setPage(p=>Math.max(1,p-1))} >←</Btn>
-          <Btn small variant="outline" onClick={()=>setPage(p=>Math.min(Math.ceil(rows.length/PAGE_SIZE),p+1))}>→</Btn>
+          <Btn small variant="outline" onClick={()=>setPage(p=>Math.min(Math.ceil(rows.length/PAGE_SIZE)||1,p+1))}>→</Btn>
           <Btn small variant="ghost" onClick={exportCSV}>{isAr?"⬇ تصدير CSV":"⬇ Export CSV"}</Btn>
         </div>
       </div>
@@ -1935,11 +1937,11 @@ const Appointments = () => {
               try { const uid = sel._uuid || sel.id; await apiFetch("/appointments/"+uid+"/cancel", {method:"POST", body:JSON.stringify({reason:"Cancelled by admin"})}); } catch(e) { console.error("Cancel appointment failed:", e); }
               setAppointments(prev=>prev.map(a=>a.id===sel.id?{...a,status:"CANCELED",cancelReason:"Cancelled by admin"}:a));
               // Refresh appointments and investors from API
-              try { const ar=await apiFetch("/appointments?page=1&page_size=9999"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",qty:a.quantity||"",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||""})));} } catch(e2){}
+              try { const ar=await apiFetch("/appointments?page=1&page_size=9999"); if(ar&&ar.ok){const ad=await ar.json();const items=ad.items||ad.appointments||ad;if(Array.isArray(items)&&items.length>0)setAppointments(items.map(a=>({id:a.display_id||a.id,_uuid:String(a.id),investorId:a.investor_id||"",nationalId:a.national_id||"",type:a.type||"DEPOSIT",metal:a.metal||"Gold",qty:a.quantity||"",quantity:a.quantity||"",vault:a.vault_location||"Riyadh",date:(a.scheduled_at||"").slice(0,10),time:(a.scheduled_at||"").slice(11,16),status:a.status||"BOOKED",fee:String(a.fee||0),paymentMethod:a.payment_method||"",otp:a.otp_code||"",notes:a.notes||"",investorPhone:a.investor_phone||""})));} } catch(e2){}
               try { const ir=await apiFetch("/investors?page=1&page_size=9999"); if(ir&&ir.ok){const id2=await ir.json();const items=id2.items||id2.investors||[];if(Array.isArray(items)&&items.length>0)setInvestors(items.map(inv=>({id:inv.display_id||inv.id,_uuid:String(inv.id),nameEn:inv.name_en||"",nameAr:inv.name_ar||"",wallet:inv.wallet_address||"pending",holdingsValue:String(inv.holdings_value||0),gold:Number(inv.gold_grams||0),silver:Number(inv.silver_grams||0),platinum:Number(inv.platinum_grams||0),status:inv.status||"ACTIVE",joined:(inv.joined_at||"").slice(0,10),vaultKey:inv.vault_key||"",nationalId:inv.national_id||"",kycExpiry:inv.kyc_expiry?inv.kyc_expiry.slice(0,10):"",noShowCount:inv.no_show_count||0,email:inv.email||"",phone:inv.phone||""})));} } catch(e2){}
               // Refresh wallet movements from API to pick up server-created refund
               try { const wr=await apiFetch("/wallet/movements?page=1&page_size=9999"); if(wr&&wr.ok){const wd=await wr.json();const items=wd.items||wd.movements||wd;if(Array.isArray(items))setWalletMovements(items.map(m=>({id:m.display_id||m.id,nationalId:m.national_id||"",investor:m.investor_name||m.national_id||"",vaultKey:m.vault_key||"",type:m.type||"CREDIT",amount:String(m.amount||0),reason:m.reason||"",date:m.created_at||""})));} } catch(e3){}
-              addAudit("CANCEL_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — refund SAR "+refundAmt);
+              addAudit("CANCEL_APPOINTMENT", sel.id, (sel.nationalId||sel.investorId||"—")+" — "+sel.type+" — refund SAR "+(sel.fee - cfee));
               closeAll();
             }}>{isAr?"نعم، إلغاء الموعد":"Yes, Cancel Appointment"}</Btn>
             <Btn variant="outline" onClick={closeAll}>{isAr?"لا، أبقه":"No, Keep It"}</Btn>
@@ -3032,7 +3034,7 @@ const RiskBadge = ({level}) => {
 };
 
 const Sparkline = ({data,color="#C4956A",w=80,h=24}) => {
-  if(!data||data.length<2) return null;
+  if(!data||data.length<2||data.some(v=>typeof v!=="number"||!isFinite(v))) return null;
   const max=Math.max(...data),min=Math.min(...data),range=max-min||1;
   const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/range)*h}`).join(" ");
   return <svg width={w} height={h} style={{display:"block"}}><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
@@ -3340,15 +3342,20 @@ const AuditLog = () => {
       else if(p.noShows >= 2){ score+=5; factors.push("2 no-shows (+5)"); }
 
       // Account age (0-10)
-      const age = (new Date()-new Date(p.joinDate))/(86400000);
+      const joinD = new Date(p.joinDate);
+      const age = isNaN(joinD.getTime()) ? 999 : (new Date()-joinD)/(86400000);
       if(age < 14 && p.totalVolume > 10000){ score+=10; factors.push("New acct < 14d + active (+10)"); }
       else if(age < 30 && p.totalVolume > 5000){ score+=5; factors.push("New acct < 30d + active (+5)"); }
 
       // KYC (0-10)
       if(p.kycExpiry){
-        const daysLeft = (new Date(p.kycExpiry)-new Date())/(86400000);
-        if(daysLeft <= 0){ score+=10; factors.push("KYC expired (+10)"); }
-        else if(daysLeft < 30){ score+=4; factors.push("KYC expiring < 30d (+4)"); }
+        const kycDate = new Date(p.kycExpiry);
+        if(isNaN(kycDate.getTime())){ score+=10; factors.push("KYC invalid (+10)"); }
+        else {
+          const daysLeft = (kycDate-new Date())/(86400000);
+          if(daysLeft <= 0){ score+=10; factors.push("KYC expired (+10)"); }
+          else if(daysLeft < 30){ score+=4; factors.push("KYC expiring < 30d (+4)"); }
+        }
       }
 
       // Status (0-10)
@@ -3399,17 +3406,17 @@ const AuditLog = () => {
       const d = alert.detail||"";
       const nums = (d.match(/[\d,]+/g)||[]).map(n=>n.replace(/,/g,""));
       if(rk==="R01") return "إجمالي حجم التداول "+d.match(/SAR [\d,]+/)?.[0]?.replace("SAR","")?.trim()+" ريال سعودي يتجاوز الحد المقرر من ساما.";
-      if(rk==="R02") return "شراء "+nums[0]+" ريال / بيع "+nums[1]+" ريال، بمعدل تكرار مرتفع.";
-      if(rk==="R03") return nums[0]+" معاملة خلال "+nums[1]+" أيام.";
-      if(rk==="R04") return "تم تسييل "+nums[0]+"% من إجمالي الحيازات.";
-      if(rk==="R05") return "عمر الحساب "+nums[0]+" يوم، حجم تداول "+nums[1]+" ريال سعودي.";
-      if(rk==="R06") return nums[0]+" حالات عدم حضور للمواعيد المقررة.";
-      if(rk==="R07"&&d.includes("Expired")) return "منتهية الصلاحية منذ "+nums[0]+" يوم.";
-      if(rk==="R07") return "تنتهي خلال "+nums[0]+" يوم.";
-      if(rk==="R08") return nums[0]+" أوامر ملغاة.";
-      if(rk==="R09") return "مستخدم محظور لديه "+nums[0]+" معاملة و"+nums[1]+" أمر.";
-      if(rk==="R10") return nums[0]+" معاملات بمبالغ مدوّرة.";
-      if(rk==="R14") return nums[0]+" حسابات بنكية مستخدمة.";
+      if(rk==="R02") return "شراء "+(nums[0]||"—")+" ريال / بيع "+(nums[1]||"—")+" ريال، بمعدل تكرار مرتفع.";
+      if(rk==="R03") return (nums[0]||"—")+" معاملة خلال "+(nums[1]||"—")+" أيام.";
+      if(rk==="R04") return "تم تسييل "+(nums[0]||"—")+"% من إجمالي الحيازات.";
+      if(rk==="R05") return "عمر الحساب "+(nums[0]||"—")+" يوم، حجم تداول "+(nums[1]||"—")+" ريال سعودي.";
+      if(rk==="R06") return (nums[0]||"—")+" حالات عدم حضور للمواعيد المقررة.";
+      if(rk==="R07"&&d.includes("Expired")) return "منتهية الصلاحية منذ "+(nums[0]||"—")+" يوم.";
+      if(rk==="R07") return "تنتهي خلال "+(nums[0]||"—")+" يوم.";
+      if(rk==="R08") return (nums[0]||"—")+" أوامر ملغاة.";
+      if(rk==="R09") return "مستخدم محظور لديه "+(nums[0]||"—")+" معاملة و"+(nums[1]||"—")+" أمر.";
+      if(rk==="R10") return (nums[0]||"—")+" معاملات بمبالغ مدوّرة.";
+      if(rk==="R14") return (nums[0]||"—")+" حسابات بنكية مستخدمة.";
       return d;
     };
     const detailAr = buildDetailAr();
@@ -4083,7 +4090,7 @@ const AuditLog = () => {
               {check:isAr?"الإبلاغ عن النشاط المشبوه (SAR)":"Suspicious Activity Reporting (SAR)",status:"PASS",detail:isAr?"أداة إنشاء بلاغات SAR متاحة لجميع مستويات التنبيه":"SAR generation tool available for all alert levels"},
               {check:isAr?"تتبع تجديد التحقق من الهوية":"KYC Renewal Tracking",status:riskScores.some(r=>r.kycExpiry&&(new Date(r.kycExpiry)-new Date())/(86400000)<0)?"FAIL":"PASS",detail:isAr?"يجب أن يكون لجميع المستثمرين النشطين تحقق صالح":"All active investors must have valid KYC"},
               {check:isAr?"فحص العقوبات":"Sanctions Screening",status:compTasks.find(t=>t.id==="SANC-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="SANC-01")?.status==="COMPLETED"?(isAr?"آخر إكمال: ":"Last completed: ")+compTasks.find(t=>t.id==="SANC-01")?.log.slice(-1)[0]?.date?.slice(0,10):(isAr?"إجراء مطلوب — استخدم سير العمل أعلاه":"Action required — use workflow above")},
-              {check:isAr?"حفظ السجلات (5 سنوات)":"Record Retention (5 years)",status:"PASS",detail:`${auditLog.length} ${isAr?"سجل محفوظ. الإنتاج: أرشفة في تخزين غير قابل للتغيير.":"audit entries maintained. Production: archive to immutable storage."}`},
+              {check:isAr?"حفظ السجلات (5 سنوات)":"Record Retention (5 years)",status:"PASS",detail:`${(auditLog||[]).length} ${isAr?"سجل محفوظ. الإنتاج: أرشفة في تخزين غير قابل للتغيير.":"audit entries maintained. Production: archive to immutable storage."}`},
               {check:isAr?"سجلات تدريب الموظفين":"Staff Training Records",status:compTasks.find(t=>t.id==="TRAIN-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="TRAIN-01")?.status==="COMPLETED"?(isAr?"تم التحقق من التدريب — ":"Training verified — ")+compTasks.find(t=>t.id==="TRAIN-01")?.log.slice(-1)[0]?.date?.slice(0,10):(isAr?"إجراء مطلوب — استخدم سير العمل أعلاه":"Action required — use workflow above")},
               {check:isAr?"منهجية تقييم المخاطر":"Risk Assessment Methodology",status:"PASS",detail:isAr?"نموذج تقييم متعدد العوامل (الحجم، السرعة، السلوك، التحقق، الحالة)":"Multi-factor scoring model (volume, velocity, behavior, KYC, status)"},
               {check:isAr?"فحص الأشخاص المعرضين سياسياً (PEP)":"Politically Exposed Persons (PEP) Screening",status:compTasks.find(t=>t.id==="PEP-01")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="PEP-01")?.status==="COMPLETED"?(isAr?"تم فحص PEP — ":"PEP screening completed — ")+compTasks.find(t=>t.id==="PEP-01")?.log.slice(-1)[0]?.date?.slice(0,10):(isAr?"إجراء مطلوب — استخدم سير العمل أعلاه":"Action required — use workflow above")},
@@ -4116,7 +4123,7 @@ const AuditLog = () => {
               {check:isAr?"مراقبة التواطؤ":"Collusion Surveillance",status:cmaAlerts.filter(a=>a.category==="COLLUSION").length===0?"PASS":"ACTION",detail:"Repeated counterparty pattern analysis"},
               {check:isAr?"مراقبة سعر الإغلاق":"Closing Price Surveillance (Art 3.b.6)",status:"PASS",detail:"Late order detection system active"},
               {check:isAr?"إخطار الهيئة (المادة 11)":"Authority Notification (Art 11)",status:compTasks.find(t=>t.id==="CMA-NOTIFY")?.status==="COMPLETED"?"PASS":"MANUAL",detail:compTasks.find(t=>t.id==="CMA-NOTIFY")?.status==="COMPLETED"?"CMA notified — "+compTasks.find(t=>t.id==="CMA-NOTIFY")?.log.slice(-1)[0]?.date?.slice(0,10):"Action required — use workflow above"},
-              {check:isAr?"حفظ السجلات 10 سنوات (المادة 11.د)":"Record Retention 10 Years (Art 11.d)",status:"PASS",detail:`${auditLog.length + cmaAlerts.length} records. Production: archive per 10-year requirement`},
+              {check:isAr?"حفظ السجلات 10 سنوات (المادة 11.د)":"Record Retention 10 Years (Art 11.d)",status:"PASS",detail:`${(auditLog||[]).length + (cmaAlerts||[]).length} records. Production: archive per 10-year requirement`},
             ].map((item,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,background:item.status==="PASS"?C.greenBg:item.status==="FAIL"?"#FBF0EC":"#FDF4EC"}}>
                 <span style={{fontSize:20}}>{item.status==="PASS"?"✅":item.status==="FAIL"?"❌":"⚠️"}</span>
@@ -4517,10 +4524,10 @@ const ApptSlotsConfig = ({ start, setStart, end, setEnd, interval, setInterval, 
   // Generate slots from config
   const generateSlots = () => {
     const slots = [];
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    const startMins = sh * 60 + sm;
-    const endMins   = eh * 60 + em;
+    const [sh, sm] = (start||"08:00").split(":").map(Number);
+    const [eh, em] = (end||"16:00").split(":").map(Number);
+    const startMins = (sh||0) * 60 + (sm||0);
+    const endMins   = (eh||16) * 60 + (em||0);
     const step      = parseInt(interval) || 30;
     const d         = parseInt(desks) || 1;
     for (let m = startMins; m < endMins; m += step) {
@@ -4663,14 +4670,14 @@ const CommissionTab = ({
 
   // Example trade preview
   const tradeAmt = 10000;
-  const buyComm  = +(tradeAmt * parseFloat(commBuyer||0) / 100).toFixed(2);
-  const sellComm = +(tradeAmt * parseFloat(commSeller||0) / 100).toFixed(2);
+  const buyComm  = +(tradeAmt * (parseFloat(commBuyer||0)||0) / 100).toFixed(2);
+  const sellComm = +(tradeAmt * (parseFloat(commSeller||0)||0) / 100).toFixed(2);
   const totalComm = buyComm + sellComm;
   const buyerPays  = tradeAmt + buyComm;
   const sellerGets = tradeAmt - sellComm;
 
   // Split breakdown from total commission
-  const splitOf = (pct) => +(totalComm * parseInt(pct||0) / 100).toFixed(2);
+  const splitOf = (pct) => +(totalComm * (parseInt(pct||0)||0) / 100).toFixed(2);
 
   return (
     <div>
@@ -5045,7 +5052,7 @@ const OrderBook = () => {
   const [mmCeiling, setMmCeiling]   = useState(""); // price ceiling SAR/g
 
   const GATEWAY = ["MADA","Visa","Mastercard","Apple Pay","STC Pay","Android Pay"];
-  const mmTotal = parseFloat(mmQty||0) * parseFloat(mmPrice||0);
+  const mmTotal = (parseFloat(mmQty||0)||0) * (parseFloat(mmPrice||0)||0);
 
   const METALS    = ["Gold","Silver","Platinum"];
   const METALS_AR = {Gold:"\u0627\u0644\u0630\u0647\u0628",Silver:"\u0627\u0644\u0641\u0636\u0629",Platinum:"\u0627\u0644\u0628\u0644\u0627\u062a\u064a\u0646"};
@@ -5080,6 +5087,7 @@ const OrderBook = () => {
 
     stabLastRef.current = Date.now();
     const midPrice = (bestBid+bestAsk)/2;
+    if(midPrice <= 0) return;
     const halfSpread = parseFloat(maxSpreadPct||2)/2/100;
     const synBidPrice = +(midPrice*(1-halfSpread)).toFixed(2);
     const synAskPrice = +(midPrice*(1+halfSpread)).toFixed(2);
@@ -6085,8 +6093,8 @@ const UserManagement = () => {
   };
 
   // Audit log filtering
-  const auditActionTypes = [...new Set(auditLog.map(e=>e.action))];
-  const filteredAudit = auditLog.filter(e=>{
+  const auditActionTypes = [...new Set((auditLog||[]).map(e=>e.action))];
+  const filteredAudit = (auditLog||[]).filter(e=>{
     if(auditTypeFilter!=="ALL"&&e.action!==auditTypeFilter) return false;
     if(auditSearch){
       const q=auditSearch.toLowerCase();
@@ -6106,7 +6114,7 @@ const UserManagement = () => {
       <div style={{display:"flex",gap:4,marginBottom:18}}>
         {[
           {id:"users",label:isAr?"المستخدمون":"Users",icon:"user",count:users.length},
-          {id:"activity",label:isAr?"سجل النشاط":"Activity Log",icon:"financials",count:auditLog.length},
+          {id:"activity",label:isAr?"سجل النشاط":"Activity Log",icon:"financials",count:(auditLog||[]).length},
         ].map(tb=>(
           <button key={tb.id} onClick={()=>setActiveTab(tb.id)} style={{
             padding:"10px 20px",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",
@@ -6174,10 +6182,10 @@ const UserManagement = () => {
       {activeTab==="activity"&&<div>
         {/* Stats */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
-          <StatCard icon={Icons.financials(22,C.navy)} title={isAr?"إجمالي الإجراءات":"Total Actions"} value={auditLog.length} />
-          <StatCard icon={Icons.usersAdmin(22,C.greenSolid)} title={isAr?"المستخدمون النشطون":"Active Users"} value={[...new Set(auditLog.map(e=>e.admin))].length} />
-          <StatCard icon={Icons.warning(22,"#D4943A")} title={isAr?"إجراءات حرجة":"Critical Actions"} value={auditLog.filter(e=>(e.action||"").includes("ban")||(e.action||"").includes("suspend")||(e.action||"").includes("reject")||(e.action||"").includes("delete")).length} />
-          <StatCard icon={Icons.check(22,C.blueSolid)} title={isAr?"اليوم":"Today"} value={auditLog.filter(e=>(e.time||"").startsWith(new Date().toISOString().slice(0,10))).length} />
+          <StatCard icon={Icons.financials(22,C.navy)} title={isAr?"إجمالي الإجراءات":"Total Actions"} value={(auditLog||[]).length} />
+          <StatCard icon={Icons.usersAdmin(22,C.greenSolid)} title={isAr?"المستخدمون النشطون":"Active Users"} value={[...new Set((auditLog||[]).map(e=>e.admin))].length} />
+          <StatCard icon={Icons.warning(22,"#D4943A")} title={isAr?"إجراءات حرجة":"Critical Actions"} value={(auditLog||[]).filter(e=>(e.action||"").includes("ban")||(e.action||"").includes("suspend")||(e.action||"").includes("reject")||(e.action||"").includes("delete")).length} />
+          <StatCard icon={Icons.check(22,C.blueSolid)} title={isAr?"اليوم":"Today"} value={(auditLog||[]).filter(e=>(e.time||"").startsWith(new Date().toISOString().slice(0,10))).length} />
         </div>
 
         {/* Filters */}
@@ -6197,7 +6205,7 @@ const UserManagement = () => {
         {filteredAudit.length===0?(
           <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,padding:"40px",textAlign:"center"}}>
             <p style={{fontSize:38,marginBottom:12}}>📋</p>
-            <p style={{fontSize:16,color:C.textMuted}}>{auditLog.length===0?(isAr?"لا توجد إجراءات مسجلة بعد":"No actions recorded yet — they appear here as admins work"):(isAr?"لا توجد نتائج تطابق الفلتر":"No results match the current filter")}</p>
+            <p style={{fontSize:16,color:C.textMuted}}>{(auditLog||[]).length===0?(isAr?"لا توجد إجراءات مسجلة بعد":"No actions recorded yet — they appear here as admins work"):(isAr?"لا توجد نتائج تطابق الفلتر":"No results match the current filter")}</p>
           </div>
         ):(
           <div style={{background:C.white,borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden"}}>
@@ -6214,7 +6222,7 @@ const UserManagement = () => {
                   const col = ACTION_COLOR_MAP[e.action]||C.navy;
                   return (
                     <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?C.white:"#FAF8F5"}}>
-                      <td style={{padding:"8px 12px",fontSize:12,fontFamily:"monospace",color:C.textMuted,whiteSpace:"nowrap"}}>{e.time?new Date(e.time).toLocaleString("en-SA",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—"}</td>
+                      <td style={{padding:"8px 12px",fontSize:12,fontFamily:"monospace",color:C.textMuted,whiteSpace:"nowrap"}}>{e.time&&!isNaN(new Date(e.time).getTime())?new Date(e.time).toLocaleString("en-SA",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—"}</td>
                       <td style={{padding:"8px 12px",fontSize:13,fontWeight:600,color:C.navy}}>{e.admin||"—"}</td>
                       <td style={{padding:"8px 12px"}}><span style={{padding:"2px 8px",borderRadius:20,fontSize:12,fontWeight:700,color:col,background:col+"15",border:`1px solid ${col}33`}}>{actionLabel(e.action)}</span></td>
                       <td style={{padding:"8px 12px",fontSize:13,color:C.textMuted,fontWeight:600}}>{(()=>{const et=e.entityType||"—";const m={"investor":isAr?"مستثمر":"Investor","appointment":isAr?"موعد":"Appointment","withdrawal":isAr?"سحب":"Withdrawal","bar":isAr?"سبيكة":"Bar","order":isAr?"أمر":"Order","ORDER_BOOK":isAr?"دفتر الأوامر":"Order Book","wallet":isAr?"محفظة":"Wallet","admin":isAr?"مسؤول":"Admin","blacklist":isAr?"قائمة سوداء":"Blacklist","settings":isAr?"إعدادات":"Settings","block":isAr?"بلوك":"Block"};return m[et]||et;})()}</td>
@@ -6408,9 +6416,10 @@ const UserManagement = () => {
               <div style={{maxHeight:400,overflowY:"auto",display:"flex",flexDirection:"column",gap:2}}>
                 {filtered.length===0&&<p style={{fontSize:14,color:C.textMuted,textAlign:"center",padding:20}}>{isAr?"لا توجد إجراءات":"No activity found"}</p>}
                 {filtered.map((entry,i)=>{
-                  const isLogin = entry.action.includes("Login")||entry.action.includes("دخول");
-                  const isDanger = entry.action.includes("Suspend")||entry.action.includes("إيقاف")||entry.action.includes("SAR")||entry.action.includes("بلاغ");
-                  const isSuccess = entry.action.includes("Approved")||entry.action.includes("موافقة")||entry.action.includes("Completed")||entry.action.includes("reactivated");
+                  const act = entry.action||"";
+                  const isLogin = act.includes("Login")||act.includes("دخول");
+                  const isDanger = act.includes("Suspend")||act.includes("إيقاف")||act.includes("SAR")||act.includes("بلاغ");
+                  const isSuccess = act.includes("Approved")||act.includes("موافقة")||act.includes("Completed")||act.includes("reactivated");
                   return (
                     <div key={i} style={{display:"flex",gap:10,padding:"8px 12px",borderRadius:8,background:i%2===0?C.bg:"transparent",alignItems:"flex-start"}}>
                       <div style={{width:6,height:6,borderRadius:3,marginTop:6,flexShrink:0,
@@ -6431,11 +6440,11 @@ const UserManagement = () => {
               {/* Summary stats */}
               <div style={{display:"flex",gap:10,marginTop:14,paddingTop:14,borderTop:`1px solid ${C.border}`}}>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:"8px 12px",textAlign:"center"}}>
-                  <p style={{fontSize:18,fontWeight:800,color:C.navy}}>{log.filter(e=>e.action.includes("Login")||e.action.includes("دخول")).length}</p>
+                  <p style={{fontSize:18,fontWeight:800,color:C.navy}}>{log.filter(e=>(e.action||"").includes("Login")||(e.action||"").includes("دخول")).length}</p>
                   <p style={{fontSize:11,color:C.textMuted}}>{isAr?"تسجيلات دخول":"Logins"}</p>
                 </div>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:"8px 12px",textAlign:"center"}}>
-                  <p style={{fontSize:18,fontWeight:800,color:C.navy}}>{log.filter(e=>!e.action.includes("Login")&&!e.action.includes("دخول")).length}</p>
+                  <p style={{fontSize:18,fontWeight:800,color:C.navy}}>{log.filter(e=>!(e.action||"").includes("Login")&&!(e.action||"").includes("دخول")).length}</p>
                   <p style={{fontSize:11,color:C.textMuted}}>{isAr?"إجراءات":"Actions"}</p>
                 </div>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:"8px 12px",textAlign:"center"}}>
@@ -6443,7 +6452,7 @@ const UserManagement = () => {
                   <p style={{fontSize:11,color:C.textMuted}}>{isAr?"عناوين IP":"Unique IPs"}</p>
                 </div>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:"8px 12px",textAlign:"center"}}>
-                  <p style={{fontSize:18,fontWeight:800,color:C.navy}}>{log.filter(e=>e.action.includes("SAR")||e.action.includes("CMA")||e.action.includes("بلاغ")||e.action.includes("إخطار")).length}</p>
+                  <p style={{fontSize:18,fontWeight:800,color:C.navy}}>{log.filter(e=>(e.action||"").includes("SAR")||(e.action||"").includes("CMA")||(e.action||"").includes("بلاغ")||(e.action||"").includes("إخطار")).length}</p>
                   <p style={{fontSize:11,color:C.textMuted}}>{isAr?"بلاغات":"Reports"}</p>
                 </div>
               </div>
@@ -7027,7 +7036,7 @@ const InvestorTimeline = ({ investor, onClose }) => {
     color:"#D4943A"});
 
   // KYC events
-  if(investor.kycExpiry) {
+  if(investor.kycExpiry && !isNaN(new Date(investor.kycExpiry).getTime())) {
     const daysLeft = Math.ceil((new Date(investor.kycExpiry)-new Date())/(86400000));
     events.push({date:investor.kycExpiry, type:"kyc", icon:daysLeft<=0?"🔴":daysLeft<30?"🟡":"🟢",
       title:daysLeft<=0?(isAr?"انتهت صلاحية الهوية":"KYC Expired"):daysLeft<30?(isAr?`الهوية تنتهي خلال ${daysLeft} يوم`:`KYC expires in ${daysLeft} days`):(isAr?"هوية سارية":"KYC Valid"),
@@ -8077,6 +8086,7 @@ const Settings = ({ onLangChange }) => {
         setGatewaySettings(p=>({...p,
           madaFee:String(d.mada_fee||p.madaFee), madaCap:String(d.mada_cap||p.madaCap),
           visaFee:String(d.visa_fee||p.visaFee), sadadFee:String(d.sadad_fee||p.sadadFee),
+          madaLimit:String(d.mada_limit??p.madaLimit), visaLimit:String(d.visa_limit??p.visaLimit),
         }));
         if(d.wallet_deposit!==undefined) setWalletOn(d.wallet_deposit);
       }
@@ -8087,12 +8097,13 @@ const Settings = ({ onLangChange }) => {
     }).catch(()=>{});
     // Load all other settings from API
     apiFetch("/settings/platform").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.name)setPlatform(d);}).catch(()=>{});
-    apiFetch("/settings/blockchain").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.network_name)setNetName(d.network_name);if(d.protocol)setProtocol(d.protocol);if(d.contract)setContract(d.contract);if(d.max_mb)setMaxMB(String(d.max_mb));if(d.max_hrs)setMaxHrs(String(d.max_hrs));if(d.quorum)setQuorum(String(d.quorum));if(d.explorer_public!==undefined)setExplorerOn(d.explorer_public);}}).catch(()=>{});
-    apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.test_fee)setTestFee(String(d.test_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));}}).catch(()=>{});
+    apiFetch("/settings/blockchain").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.network_name)setNetName(d.network_name);if(d.protocol)setProtocol(d.protocol);if(d.contract)setContract(d.contract);if(d.max_mb)setMaxMB(String(d.max_mb));if(d.max_hrs)setMaxHrs(String(d.max_hrs));if(d.quorum)setQuorum(String(d.quorum));if(d.explorer_public!==undefined)setExplorerOn(d.explorer_public);if(d.explorer_url)setExplorerUrl(d.explorer_url);}}).catch(()=>{});
+    apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.test_fee)setTestFee(String(d.test_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));if(d.weekend_days)setWeekendDays(d.weekend_days);}}).catch(()=>{});
     apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
     apiFetch("/settings/reporting").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.sarEmail!==undefined)setReportingConfig(d);}).catch(()=>{});
     apiFetch("/settings/manufacturers").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d))setManufacturers(d);}).catch(()=>{});
+    apiFetch("/settings/legal").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.terms_url)setTermsUrl(d.terms_url);if(d.platform_agreement_url)setPlatformAgreementUrl(d.platform_agreement_url);if(d.booking_terms_ar)setBookingTermsAr(d.booking_terms_ar);if(d.booking_terms_en)setBookingTermsEn(d.booking_terms_en);}}).catch(()=>{});
   },[]);
   const [tab,setTab]=useState("PLATFORM");
   const [walletOn,setWalletOn]=useState(false);
@@ -8119,11 +8130,13 @@ const Settings = ({ onLangChange }) => {
   const [platform,setPlatform]=useState({name:"Tanaqul Precious",timezone:"Asia/Riyadh (GMT+3)",lang:"ar"});
   // Payments
   // Gateway settings come from App-level context (persist across navigation)
-  const {madaFee,madaCap,visaFee,sadadFee} = gatewaySettings;
+  const {madaFee,madaCap,visaFee,sadadFee,madaLimit,visaLimit} = gatewaySettings;
   const setMadaFee  = v => setGatewaySettings(p=>({...p,madaFee:v}));
   const setMadaCap  = v => setGatewaySettings(p=>({...p,madaCap:v}));
   const setVisaFee  = v => setGatewaySettings(p=>({...p,visaFee:v}));
   const setSadadFee = v => setGatewaySettings(p=>({...p,sadadFee:v}));
+  const setMadaLimit = v => setGatewaySettings(p=>({...p,madaLimit:v}));
+  const setVisaLimit = v => setGatewaySettings(p=>({...p,visaLimit:v}));
   // Commission — backed by App-level context (persists and flows to matching engine)
   const commBuyer = commissionRates.buyer;
   const commSeller = commissionRates.seller;
@@ -8143,6 +8156,7 @@ const Settings = ({ onLangChange }) => {
   const [contract,setContract]=useState("0xc0ntract...addr");
   const [maxMB,setMaxMB]=useState("1"); const [maxHrs,setMaxHrs]=useState("24");
   const [quorum,setQuorum]=useState("1");
+  const [explorerUrl,setExplorerUrl]=useState("");
   // Notifications
   const [smsKey,setSmsKey]=useState(""); const [smsEndpoint,setSmsEndpoint]=useState("https://sms-api.example.com");
   const [fcmKey,setFcmKey]=useState("");
@@ -8160,17 +8174,35 @@ const Settings = ({ onLangChange }) => {
   const [slotInterval,setSlotInterval]=useState("30");
   const [slotDesks,setSlotDesks]=useState("2");
   const [testFee,setTestFee]=useState("150"); const [handFee,setHandFee]=useState("100");
+  const [weekendDays,setWeekendDays]=useState([5,6]); // 0=Sun,1=Mon,...5=Fri,6=Sat — Saudi default: Fri+Sat
   // NAFATH
   const [nafathKey,setNafathKey]=useState(""); const [nafathWebhook,setNafathWebhook]=useState("https://api.tanaqul.sa/nafath/webhook");
   const [nafathMode,setNafathMode]=useState("production");
   // Security
   const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x");
+  // Legal documents
+  const [termsUrl,setTermsUrl]=useState(""); const [platformAgreementUrl,setPlatformAgreementUrl]=useState("");
+  const [bookingTermsAr,setBookingTermsAr]=useState(""); const [bookingTermsEn,setBookingTermsEn]=useState("");
+  // Smart Trading / Smart Hub
+  const [stPlans,setStPlans]=useState([]);
+  const [stNewPlan,setStNewPlan]=useState({name_en:"",name_ar:"",price_monthly:"",features_en:"",features_ar:"",is_popular:false});
+  const [stEditId,setStEditId]=useState(null);
+  const [stEditPlan,setStEditPlan]=useState(null);
+  // AI Chat settings
+  const [aiApiKey,setAiApiKey]=useState("");
+  const [aiChatLimit,setAiChatLimit]=useState("50");
+  const [aiModel,setAiModel]=useState("gpt-4o-mini");
+  const [aiShowKey,setAiShowKey]=useState(false);
+  useEffect(()=>{
+    apiFetch("/settings/smart-trading/plans").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.plans||d))setStPlans(d.plans||d);}).catch(()=>{});
+    apiFetch("/settings/smart-trading/ai").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setAiApiKey(d.api_key);if(d.chat_limit)setAiChatLimit(String(d.chat_limit));if(d.model)setAiModel(d.model);}}).catch(()=>{});
+  },[]);
 
 
   return (
     <div>
       <SectionHeader title={isAr?"الإعدادات":"Settings"} sub={isAr?"إعدادات وإدارة المنصة":"Platform configuration and management"} />
-      <TabBar tabs={[{id:"PLATFORM",label:isAr?"المنصة":"PLATFORM"},{id:"PAYMENTS",label:isAr?"المدفوعات":"PAYMENTS"},{id:"COMMISSION",label:isAr?"العمولة":"COMMISSION"},{id:"STORAGE FEES",label:isAr?"رسوم التخزين":"STORAGE FEES"},{id:"BLOCKCHAIN",label:isAr?"البلوكشين":"BLOCKCHAIN"},{id:"NOTIFICATIONS",label:isAr?"الإشعارات":"NOTIFICATIONS"},{id:"REPORTING",label:isAr?"التقارير":"REPORTING"},{id:"VAULT",label:isAr?"الخزينة":"VAULT"},{id:"MANUFACTURERS",label:isAr?"الشركات المصنعة":"MANUFACTURERS"},{id:"NAFATH",label:isAr?"نفاذ":"NAFATH"},{id:"SECURITY",label:isAr?"الأمان":"SECURITY"}]} active={tab} onChange={setTab} />
+      <TabBar tabs={[{id:"PLATFORM",label:isAr?"المنصة":"PLATFORM"},{id:"PAYMENTS",label:isAr?"المدفوعات":"PAYMENTS"},{id:"COMMISSION",label:isAr?"العمولة":"COMMISSION"},{id:"STORAGE FEES",label:isAr?"رسوم التخزين":"STORAGE FEES"},{id:"SMART HUB",label:isAr?"المركز الذكي":"SMART HUB"},{id:"BLOCKCHAIN",label:isAr?"البلوكشين":"BLOCKCHAIN"},{id:"NOTIFICATIONS",label:isAr?"الإشعارات":"NOTIFICATIONS"},{id:"REPORTING",label:isAr?"التقارير":"REPORTING"},{id:"VAULT",label:isAr?"الخزينة":"VAULT"},{id:"MANUFACTURERS",label:isAr?"الشركات المصنعة":"MANUFACTURERS"},{id:"NAFATH",label:isAr?"نفاذ":"NAFATH"},{id:"SECURITY",label:isAr?"الأمان":"SECURITY"},{id:"LEGAL",label:isAr?"القانونية":"LEGAL"}]} active={tab} onChange={setTab} />
       {tab==="PLATFORM"&&<div>
         <G title={isAr?"إعدادات المنصة":"Platform Settings"}>
           <Inp label={isAr?"اسم المنصة":"Platform Name"} value={platform.name} onChange={v=>setPlatform({...platform,name:v})} />
@@ -8185,8 +8217,8 @@ const Settings = ({ onLangChange }) => {
           {Icons.warning(18,"#D4943A")}<p style={{fontSize:14,color:C.orange,fontWeight:500}}>{isAr?"إيداع المحفظة معطّل — بانتظار موافقة ساما التنظيمية.":"Wallet Deposit disabled — pending SAMA regulatory clearance."}</p>
         </div>
         <G title={isAr?"إيداع المحفظة":"Wallet Deposit"}><Toggle label={isAr?"تفعيل إيداع المحفظة":"Enable Wallet Deposits"} sub={isAr?"تفعيل عند موافقة ساما فقط":"Activate only when SAMA approved"} value={walletOn} onChange={setWalletOn} /></G>
-        <G title={isAr?"مدى — نسبة + حد أقصى ثابت":"MADA — Percentage + Fixed Cap"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={madaFee} onChange={setMadaFee} /><Inp label={isAr?"الحد الأقصى (ريال)":"Max Cap (SAR)"} value={madaCap} onChange={setMadaCap} /></G>
-        <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={visaFee} onChange={setVisaFee} /></G>
+        <G title={isAr?"مدى — نسبة + حد أقصى ثابت":"MADA — Percentage + Fixed Cap"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={madaFee} onChange={setMadaFee} /><Inp label={isAr?"الحد الأقصى (ريال)":"Max Cap (SAR)"} value={madaCap} onChange={setMadaCap} /><Inp label={isAr?"حد المعاملة (ريال)":"Transaction Limit (SAR)"} value={madaLimit} onChange={setMadaLimit} /></G>
+        <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={visaFee} onChange={setVisaFee} /><Inp label={isAr?"حد المعاملة (ريال) — 0 = بلا حد":"Transaction Limit (SAR) — 0 = No limit"} value={visaLimit} onChange={setVisaLimit} /></G>
         <G title={isAr?"سداد — رسوم ثابتة":"SADAD — Fixed Fee"}><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
       </div>}
       {tab==="COMMISSION"&&<CommissionTab
@@ -8303,10 +8335,136 @@ const Settings = ({ onLangChange }) => {
         </div>
       </div>}
 
+      {tab==="SMART HUB"&&<div>
+        <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:10,padding:"12px 18px",marginBottom:18,display:"flex",gap:12,alignItems:"flex-start"}}>
+          <span style={{fontSize:18}}>⚡</span>
+          <div>
+            <p style={{fontSize:14,fontWeight:700,color:"#166534",margin:"0 0 4px"}}>{isAr?"إدارة المركز الذكي":"Smart Hub Management"}</p>
+            <p style={{fontSize:12,color:"#15803D",margin:0}}>{isAr?"أنشئ خطط اشتراك شهرية للمستثمرين. تتيح التنبيهات السعرية والشراء/البيع التلقائي والمساعد الذكي.":"Create monthly subscription plans for investors. Unlocks price alerts, auto-buy, auto-sell and AI assistant."}</p>
+          </div>
+        </div>
+
+        {/* AI Chat Configuration */}
+        <G title={isAr?"إعدادات المساعد الذكي (AI Chat)":"AI Assistant Configuration"}>
+          <div style={{background:"#EFF6FF",border:"1px solid #93C5FD",borderRadius:10,padding:"12px 18px",marginBottom:14,display:"flex",gap:12,alignItems:"flex-start"}}>
+            <span style={{fontSize:18}}>🤖</span>
+            <div>
+              <p style={{fontSize:14,fontWeight:700,color:"#1E40AF",margin:"0 0 4px"}}>{isAr?"مفتاح API للذكاء الاصطناعي":"AI API Key"}</p>
+              <p style={{fontSize:12,color:"#2563EB",margin:0}}>{isAr?"يُستخدم في الخادم لتوليد ردود المساعد الذكي. لا يُكشف للمستثمرين.":"Used server-side to generate AI assistant responses. Never exposed to investors."}</p>
+            </div>
+          </div>
+          <div style={{marginBottom:12}}>
+            <label style={{display:"block",fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"مفتاح API":"API Key"}</label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <input type={aiShowKey?"text":"password"} value={aiApiKey} onChange={e=>setAiApiKey(e.target.value)} placeholder="sk-..." style={{flex:1,padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none",fontFamily:"'DM Mono',monospace",letterSpacing:"0.5px"}} />
+              <Btn small variant="outline" onClick={()=>setAiShowKey(p=>!p)}>{aiShowKey?(isAr?"إخفاء":"Hide"):(isAr?"إظهار":"Show")}</Btn>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div>
+              <Inp label={isAr?"حد الرسائل الشهري لكل مشترك":"Monthly Chat Limit per Subscriber"} value={aiChatLimit} onChange={setAiChatLimit} placeholder="50" />
+              <p style={{fontSize:11,color:C.textMuted,marginTop:4}}>{isAr?"عدد الرسائل المسموحة شهرياً لكل مستثمر مشترك. 0 = بلا حد.":"Max messages per subscriber per month. 0 = unlimited."}</p>
+            </div>
+            <div>
+              <Sel label={isAr?"نموذج الذكاء الاصطناعي":"AI Model"} value={aiModel} onChange={setAiModel} options={[{value:"gpt-4o-mini",label:"GPT-4o Mini (Fast, Low Cost)"},{value:"gpt-4o",label:"GPT-4o (Balanced)"},{value:"gpt-4-turbo",label:"GPT-4 Turbo (Advanced)"},{value:"claude-sonnet-4-20250514",label:"Claude Sonnet 4 (Anthropic)"},{value:"claude-haiku-4-5-20251001",label:"Claude Haiku 4.5 (Fast)"}]} />
+              <p style={{fontSize:11,color:C.textMuted,marginTop:4}}>{isAr?"النموذج المستخدم لتوليد الردود":"Model used to generate responses"}</p>
+            </div>
+          </div>
+          <div style={{marginTop:12}}>
+            <Btn variant="teal" onClick={async()=>{
+              try{await apiFetch("/settings/smart-trading/ai",{method:"PUT",body:JSON.stringify({api_key:aiApiKey,chat_limit:parseInt(aiChatLimit)||50,model:aiModel})});showSaved();}catch(e){}
+            }}>{isAr?"حفظ إعدادات AI":"Save AI Settings"}</Btn>
+          </div>
+        </G>
+
+        {/* Existing Plans */}
+        <G title={isAr?"الخطط الحالية":"Current Plans"}>
+          {stPlans.length===0?<p style={{fontSize:14,color:C.textMuted,textAlign:"center",padding:"20px 0"}}>{isAr?"لا توجد خطط بعد":"No plans yet"}</p>:
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
+            {stPlans.map((plan,idx)=>(
+              <div key={plan.id||idx} style={{background:C.white,borderRadius:12,border:`2px solid ${plan.is_popular?C.gold:C.border}`,padding:16,position:"relative"}}>
+                {plan.is_popular&&<div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:C.gold,color:C.navy,fontSize:11,fontWeight:700,padding:"2px 12px",borderRadius:20}}>{isAr?"الأكثر شيوعاً":"POPULAR"}</div>}
+                <h4 style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:4}}>{isAr?plan.name_ar:plan.name_en}</h4>
+                <p style={{fontSize:28,fontWeight:800,color:C.gold,marginBottom:8}}>{parseFloat(plan.price_monthly||0).toLocaleString()} <span style={{fontSize:14,fontWeight:500,color:C.textMuted}}>{isAr?"ر.س/شهر":"SAR/mo"}</span></p>
+                <ul style={{fontSize:13,color:C.textMuted,listStyle:"none",padding:0,margin:"0 0 12px"}}>
+                  {(isAr?plan.features_ar:plan.features_en||[]).map((f,i)=><li key={i} style={{padding:"3px 0",display:"flex",gap:6,alignItems:"center"}}>✓ {f}</li>)}
+                </ul>
+                <div style={{display:"flex",gap:6}}>
+                  <Btn small variant="outline" onClick={()=>{setStEditId(plan.id||idx);setStEditPlan({...plan,features_en:(plan.features_en||[]).join("\n"),features_ar:(plan.features_ar||[]).join("\n")});}}>{isAr?"تعديل":"Edit"}</Btn>
+                  <Btn small variant="danger" onClick={async()=>{try{await apiFetch(`/settings/smart-trading/plans/${plan.id}`,{method:"DELETE"});setStPlans(p=>p.filter(x=>(x.id||stPlans.indexOf(x))!==(plan.id||idx)));}catch(e){}}}>{isAr?"حذف":"Delete"}</Btn>
+                </div>
+              </div>
+            ))}
+          </div>}
+        </G>
+
+        {/* Add New Plan */}
+        <G title={isAr?"إضافة خطة جديدة":"Add New Plan"}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <Inp label={isAr?"اسم الخطة (إنجليزي)":"Plan Name (English)"} value={stNewPlan.name_en} onChange={v=>setStNewPlan(p=>({...p,name_en:v}))} placeholder="e.g. Pro Trader" />
+            <Inp label={isAr?"اسم الخطة (عربي)":"Plan Name (Arabic)"} value={stNewPlan.name_ar} onChange={v=>setStNewPlan(p=>({...p,name_ar:v}))} placeholder="مثال: المتداول المحترف" />
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:10}}>
+            <Inp label={isAr?"السعر الشهري (ريال)":"Monthly Price (SAR)"} value={stNewPlan.price_monthly} onChange={v=>setStNewPlan(p=>({...p,price_monthly:v}))} placeholder="49.00" />
+            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:20}}>
+              <Toggle label={isAr?"خطة مميزة (الأكثر شيوعاً)":"Popular Plan (highlighted)"} value={stNewPlan.is_popular} onChange={v=>setStNewPlan(p=>({...p,is_popular:v}))} />
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:10}}>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"المميزات (إنجليزي) — سطر لكل ميزة":"Features (English) — one per line"}</label>
+              <textarea value={stNewPlan.features_en} onChange={e=>setStNewPlan(p=>({...p,features_en:e.target.value}))} rows={4} placeholder={"Price alerts\nAuto-buy rules\nAuto-sell rules"} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}} />
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"المميزات (عربي) — سطر لكل ميزة":"Features (Arabic) — one per line"}</label>
+              <textarea value={stNewPlan.features_ar} onChange={e=>setStNewPlan(p=>({...p,features_ar:e.target.value}))} rows={4} placeholder={"تنبيهات الأسعار\nشراء تلقائي\nبيع تلقائي"} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",direction:"rtl"}} />
+            </div>
+          </div>
+          <div style={{marginTop:12}}>
+            <Btn variant="teal" onClick={async()=>{
+              if(!stNewPlan.name_en||!stNewPlan.price_monthly)return;
+              const payload={name_en:stNewPlan.name_en,name_ar:stNewPlan.name_ar,price_monthly:parseFloat(stNewPlan.price_monthly),features_en:stNewPlan.features_en.split("\n").filter(Boolean),features_ar:stNewPlan.features_ar.split("\n").filter(Boolean),is_popular:stNewPlan.is_popular};
+              try{const r=await apiFetch("/settings/smart-trading/plans",{method:"POST",body:JSON.stringify(payload)});const d=await r.json();setStPlans(p=>[...p,d.plan||d||{...payload,id:Date.now()}]);setStNewPlan({name_en:"",name_ar:"",price_monthly:"",features_en:"",features_ar:"",is_popular:false});}catch(e){}
+            }}><span style={{display:"flex",alignItems:"center",gap:6}}>{Icons.add(14,C.white)} {isAr?"إضافة الخطة":"Add Plan"}</span></Btn>
+          </div>
+        </G>
+
+        {/* Edit Plan Modal */}
+        {stEditPlan&&<Modal title={isAr?"تعديل الخطة":"Edit Plan"} onClose={()=>{setStEditId(null);setStEditPlan(null);}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <Inp label={isAr?"اسم الخطة (إنجليزي)":"Plan Name (English)"} value={stEditPlan.name_en} onChange={v=>setStEditPlan(p=>({...p,name_en:v}))} />
+            <Inp label={isAr?"اسم الخطة (عربي)":"Plan Name (Arabic)"} value={stEditPlan.name_ar} onChange={v=>setStEditPlan(p=>({...p,name_ar:v}))} />
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:10}}>
+            <Inp label={isAr?"السعر الشهري (ريال)":"Monthly Price (SAR)"} value={String(stEditPlan.price_monthly||"")} onChange={v=>setStEditPlan(p=>({...p,price_monthly:v}))} />
+            <div style={{marginTop:20}}><Toggle label={isAr?"خطة مميزة":"Popular"} value={stEditPlan.is_popular} onChange={v=>setStEditPlan(p=>({...p,is_popular:v}))} /></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:10}}>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"المميزات (إنجليزي)":"Features (English)"}</label>
+              <textarea value={stEditPlan.features_en} onChange={e=>setStEditPlan(p=>({...p,features_en:e.target.value}))} rows={4} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit"}} />
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"المميزات (عربي)":"Features (Arabic)"}</label>
+              <textarea value={stEditPlan.features_ar} onChange={e=>setStEditPlan(p=>({...p,features_ar:e.target.value}))} rows={4} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",direction:"rtl"}} />
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,marginTop:14}}>
+            <Btn variant="gold" onClick={async()=>{
+              const payload={name_en:stEditPlan.name_en,name_ar:stEditPlan.name_ar,price_monthly:parseFloat(stEditPlan.price_monthly),features_en:stEditPlan.features_en.split("\n").filter(Boolean),features_ar:stEditPlan.features_ar.split("\n").filter(Boolean),is_popular:stEditPlan.is_popular};
+              try{await apiFetch(`/settings/smart-trading/plans/${stEditId}`,{method:"PUT",body:JSON.stringify(payload)});setStPlans(p=>p.map(x=>(x.id===stEditId)?{...x,...payload}:x));}catch(e){}
+              setStEditId(null);setStEditPlan(null);
+            }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+            <Btn variant="outline" onClick={()=>{setStEditId(null);setStEditPlan(null);}}>{isAr?"إلغاء":"Cancel"}</Btn>
+          </div>
+        </Modal>}
+      </div>}
+
       {tab==="BLOCKCHAIN"&&<div>
         <G title={isAr?"الشبكة":"Network"}><Inp label={isAr?"اسم الشبكة":"Network Name"} value={netName} onChange={setNetName} /><Sel label={isAr?"البروتوكول":"Protocol"} value={protocol} onChange={setProtocol} options={[{value:"besu",label:"Hyperledger Besu"},{value:"fabric",label:"Hyperledger Fabric"}]} /><Inp label={isAr?"عنوان العقد":"Contract Address"} value={contract} onChange={setContract} /></G>
         <G title={isAr?"محفز الكتلة":"Block Trigger"}><Inp label={isAr?"الحد الأقصى للحجم (ميجابايت)":"Max Size (MB)"} value={maxMB} onChange={setMaxMB} /><Inp label={isAr?"الحد الأقصى للوقت (ساعات)":"Max Time (hours)"} value={maxHrs} onChange={setMaxHrs} /></G>
         <G title={isAr?"المصادقون":"Validators"}><Inp label={isAr?"حد النصاب":"Quorum Threshold"} value={quorum} onChange={setQuorum} /><Toggle label={isAr?"مستكشف الكتل العام":"Public Block Explorer"} sub={isAr?"السماح بالوصول العام للقراءة فقط":"Allow public read-only access"} value={explorerOn} onChange={setExplorerOn} /></G>
+        <G title={isAr?"مستكشف البلوكتشين":"Block Explorer"}><Inp label={isAr?"رابط المستكشف":"Explorer URL"} value={explorerUrl} onChange={setExplorerUrl} placeholder="https://explorer.tanaqul.sa" /><p style={{fontSize:12,color:C.textMuted,marginTop:4}}>{isAr?"رابط المستكشف الذي يظهر للعملاء في صفحة الخزنة":"The explorer link shown to customers on the Vault page"}</p></G>
       </div>}
       {tab==="NOTIFICATIONS"&&<NotificationSettings />}
 
@@ -8468,6 +8626,20 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"قواعد المواعيد":"Appointment Rules"}>
           <Inp label={isAr?"الحجز المسبق (أيام)":"Advance Booking (days)"} value={advBook} onChange={setAdvBook} />
           <Inp label={isAr?"نافذة الانتهاء (دقائق بعد الموعد)":"Expiry Window (minutes after appointment)"} value={expiry} onChange={setExpiry} />
+          <div style={{marginTop:10,marginBottom:14}}>
+            <label style={{display:"block",fontSize:14,fontWeight:700,color:C.textMuted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.03em"}}>{isAr?"أيام العطلة (لا مواعيد)":"Weekend / Off Days (no appointments)"}</label>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {[{d:0,en:"Sun",ar:"أحد"},{d:1,en:"Mon",ar:"اثنين"},{d:2,en:"Tue",ar:"ثلاثاء"},{d:3,en:"Wed",ar:"أربعاء"},{d:4,en:"Thu",ar:"خميس"},{d:5,en:"Fri",ar:"جمعة"},{d:6,en:"Sat",ar:"سبت"}].map(day=>{
+                const active=weekendDays.includes(day.d);
+                return <button key={day.d} onClick={()=>setWeekendDays(prev=>active?prev.filter(x=>x!==day.d):[...prev,day.d])}
+                  style={{padding:"8px 16px",borderRadius:10,border:`2px solid ${active?C.red:C.border}`,background:active?"rgba(239,68,68,0.1)":C.white,
+                    color:active?C.red:C.text,fontSize:14,fontWeight:active?700:500,cursor:"pointer",transition:"all 0.15s",minWidth:56,textAlign:"center"}}>
+                  {isAr?day.ar:day.en}
+                </button>;
+              })}
+            </div>
+            <p style={{fontSize:12,color:C.textMuted,marginTop:6}}>{isAr?"اضغط لتبديل — الأيام المحددة لن تظهر للمستثمرين عند حجز المواعيد":"Click to toggle — selected days will be hidden from investors when booking"}</p>
+          </div>
           <ApptSlotsConfig
             start={slotStart} setStart={setSlotStart}
             end={slotEnd}     setEnd={setSlotEnd}
@@ -8519,20 +8691,54 @@ const Settings = ({ onLangChange }) => {
         </G>
         <PriceFeedSettings />
       </div>}
+      {tab==="LEGAL"&&<div>
+        <G title={isAr?"المستندات القانونية":"Legal Documents"}>
+          <p style={{fontSize:13,color:C.textMuted,marginBottom:12}}>{isAr?"ارفع ملفات PDF لعرضها للمستثمرين أثناء التسجيل. تفتح في صفحة جديدة.":"Upload PDF files shown to investors during signup. Opens in a new browser tab."}</p>
+          <div style={{marginBottom:16}}>
+            <label style={{fontSize:14,fontWeight:600,color:C.text,display:"block",marginBottom:6}}>{isAr?"الشروط والأحكام":"Terms & Conditions"}</label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <input type="file" accept=".pdf" onChange={async(e)=>{const f=e.target.files?.[0];if(!f)return;const fd=new FormData();fd.append("file",f);fd.append("type","terms");try{const r=await apiFetch("/settings/legal/upload",{method:"POST",body:fd,headers:{}});const d=await r.json();if(d.url)setTermsUrl(d.url);}catch{setTermsUrl(URL.createObjectURL(f));}}} style={{flex:1,fontSize:14}} />
+              {termsUrl&&<a href={termsUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:13,color:C.gold,fontWeight:600,textDecoration:"underline"}}>{isAr?"معاينة":"Preview"}</a>}
+            </div>
+            {termsUrl&&<p style={{fontSize:12,color:C.greenSolid,marginTop:4}}>{isAr?"✅ تم الرفع":"✅ Uploaded"}</p>}
+          </div>
+          <div>
+            <label style={{fontSize:14,fontWeight:600,color:C.text,display:"block",marginBottom:6}}>{isAr?"اتفاقية استخدام المنصة":"Platform Usage Agreement"}</label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <input type="file" accept=".pdf" onChange={async(e)=>{const f=e.target.files?.[0];if(!f)return;const fd=new FormData();fd.append("file",f);fd.append("type","platform_agreement");try{const r=await apiFetch("/settings/legal/upload",{method:"POST",body:fd,headers:{}});const d=await r.json();if(d.url)setPlatformAgreementUrl(d.url);}catch{setPlatformAgreementUrl(URL.createObjectURL(f));}}} style={{flex:1,fontSize:14}} />
+              {platformAgreementUrl&&<a href={platformAgreementUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:13,color:C.gold,fontWeight:600,textDecoration:"underline"}}>{isAr?"معاينة":"Preview"}</a>}
+            </div>
+            {platformAgreementUrl&&<p style={{fontSize:12,color:C.greenSolid,marginTop:4}}>{isAr?"✅ تم الرفع":"✅ Uploaded"}</p>}
+          </div>
+        </G>
+        <G title={isAr?"شروط وأحكام حجز المواعيد":"Booking Terms & Conditions"}>
+          <p style={{fontSize:13,color:C.textMuted,marginBottom:12}}>{isAr?"يجب على المستثمر الموافقة على هذه الشروط قبل تأكيد حجز موعد الإيداع أو السحب.":"Investor must agree to these terms before confirming a deposit or withdrawal appointment booking."}</p>
+          <div style={{marginBottom:16}}>
+            <label style={{fontSize:14,fontWeight:600,color:C.text,display:"block",marginBottom:6}}>{isAr?"الشروط (عربي)":"Terms (Arabic)"}</label>
+            <textarea value={bookingTermsAr} onChange={e=>setBookingTermsAr(e.target.value)} placeholder={isAr?"أدخل شروط وأحكام الحجز بالعربية...":"Enter booking terms in Arabic..."} style={{width:"100%",minHeight:120,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}} />
+          </div>
+          <div>
+            <label style={{fontSize:14,fontWeight:600,color:C.text,display:"block",marginBottom:6}}>{isAr?"الشروط (إنجليزي)":"Terms (English)"}</label>
+            <textarea value={bookingTermsEn} onChange={e=>setBookingTermsEn(e.target.value)} placeholder={isAr?"أدخل شروط وأحكام الحجز بالإنجليزية...":"Enter booking terms in English..."} style={{width:"100%",minHeight:120,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}} />
+          </div>
+        </G>
+      </div>}
       <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginTop:8,gap:12,flexWrap:"wrap"}}>{saved&&<span style={{fontSize:15,color:C.greenSolid,fontWeight:600}}>{isAr?"✅ تم حفظ الإعدادات!":"✅ Settings saved!"}</span>}<Btn variant="gold" onClick={async ()=>{
           // Save ALL settings to backend
           // Split saved via localStorage — backend _set has table conflict, skip for now
           try{await apiFetch("/blocks/settings/split",{method:"PUT",body:JSON.stringify({platform_percent:parseInt(splitBuying||0)+parseInt(splitSelling||0),creator_percent:parseInt(splitCreator||0),validators_percent:parseInt(splitValidators||0)})});}catch(e){}
           try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(commBuyer||2),seller_rate:parseFloat(commSeller||1)})});}catch(e){}
           try{await apiFetch("/settings/cancel-fee",{method:"PUT",body:JSON.stringify({fee:parseFloat(cancelFee||50)})});}catch(e){}
-          try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(madaFee||1.5),mada_cap:parseFloat(madaCap||15),visa_fee:parseFloat(visaFee||2.5),sadad_fee:parseFloat(sadadFee||0),wallet_deposit:walletOn})});}catch(e){}
+          try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(madaFee||1.5),mada_cap:parseFloat(madaCap||15),visa_fee:parseFloat(visaFee||2.5),sadad_fee:parseFloat(sadadFee||0),mada_limit:parseFloat(madaLimit||50000),visa_limit:parseFloat(visaLimit||0),wallet_deposit:walletOn})});}catch(e){}
           try{await apiFetch("/settings/platform",{method:"PUT",body:JSON.stringify(platform)});}catch(e){}
-          try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn})});}catch(e){}
-          try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),test_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100)})});}catch(e){}
+          try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn,explorer_url:explorerUrl})});}catch(e){}
+          try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),test_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
           try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode})});}catch(e){}
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
           try{await apiFetch("/settings/reporting",{method:"PUT",body:JSON.stringify(reportingConfig)});}catch(e){}
           try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:manufacturers||[]})});}catch(e){}
+          try{await apiFetch("/settings/legal",{method:"PUT",body:JSON.stringify({terms_url:termsUrl,platform_agreement_url:platformAgreementUrl,booking_terms_ar:bookingTermsAr,booking_terms_en:bookingTermsEn})});}catch(e){}
+          try{await apiFetch("/settings/smart-trading/plans/bulk",{method:"PUT",body:JSON.stringify({plans:stPlans})});}catch(e){}
           showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
       <div id="split-err" style={{display:"none",background:C.redBg,border:"1px solid #C85C3E44",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:14,color:"#C85C3E",fontWeight:600}}></div>
     </div>
@@ -9068,9 +9274,9 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     const sellVol = txns.filter(tx=>tx.sellerNationalId===nid&&tx.status==="COMPLETED").reduce((a,tx)=>a+parseSARGlobal(tx.total),0)
       + matchList.filter(m=>{const so=orders.find(o=>o.id===m.sellOrder);return so?.nationalId===nid;}).reduce((a,m)=>a+(Number(m.totalSAR)||0),0);
     const totalVol = buyVol + sellVol;
-    const txDates = txns.map(tx=>new Date(tx.date));
+    const txDates = txns.map(tx=>new Date(tx.date)).filter(d=>!isNaN(d.getTime()));
     const daysBetween = txDates.length>1 ? (Math.max(...txDates)-Math.min(...txDates))/(86400000) : 0;
-    const txFreq = daysBetween>0 ? txns.length/daysBetween : 0;
+    const txFreq = (daysBetween>0 && isFinite(daysBetween)) ? txns.length/daysBetween : 0;
     const ords = orders.filter(o=>o.nationalId===nid);
     const wdReqs = withdrawals.filter(w=>w.nationalId===nid||w.investor===inv.nameEn);
     const totalWithdrawn = wdReqs.filter(w=>w.status==="PROCESSED"||w.status==="APPROVED").reduce((a,w)=>a+parseSARGlobal(w.amount),0);
@@ -9086,7 +9292,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     if(totalWithdrawn > 0 && holdings > 0 && (totalWithdrawn/(holdings+totalWithdrawn)) > 0.7) push("R04","MEDIUM","Disproportionate Withdrawal",`${Math.round((totalWithdrawn/(holdings+totalWithdrawn))*100)}% liquidated.`,"WITHDRAWAL");
     if(daysSinceJoin < 30 && totalVol > 50000) push("R05","HIGH","New Account High Volume",`${Math.ceil(daysSinceJoin)} days old, SAR ${(totalVol||0).toLocaleString()} volume.`,"ONBOARDING");
     if(noShows >= 2) push("R06","MEDIUM","Repeated No-Shows",`${noShows} appointment no-shows.`,"BEHAVIOR");
-    if(inv.kycExpiry){
+    if(inv.kycExpiry && !isNaN(new Date(inv.kycExpiry).getTime())){
       const dLeft = (new Date(inv.kycExpiry)-now)/(86400000);
       if(dLeft < 30 && dLeft > 0 && totalVol > 0) push("R07","MEDIUM","KYC Expiring",`Expires in ${Math.ceil(dLeft)} days.`,"COMPLIANCE");
       if(dLeft <= 0) push("R07","HIGH","KYC Expired",`Expired ${Math.abs(Math.ceil(dLeft))} days ago.`,"COMPLIANCE");
@@ -9113,7 +9319,7 @@ const runGlobalAML = ({investors, orders, matches, walletMovements, withdrawals,
     const intlBanks = wdBanks.filter(b=>b&&(b.includes("International")||b.includes("SWIFT")||b.includes("USD")));
     if(intlBanks.length >= 1 && totalWithdrawn > 50000) push("R17","MEDIUM","Cross-Border Withdrawal Pattern",`International withdrawal detected: SAR ${(totalWithdrawn||0).toLocaleString()} across ${wdBanks.length} accounts.`,"WITHDRAWAL");
     // R18: Off-Hours Trading — unusual activity outside Saudi business hours (7 AM – 11 PM)
-    const offHoursTx = txns.filter(tx=>{const d=tx.date||"";const h=parseInt((d.includes("T")?d.split("T")[1]:d.split(" ")[1])||"12");return h<7||h>=23;});
+    const offHoursTx = txns.filter(tx=>{const d=tx.date||"";const ts=d.includes("T")?d.split("T")[1]:d.split(" ")[1];const h=parseInt((ts||"12").slice(0,2)||"12",10);return !isNaN(h)&&(h<7||h>=23);});
     if(offHoursTx.length >= 2) push("R18","LOW","Off-Hours Trading Activity",`${offHoursTx.length} transactions outside business hours (before 7 AM or after 11 PM). May indicate automated or non-resident activity.`,"BEHAVIOR");
   });
 
@@ -9299,7 +9505,7 @@ const runCMAManipulation = ({investors, orders, matches, blacklist, transactions
   // Orders placed in last minutes of trading near close
   const closeTime = "23:59";
   orders.filter(o=>o.placed&&o.nationalId!=="SYSTEM").forEach(o => {
-    const time = (o.placed.includes("T")?o.placed.split("T")[1]:o.placed.split(" ")[1]);
+    const time = (o.placed.includes("T")?o.placed.split("T")[1]:o.placed.split(" ")[1])||"";
     if(time && time >= "23:50" && o.status !== "CANCELLED") {
       push("CMA-08","MEDIUM",o.nationalId,o.investor,
         "Near-Close Order (Art 3.b.6 Review)",
@@ -9939,7 +10145,7 @@ export default function App() {
   const [bidEnabled, setBidEnabled] = useState(true);
   const [tradingOpen, setTradingOpen] = useState(true);
   const [commSplit, setCommSplit] = useState({buying:30,selling:30,creator:20,validators:20});
-  const [gatewaySettings, setGatewaySettings] = useState({madaFee:"1.5",madaCap:"10.00",visaFee:"2.5",sadadFee:"5.00"});
+  const [gatewaySettings, setGatewaySettings] = useState({madaFee:"0.008",madaCap:"100.00",visaFee:"0.025",sadadFee:"5.00",madaLimit:"50000",visaLimit:"0"});
   const [commissionRates, setCommissionRates] = useState({buyer:"1.0",seller:"1.0"});
   const [cancelFee, setCancelFee] = useState("50");
   const [storageFeeSettings, setStorageFeeSettings] = useState({goldAnnualPct:"0.5",silverAnnualPct:"0.75",platinumAnnualPct:"0.6",billingCycle:"monthly",minFee:"5"});
@@ -10359,7 +10565,7 @@ export default function App() {
       setTimeout(() => setAmlToast(null), 6000);
     }
     prevAlertKeysRef.current = currentKeys;
-  }, [loggedIn, appInvestors, appOrders, appMatches, appWalletMoves, appWithdrawals, appBars, appBlacklist]);
+  }, [loggedIn, appInvestors, appOrders, appMatches, appWalletMoves, appWithdrawals, appBars, appBlacklist, appAppointments]);
 
   const isAr  = lang === "ar";
   const tFn   = (key) => translate(lang, key);
@@ -10650,7 +10856,7 @@ export default function App() {
             <span style={{fontSize:24}}>🚨</span>
             <div style={{flex:1}}>
               <p style={{fontSize:13,fontWeight:800,color:"#FFF"}}>{isAr?`${amlToast.count} تنبيه جديد مكتشف`:`${amlToast.count} New ${amlToast.count>1?"Alerts":"Alert"} Detected`}</p>
-              <p style={{fontSize:11,color:"#E8C5BA"}}>{amlToast.top.rule}: {amlToast.top.title} — {amlToast.top.name}</p>
+              <p style={{fontSize:11,color:"#E8C5BA"}}>{amlToast.top?.rule}: {amlToast.top?.title} — {amlToast.top?.name}</p>
             </div>
             <button onClick={()=>{setAmlToast(null);setPage("auditlog");}} style={{padding:"6px 12px",borderRadius:8,background:"#FFF",color:"#C85C3E",fontSize:13,fontWeight:700,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>{isAr?"مراجعة ←":"Review →"}</button>
           </div>}
