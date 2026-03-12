@@ -2222,6 +2222,7 @@ const Financials = () => {
   const [sfLoading, setSfLoading] = useState(false);
   const [subscriptions, setSubscriptions] = useState([]);
   const [subLoading, setSubLoading] = useState(false);
+  const [manualSubForm, setManualSubForm] = useState(null); // {investor_id, plan_id, months, notes}
   // Fetch subscriptions when tab is active
   useEffect(()=>{
     if(tab==="SUBSCRIPTIONS"){
@@ -2271,7 +2272,7 @@ const Financials = () => {
   const depositAppts = (appointments||[]).filter(a=>a.type==="DEPOSIT"&&a.status!=="CANCELED"&&a.status!=="REJECTED");
   const withdrawAppts = (appointments||[]).filter(a=>a.type==="WITHDRAWAL"&&a.status!=="CANCELED"&&a.status!=="REJECTED");
   // Subscription income
-  const subIncome = subscriptions.filter(s=>s.status==="ACTIVE"||s.status==="active").reduce((a,s)=>a+(parseFloat(s.price_monthly||s.amount)||0),0);
+  const subIncome = subscriptions.filter(s=>(s.status==="ACTIVE"||s.status==="active")&&!s.is_manual).reduce((a,s)=>a+(parseFloat(s.price_monthly||s.amount)||0),0);
   const subVat = subIncome * 0.15;
 
   const doWithdrawal = (row, type) => { setWModal({type,row}); setWReason(""); };
@@ -2509,6 +2510,50 @@ const Financials = () => {
             </div>
           ))}
         </div>
+        {/* Manual Activation */}
+        <div style={{marginBottom:16}}>
+          {!manualSubForm ? (
+            <button onClick={()=>setManualSubForm({investor_id:"",plan_id:"",months:"1",notes:""})} style={{padding:"8px 16px",background:C.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل اشتراك يدوي":"Manual Activation"}</button>
+          ) : (
+            <div style={{background:C.cream,border:`1px solid ${C.gold}33`,borderRadius:10,padding:16,marginBottom:12}}>
+              <p style={{fontSize:14,fontWeight:700,color:C.gold,margin:"0 0 12px"}}>{isAr?"تفعيل اشتراك يدوي (بدون فوترة)":"Manual Activation (No Billing)"}</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 120px 1fr",gap:10,marginBottom:12}}>
+                <div>
+                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"معرّف المستثمر":"Investor ID"}</label>
+                  <input value={manualSubForm.investor_id} onChange={e=>setManualSubForm(p=>({...p,investor_id:e.target.value}))} placeholder="INV-XXXX" style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}} />
+                </div>
+                <div>
+                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الباقة":"Plan"}</label>
+                  <select value={manualSubForm.plan_id} onChange={e=>setManualSubForm(p=>({...p,plan_id:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}}>
+                    <option value="">{isAr?"اختر باقة":"Select plan"}</option>
+                    {stPlans.map(p=><option key={p.id} value={p.id}>{isAr?p.name_ar:p.name_en} — SAR {p.price_monthly}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"المدة (أشهر)":"Months"}</label>
+                  <input type="number" min="1" max="60" value={manualSubForm.months} onChange={e=>setManualSubForm(p=>({...p,months:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}} />
+                </div>
+                <div>
+                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"ملاحظات":"Notes"}</label>
+                  <input value={manualSubForm.notes} onChange={e=>setManualSubForm(p=>({...p,notes:e.target.value}))} placeholder={isAr?"اختياري":"Optional"} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}} />
+                </div>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={async ()=>{
+                  if(!manualSubForm.investor_id||!manualSubForm.plan_id){showToast(isAr?"أدخل المعرف والباقة":"Enter investor ID and plan","error");return;}
+                  try{
+                    await apiFetch("/billing/subscriptions/activate",{method:"POST",body:JSON.stringify({investor_id:manualSubForm.investor_id,plan_id:manualSubForm.plan_id,months:parseInt(manualSubForm.months||1),notes:manualSubForm.notes})});
+                    showToast(isAr?"✅ تم تفعيل الاشتراك":"✅ Subscription activated");
+                    setManualSubForm(null);
+                    // Refresh subscriptions
+                    apiFetch("/subscriptions").then(r=>r&&r.ok?r.json():null).then(d=>{if(d?.items)setSubscriptions(d.items);else if(Array.isArray(d))setSubscriptions(d);}).catch(()=>{});
+                  }catch(e){showToast(isAr?"حدث خطأ":"Error","error");}
+                }} style={{padding:"8px 20px",background:C.greenSolid,color:"#fff",border:"none",borderRadius:6,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل":"Activate"}</button>
+                <button onClick={()=>setManualSubForm(null)} style={{padding:"8px 16px",background:C.border,color:C.text,border:"none",borderRadius:6,fontWeight:600,fontSize:13,cursor:"pointer"}}>{isAr?"إلغاء":"Cancel"}</button>
+              </div>
+            </div>
+          )}
+        </div>
         <TTable cols={[
           {key:"id",label:isAr?"المعرف":"ID"},
           {key:"investor",label:isAr?"المستثمر":"Investor"},
@@ -2516,7 +2561,7 @@ const Financials = () => {
           {key:"price",label:isAr?"السعر الشهري":"Monthly Price",render:v=><SARAmount amount={v}/>},
           {key:"vat",label:isAr?"ض.ق.م 15%":"VAT 15%",render:v=><span style={{color:"#E65100",fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(v)*0.15).toFixed(2)}</span>},
           {key:"total",label:isAr?"الإجمالي":"Total",render:(_,row)=><span style={{fontWeight:700,color:C.gold,fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(row.price||0)*1.15).toFixed(2)}</span>},
-          {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
+          {key:"status",label:isAr?"الحالة":"Status",render:(v,row)=><>{row.isManual&&<span style={{fontSize:10,fontWeight:700,color:"#9333EA",background:"#FAF5FF",padding:"2px 6px",borderRadius:4,marginEnd:4}}>{isAr?"يدوي":"Manual"}</span>}<Badge label={v}/></>},
           {key:"startedAt",label:isAr?"تاريخ البدء":"Started"},
           {key:"expiresAt",label:isAr?"ينتهي في":"Expires"},
         ]} rows={subscriptions.map(s=>({
@@ -2526,6 +2571,7 @@ const Financials = () => {
           price:String(s.price_monthly||s.amount||0),
           vat:String(s.price_monthly||s.amount||0),
           status:s.status||"ACTIVE",
+          isManual:!!s.is_manual,
           startedAt:(s.started_at||s.created_at||"").slice(0,10),
           expiresAt:(s.expires_at||"").slice(0,10)||"—",
         }))} />
