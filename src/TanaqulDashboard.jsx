@@ -1436,6 +1436,14 @@ const Investors = () => {
         {key:"gold",label:isAr?"ذهب(غ)":"Gold(g)"},{key:"silver",label:isAr?"فضة(غ)":"Silver(g)"},{key:"platinum",label:isAr?"بلا(غ)":"Pt(g)"},
         {key:"status",label:isAr?"الحالة":"Status",render:v=><Badge label={v}/>},
         {key:"joined",label:isAr?"تاريخ الانضمام":"Joined"},
+        {key:"daysPending",label:isAr?"أيام الانتظار":"Days Pending",render:(_,row)=>{
+          if(row.status!=="PENDING_DOCUMENT"&&row.status!=="PENDING_APPROVAL") return "—";
+          const d=row.joined||row.created_at;
+          if(!d) return "—";
+          const days=Math.floor((Date.now()-new Date(d).getTime())/(1000*60*60*24));
+          const color=days>7?"#C85C3E":days>3?"#D4943A":C.navy;
+          return <span style={{fontWeight:700,color}}>{days}d</span>;
+        }},
         {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=>(
           <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"center"}}>
             <Btn small variant="outline" onClick={()=>doAction(row,"view")}>{isAr?"عرض":"View"}</Btn>
@@ -10881,6 +10889,7 @@ export default function App() {
             {PAGES.map(p=>{
               const active=page===p.id;
               const amlBadgeCount = p.id==="auditlog" ? [...amlAlerts,...cmaAlerts].filter(a=>!amlDismissed.has(a.key)&&(a.level==="CRITICAL"||a.level==="HIGH")).length : 0;
+              const pendingBadgeCount = p.id==="investors" ? (appInvestors||[]).filter(i=>i.status==="PENDING_DOCUMENT"||i.status==="PENDING_APPROVAL").length : 0;
               return <button key={p.id} onClick={()=>setPage(p.id)}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:3,padding:"8px 10px",borderRadius:9,border:"none",cursor:"pointer",marginBottom:2,
                   justifyContent:open?"flex-start":"center",position:"relative",
@@ -10892,6 +10901,7 @@ export default function App() {
                 <span style={{flexShrink:0,width:20,display:"flex",alignItems:"center",justifyContent:"center"}}>{Icons[p.icon]?.(20, active?C.gold:"#A89880")}</span>
                 {open&&<span style={{fontSize:16,fontWeight:active?600:400,color:active?C.gold:"#A89880",whiteSpace:"nowrap"}}>{tFn(p.label)}</span>}
                 {amlBadgeCount>0&&<span style={{position:"absolute",top:2,right:open?6:2,background:C.red,color:"#FFF",fontSize:11,fontWeight:900,borderRadius:20,padding:"1px 5px",minWidth:16,textAlign:"center",animation:"pulse 2s infinite"}}>{amlBadgeCount}</span>}
+                {pendingBadgeCount>0&&<span style={{position:"absolute",top:2,right:open?6:2,background:C.gold,color:"#FFF",fontSize:11,fontWeight:900,borderRadius:20,padding:"1px 5px",minWidth:16,textAlign:"center"}}>{pendingBadgeCount}</span>}
               </button>;
             })}
           </nav>
