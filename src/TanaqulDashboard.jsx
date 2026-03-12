@@ -8385,7 +8385,7 @@ const Settings = ({ onLangChange }) => {
   // Security
   const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x");
   // Legal documents
-  const [termsUrl,setTermsUrl]=useState(""); const [platformAgreementUrl,setPlatformAgreementUrl]=useState("");
+  const [termsUrl,setTermsUrl]=useState(""); const [platformAgreementUrl,setPlatformAgreementUrl]=useState(""); const [authTemplateUrl,setAuthTemplateUrl]=useState("");
   const [bookingTermsAr,setBookingTermsAr]=useState(""); const [bookingTermsEn,setBookingTermsEn]=useState("");
   // Smart Trading / Smart Hub
   const [stPlans,setStPlans]=useState([]);
@@ -8923,6 +8923,14 @@ const Settings = ({ onLangChange }) => {
             </div>
             {platformAgreementUrl&&<p style={{fontSize:12,color:C.greenSolid,marginTop:4}}>{isAr?"✅ تم الرفع":"✅ Uploaded"}</p>}
           </div>
+          <div style={{marginTop:16}}>
+            <label style={{fontSize:14,fontWeight:600,color:C.text,display:"block",marginBottom:6}}>{isAr?"قالب التفويض":"Authorization Template"}</label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <input type="file" accept=".pdf" onChange={async(e)=>{const f=e.target.files?.[0];if(!f)return;const fd=new FormData();fd.append("file",f);fd.append("type","auth_template");try{const r=await apiFetch("/settings/legal/upload",{method:"POST",body:fd,headers:{}});const d=await r.json();if(d.url)setAuthTemplateUrl(d.url);}catch{setAuthTemplateUrl(URL.createObjectURL(f));}}} style={{flex:1,fontSize:14}} />
+              {authTemplateUrl&&<a href={authTemplateUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:13,color:C.gold,fontWeight:600,textDecoration:"underline"}}>{isAr?"معاينة":"Preview"}</a>}
+            </div>
+            {authTemplateUrl&&<p style={{fontSize:12,color:C.greenSolid,marginTop:4}}>{isAr?"✅ تم الرفع":"✅ Uploaded"}</p>}
+          </div>
         </G>
         <G title={isAr?"شروط وأحكام حجز المواعيد":"Booking Terms & Conditions"}>
           <p style={{fontSize:13,color:C.textMuted,marginBottom:12}}>{isAr?"يجب على المستثمر الموافقة على هذه الشروط قبل تأكيد حجز موعد الإيداع أو السحب.":"Investor must agree to these terms before confirming a deposit or withdrawal appointment booking."}</p>
@@ -8950,7 +8958,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
           try{await apiFetch("/settings/reporting",{method:"PUT",body:JSON.stringify(reportingConfig)});}catch(e){}
           try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:manufacturers||[]})});}catch(e){}
-          try{await apiFetch("/settings/legal",{method:"PUT",body:JSON.stringify({terms_url:termsUrl,platform_agreement_url:platformAgreementUrl,booking_terms_ar:bookingTermsAr,booking_terms_en:bookingTermsEn})});}catch(e){}
+          try{await apiFetch("/settings/legal",{method:"PUT",body:JSON.stringify({terms_url:termsUrl,platform_agreement_url:platformAgreementUrl,auth_template_url:authTemplateUrl,booking_terms_ar:bookingTermsAr,booking_terms_en:bookingTermsEn})});}catch(e){}
           try{await apiFetch("/settings/smart-trading/plans/bulk",{method:"PUT",body:JSON.stringify({plans:stPlans})});}catch(e){}
           showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
       <div id="split-err" style={{display:"none",background:C.redBg,border:"1px solid #C85C3E44",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:14,color:"#C85C3E",fontWeight:600}}></div>
