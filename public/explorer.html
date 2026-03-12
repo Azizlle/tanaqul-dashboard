@@ -189,13 +189,17 @@ tbody tr:last-child td { border-bottom: none; }
 .b-BURN, .b-BOND_BURN, .b-BOND_WITHDRAW, .b-BURNED { background: rgba(239,68,68,.1); color: var(--red); }
 .b-BOND_BREAK { background: var(--gg); color: var(--gold); }
 .b-TRANSFER { background: rgba(139,92,246,.1); color: var(--purple); }
+.b-FLOATING { background: var(--tg); color: var(--teal); }
+.b-SUSPEND { background: rgba(239,68,68,.1); color: var(--red); }
+.b-ACTIVATE { background: rgba(16,185,129,.1); color: var(--green); }
+.b-DORMANT { background: rgba(74,85,104,.15); color: var(--t3); }
 .b-SYSTEM, .b-KEY_CREATE { background: rgba(255,255,255,.05); color: var(--t2); }
 .b-PENDING { background: rgba(212,160,57,.1); color: var(--gold); }
 .b-CONFIRMED, .b-ACTIVE { background: rgba(16,185,129,.08); color: var(--green); }
 .b-FREE { background: rgba(139,92,246,.08); color: var(--purple); }
 .b-LINKED { background: var(--gg); color: var(--gold); }
 .b-SEALED { background: rgba(59,130,246,.08); color: var(--blue); }
-.b-LEFT { background: rgba(239,68,68,.08); color: var(--red); }
+.b-RELEASED { background: rgba(239,68,68,.08); color: var(--red); }
 
 /* ── Block Detail ──────────────────────────────────────── */
 .detail { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 24px; margin-top: 16px; }
@@ -414,7 +418,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 <!-- ════════════════════════════════════════════════════════ SCRIPT -->
 <script>
-const API = 'https://tanaqul-production.up.railway.app/api/v1/public/explorer';
+const API = 'https://api.tanaqul.app/api/v1/public/explorer';
 let lang = 'en';
 let pages = { blocks: 1, ledger: 1 };
 
