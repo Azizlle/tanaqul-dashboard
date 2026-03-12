@@ -443,7 +443,7 @@ tr:hover { background: rgba(196,149,106,0.03); }
 </footer>
 
 <script>
-const API = window.TANAQUL_API || "https://tanaqul-production.up.railway.app/api/v1";
+const API = window.TANAQUL_API || "https://api.tanaqul.app/api/v1";
 let currentPage = 1;
 let currentTab = "blocks";
 
@@ -464,8 +464,8 @@ const hoursAgo = iso => {
   return ((Date.now()-new Date(iso).getTime())/3600000).toFixed(1);
 };
 const typeBadge = t => {
-  const ar = {MINT:"سك",BURN:"حرق",MATCH:"مطابقة",PENDING:"معلق",CONFIRMED:"مؤكد"};
-  const m = {MINT:"badge-mint",BURN:"badge-burn",MATCH:"badge-match",PENDING:"badge-pending",CONFIRMED:"badge-confirmed"};
+  const ar = {MINT:"سك",BURN:"حرق",MATCH:"مطابقة",TRANSFER:"تحويل",FLOATING:"عائم",SUSPEND:"تعليق",ACTIVATE:"تفعيل",ONBOARD:"تسجيل",PENDING:"معلق",CONFIRMED:"مؤكد"};
+  const m = {MINT:"badge-mint",BURN:"badge-burn",MATCH:"badge-match",TRANSFER:"badge-match",FLOATING:"badge-mint",SUSPEND:"badge-burn",ACTIVATE:"badge-mint",ONBOARD:"badge-pending",PENDING:"badge-pending",CONFIRMED:"badge-confirmed"};
   return `<span class="badge ${m[t]||"badge-pending"}">${ar[t]||t}</span>`;
 };
 
