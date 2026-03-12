@@ -8305,6 +8305,7 @@ const Settings = ({ onLangChange }) => {
     apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.deposit_fee)setTestFee(String(d.deposit_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));if(d.weekend_days)setWeekendDays(d.weekend_days);}}).catch(()=>{});
     apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
+    try{apiFetch("/settings/otp-dev-mode").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setOtpDevMode(d.enabled||false);}).catch(()=>{});}catch{}
     apiFetch("/settings/reporting").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.sarEmail!==undefined)setReportingConfig(d);}).catch(()=>{});
     apiFetch("/settings/manufacturers").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){let list=null;if(Array.isArray(d))list=d;else if(d.items&&Array.isArray(d.items))list=d.items;else if(d.list&&Array.isArray(d.list))list=d.list;if(list&&list.length>0)setManufacturers(list);else{/* DB empty — seed with defaults */apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:["MKS PAMP SA (Switzerland — LBMA)","Valcambi SA (Switzerland — LBMA)","Argor-Heraeus (Switzerland — LBMA)","Royal Mint (UK — LBMA)","Saudi Aramco Refinery (KSA — GCC)"]})}).catch(()=>{});}}}).catch(()=>{});
     apiFetch("/settings/legal").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.terms_url)setTermsUrl(d.terms_url);if(d.platform_agreement_url)setPlatformAgreementUrl(d.platform_agreement_url);if(d.booking_terms_ar)setBookingTermsAr(d.booking_terms_ar);if(d.booking_terms_en)setBookingTermsEn(d.booking_terms_en);}}).catch(()=>{});
@@ -8383,7 +8384,7 @@ const Settings = ({ onLangChange }) => {
   const [nafathKey,setNafathKey]=useState(""); const [nafathWebhook,setNafathWebhook]=useState("https://api.tanaqul.sa/nafath/webhook");
   const [nafathMode,setNafathMode]=useState("production");
   // Security
-  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x");
+  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x"); const [otpDevMode,setOtpDevMode]=useState(false);
   // Legal documents
   const [termsUrl,setTermsUrl]=useState(""); const [platformAgreementUrl,setPlatformAgreementUrl]=useState(""); const [authTemplateUrl,setAuthTemplateUrl]=useState("");
   const [bookingTermsAr,setBookingTermsAr]=useState(""); const [bookingTermsEn,setBookingTermsEn]=useState("");
@@ -8901,6 +8902,7 @@ const Settings = ({ onLangChange }) => {
           <Toggle label={isAr?"المصادقة الثنائية (2FA) 🔒":"Two-Factor Authentication (2FA) 🔒"} sub={isAr?"مطلوبة لجميع عمليات دخول المسؤولين — لا يمكن تعطيلها":"Required for all admin logins — cannot be disabled"} value={true} onChange={()=>{}} />
           <Inp label={isAr?"مهلة الجلسة (دقائق)":"Session Timeout (minutes)"} value={session} onChange={setSession} />
           <Inp label={isAr?"القائمة البيضاء لعناوين IP":"IP Whitelist"} value={ipWhitelist} onChange={setIpWhitelist} />
+          <Toggle label={isAr?"وضع التطوير للرمز (OTP)":"OTP Dev Mode"} sub={isAr?"إرجاع رمز التحقق في الاستجابة بدلاً من إرسال SMS — للاختبار فقط":"Return OTP in API response instead of sending SMS — for testing only"} value={otpDevMode} onChange={v=>setOtpDevMode(v)} />
         </G>
         <PriceFeedSettings />
       </div>}
@@ -8956,6 +8958,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),deposit_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
           try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode})});}catch(e){}
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
+          try{await apiFetch("/settings/otp-dev-mode",{method:"PUT",body:JSON.stringify({enabled:otpDevMode})});}catch(e){}
           try{await apiFetch("/settings/reporting",{method:"PUT",body:JSON.stringify(reportingConfig)});}catch(e){}
           try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:manufacturers||[]})});}catch(e){}
           try{await apiFetch("/settings/legal",{method:"PUT",body:JSON.stringify({terms_url:termsUrl,platform_agreement_url:platformAgreementUrl,auth_template_url:authTemplateUrl,booking_terms_ar:bookingTermsAr,booking_terms_en:bookingTermsEn})});}catch(e){}
