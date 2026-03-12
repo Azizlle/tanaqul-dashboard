@@ -2591,9 +2591,19 @@ const Financials = () => {
               Gold: {storageFeeConfig.gold_rate_percent}%/yr &nbsp;·&nbsp;
               Silver: {storageFeeConfig.silver_rate_percent}%/yr &nbsp;·&nbsp;
               Platinum: {(storageFeeConfig.platinum_rate_percent||storageFeeConfig.plat_rate_percent||0.6)}%/yr &nbsp;·&nbsp;
-              Grace period: {storageFeeConfig.grace_period_days} days
+              Grace period: {storageFeeConfig.grace_period_days} days &nbsp;·&nbsp;
+              Movement threshold: {storageFeeConfig.movement_threshold_pct||10}%
             </p>
           </div>
+          <Btn variant="teal" style={{marginLeft:"auto",whiteSpace:"nowrap"}} onClick={async()=>{
+            if(!confirm(isAr?"هل تريد تشغيل الفوترة التلقائية لرسوم التخزين للشهر السابق؟":"Run auto-billing for storage fees for the previous month?")) return;
+            try{
+              const r=await apiFetch("/storage-fees/auto-bill",{method:"POST",body:JSON.stringify({})});
+              if(r&&r.ok){const d=await r.json();showFinToast(`${isAr?"تمت الفوترة":"Billed"}: ${d.charged} ${isAr?"محصّل":"charged"}, ${d.overdue} ${isAr?"متأخر":"overdue"}, ${d.skipped} ${isAr?"تم تخطيه":"skipped"}`);
+                setSfLoading(true);apiFetch("/storage-fees/history").then(r2=>r2&&r2.ok?r2.json():null).then(d2=>{if(d2?.items)setStorageFeeHistory(d2.items);else if(Array.isArray(d2))setStorageFeeHistory(d2);}).catch(()=>{}).finally(()=>setSfLoading(false));
+              }else{showFinToast(isAr?"فشلت الفوترة":"Billing failed");}
+            }catch(e){showFinToast(isAr?"خطأ في الفوترة":"Billing error");}
+          }}>{isAr?"تشغيل الفوترة التلقائية":"Run Auto-Billing"}</Btn>
         </div>
         {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
@@ -2625,11 +2635,16 @@ const Financials = () => {
           {key:"silverFee",label:isAr?"رسم الفضة":"Ag Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
           {key:"platFee",label:isAr?"رسم البلاتين":"Pt Fee",render:v=><SARAmount amount={(v||0).toFixed(2)}/>},
           {key:"totalFee",label:isAr?"إجمالي الرسوم":"Total Fee",render:v=><span style={{fontWeight:700,color:"#5B21B6",fontFamily:"'DM Mono',monospace"}}>SAR {(v||0).toFixed(2)}</span>},
+          {key:"dormant",label:isAr?"خامل":"Dormant",render:v=>v?<span style={{color:C.red,fontWeight:700}}>Yes</span>:<span style={{color:C.green}}>No</span>},
+          {key:"autoBilled",label:isAr?"تلقائي":"Auto",render:v=>v?<span style={{color:"#7C3AED",fontWeight:700}}>Auto</span>:<span style={{color:C.textMuted}}>Manual</span>},
+          {key:"goldVol",label:isAr?"حجم الذهب":"Au Vol",render:v=>v>0?<span style={{fontFamily:"monospace",fontSize:12}}>{v}g</span>:"—"},
+          {key:"silverVol",label:isAr?"حجم الفضة":"Ag Vol",render:v=>v>0?<span style={{fontFamily:"monospace",fontSize:12}}>{v}g</span>:"—"},
+          {key:"platVol",label:isAr?"حجم البلاتين":"Pt Vol",render:v=>v>0?<span style={{fontFamily:"monospace",fontSize:12}}>{v}g</span>:"—"},
           {key:"status",label:isAr?"الحالة":"Status",render:v=><span style={{
             padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700,
-            background:v==="BILLED"?C.greenBg:v==="OVERDUE"?C.redBg:C.orangeBg,
-            color:v==="BILLED"?C.green:v==="OVERDUE"?C.red:C.orange,
-            border:`1px solid ${v==="BILLED"?C.green:v==="OVERDUE"?C.red:C.orange}33`
+            background:v==="BILLED"||v==="charged"?C.greenBg:v==="OVERDUE"||v==="overdue"?C.redBg:C.orangeBg,
+            color:v==="BILLED"||v==="charged"?C.green:v==="OVERDUE"||v==="overdue"?C.red:C.orange,
+            border:`1px solid ${v==="BILLED"||v==="charged"?C.green:v==="OVERDUE"||v==="overdue"?C.red:C.orange}33`
           }}>{statusText(v,isAr)}</span>},
           {key:"dueDate",label:isAr?"تاريخ الاستحقاق":"Due Date"},
           {key:"id",label:isAr?"الإجراءات":"Actions",render:(_,row)=>(
@@ -2645,11 +2660,16 @@ const Financials = () => {
             investorId: r.investor_id || "",
             goldGrams: parseFloat(r.gold_grams||r.gold_oz)||0,
             silverGrams: parseFloat(r.silver_grams||r.silver_oz)||0,
-            platinumGrams: parseFloat(r.platinum_grams)||0,
+            platinumGrams: parseFloat(r.platinum_grams||r.platinum_oz)||0,
             goldFee: parseFloat(r.gold_fee)||0,
             silverFee: parseFloat(r.silver_fee)||0,
             platFee: parseFloat(r.plat_fee||r.platinum_fee)||0,
             totalFee: parseFloat(r.total_fee||r.fee_sar)||0,
+            dormant: r.is_dormant||false,
+            autoBilled: r.auto_billed||false,
+            goldVol: parseFloat(r.gold_volume_grams)||0,
+            silverVol: parseFloat(r.silver_volume_grams)||0,
+            platVol: parseFloat(r.plat_volume_grams)||0,
             status: r.status || "BILLED",
             dueDate: r.due_date || r.billing_date || "",
             billedDate: r.billing_date || r.created_at || "",
@@ -8328,6 +8348,7 @@ const Settings = ({ onLangChange }) => {
         platinumAnnualPct: String(d.platinum_rate_percent||d.plat_rate_percent||"0.6"),
         billingCycle: d.billing_cycle||"monthly",
         minFee: String(d.min_fee_sar||"5"),
+        movementThresholdPct: String(d.movement_threshold_pct||"10"),
       });
     }).catch(()=>{});
     // Load commission split from blocks API
@@ -8534,7 +8555,7 @@ const Settings = ({ onLangChange }) => {
           </div>
         </G>
         <G title={isAr?"إعدادات الفوترة":"Billing Settings"}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
             <div>
               <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"دورة الفوترة":"BILLING CYCLE"}</label>
               <select
@@ -8554,6 +8575,15 @@ const Settings = ({ onLangChange }) => {
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
               <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"الحد الأدنى يُطبّق حتى لو كانت الرسوم المحسوبة أقل":"Min fee charged even if calculated fee is lower"}</p>
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"حد الحركة (%)":"MOVEMENT THRESHOLD (%)"}</label>
+              <input type="number" step="1" min="0" max="100"
+                value={storageFeeSettings?.movementThresholdPct||"10"}
+                onChange={e=>setStorageFeeSettings(p=>({...p,movementThresholdPct:e.target.value}))}
+                style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
+              />
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"المستثمرون الذين يتداولون أقل من هذه النسبة من حيازاتهم يُعتبرون خاملين":"Investors trading less than this % of holdings are dormant"}</p>
             </div>
           </div>
         </G>
@@ -8588,6 +8618,7 @@ const Settings = ({ onLangChange }) => {
                   min_fee_sar: parseFloat(storageFeeSettings?.minFee||"5"),
                   billing_cycle: storageFeeSettings?.billingCycle||"monthly",
                   grace_period_days: 5,
+                  movement_threshold_pct: parseFloat(storageFeeSettings?.movementThresholdPct||"10"),
                 })});
               } catch(e){}
               showSaved();
@@ -10436,7 +10467,7 @@ export default function App() {
   const [gatewaySettings, setGatewaySettings] = useState({madaFee:"0.008",madaCap:"100.00",visaFee:"0.025",sadadFee:"5.00",madaLimit:"50000",visaLimit:"0"});
   const [commissionRates, setCommissionRates] = useState({buyer:"1.0",seller:"1.0"});
   const [cancelFee, setCancelFee] = useState("50");
-  const [storageFeeSettings, setStorageFeeSettings] = useState({goldAnnualPct:"0.5",silverAnnualPct:"0.75",platinumAnnualPct:"0.6",billingCycle:"monthly",minFee:"5"});
+  const [storageFeeSettings, setStorageFeeSettings] = useState({goldAnnualPct:"0.5",silverAnnualPct:"0.75",platinumAnnualPct:"0.6",billingCycle:"monthly",minFee:"5",movementThresholdPct:"10"});
   const [reportingConfig, setReportingConfig] = useState({
     sarEmail:"sar@sama.gov.sa", sarCc:"compliance@tanaqul.sa", sarEnabled:true,
     cmaEmail:"enforcement@cma.org.sa", cmaCc:"compliance@tanaqul.sa", cmaEnabled:true,
