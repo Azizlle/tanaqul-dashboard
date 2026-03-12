@@ -8314,6 +8314,7 @@ const Settings = ({ onLangChange }) => {
     apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
     try{apiFetch("/settings/otp-dev-mode").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setOtpDevMode(d.enabled||false);}).catch(()=>{});}catch{}
+    try{apiFetch("/settings/2fa").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setInvestor2faRequired(d.required||false);}).catch(()=>{});}catch{}
     apiFetch("/settings/reporting").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.sarEmail!==undefined)setReportingConfig(d);}).catch(()=>{});
     apiFetch("/settings/manufacturers").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){let list=null;if(Array.isArray(d))list=d;else if(d.items&&Array.isArray(d.items))list=d.items;else if(d.list&&Array.isArray(d.list))list=d.list;if(list&&list.length>0)setManufacturers(list);else{/* DB empty — seed with defaults */apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:["MKS PAMP SA (Switzerland — LBMA)","Valcambi SA (Switzerland — LBMA)","Argor-Heraeus (Switzerland — LBMA)","Royal Mint (UK — LBMA)","Saudi Aramco Refinery (KSA — GCC)"]})}).catch(()=>{});}}}).catch(()=>{});
     apiFetch("/settings/legal").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.terms_url)setTermsUrl(d.terms_url);if(d.platform_agreement_url)setPlatformAgreementUrl(d.platform_agreement_url);if(d.booking_terms_ar)setBookingTermsAr(d.booking_terms_ar);if(d.booking_terms_en)setBookingTermsEn(d.booking_terms_en);}}).catch(()=>{});
@@ -8392,7 +8393,7 @@ const Settings = ({ onLangChange }) => {
   const [nafathKey,setNafathKey]=useState(""); const [nafathWebhook,setNafathWebhook]=useState("https://api.tanaqul.sa/nafath/webhook");
   const [nafathMode,setNafathMode]=useState("production");
   // Security
-  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x"); const [otpDevMode,setOtpDevMode]=useState(false);
+  const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x"); const [otpDevMode,setOtpDevMode]=useState(false); const [investor2faRequired,setInvestor2faRequired]=useState(false);
   // Legal documents
   const [termsUrl,setTermsUrl]=useState(""); const [platformAgreementUrl,setPlatformAgreementUrl]=useState(""); const [authTemplateUrl,setAuthTemplateUrl]=useState("");
   const [bookingTermsAr,setBookingTermsAr]=useState(""); const [bookingTermsEn,setBookingTermsEn]=useState("");
@@ -8912,6 +8913,9 @@ const Settings = ({ onLangChange }) => {
           <Inp label={isAr?"القائمة البيضاء لعناوين IP":"IP Whitelist"} value={ipWhitelist} onChange={setIpWhitelist} />
           <Toggle label={isAr?"وضع التطوير للرمز (OTP)":"OTP Dev Mode"} sub={isAr?"إرجاع رمز التحقق في الاستجابة بدلاً من إرسال SMS — للاختبار فقط":"Return OTP in API response instead of sending SMS — for testing only"} value={otpDevMode} onChange={v=>setOtpDevMode(v)} />
         </G>
+        <G title={isAr?"أمان المستثمرين":"Investor Security"}>
+          <Toggle label={isAr?"المصادقة الثنائية مطلوبة للمستثمرين":"Require 2FA for Investors"} sub={isAr?"إلزام جميع المستثمرين بتفعيل المصادقة الثنائية عند تسجيل الدخول — سيُطلب منهم الإعداد في أول تسجيل دخول":"Require all investors to set up 2FA on login — they will be prompted to set up on first sign-in"} value={investor2faRequired} onChange={v=>setInvestor2faRequired(v)} />
+        </G>
         <PriceFeedSettings />
       </div>}
       {tab==="LEGAL"&&<div>
@@ -8967,6 +8971,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode})});}catch(e){}
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
           try{await apiFetch("/settings/otp-dev-mode",{method:"PUT",body:JSON.stringify({enabled:otpDevMode})});}catch(e){}
+          try{await apiFetch("/settings/2fa",{method:"PUT",body:JSON.stringify({required:investor2faRequired})});}catch(e){}
           try{await apiFetch("/settings/reporting",{method:"PUT",body:JSON.stringify(reportingConfig)});}catch(e){}
           try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:manufacturers||[]})});}catch(e){}
           try{await apiFetch("/settings/legal",{method:"PUT",body:JSON.stringify({terms_url:termsUrl,platform_agreement_url:platformAgreementUrl,auth_template_url:authTemplateUrl,booking_terms_ar:bookingTermsAr,booking_terms_en:bookingTermsEn})});}catch(e){}
