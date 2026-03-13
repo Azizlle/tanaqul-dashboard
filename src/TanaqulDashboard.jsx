@@ -2223,6 +2223,10 @@ const Financials = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [subLoading, setSubLoading] = useState(false);
   const [manualSubForm, setManualSubForm] = useState(null); // {investor_id, plan_id, months, notes}
+  const [stPlans, setStPlans] = useState([]);
+  useEffect(()=>{
+    apiFetch("/settings/smart-trading/plans").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.plans||d))setStPlans(d.plans||d);}).catch(()=>{});
+  },[]);
   // Fetch subscriptions when tab is active
   useEffect(()=>{
     if(tab==="SUBSCRIPTIONS"){
