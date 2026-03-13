@@ -9276,7 +9276,7 @@ const SupportTickets = () => {
       <div style={{display:"flex",gap:8,marginBottom:20}}>
         {["ALL","OPEN","IN_PROGRESS","RESOLVED","CLOSED"].map(f => (
           <button key={f} onClick={() => setStatusFilter(f)}
-            style={{padding:"8px 18px",borderRadius:10,border:"none",cursor:"pointer",fontWeight:600,fontSize:13,
+            style={{padding:"8px 18px",borderRadius:10,cursor:"pointer",fontWeight:600,fontSize:13,
               background: statusFilter === f ? C.gold+"22" : C.card,
               color: statusFilter === f ? C.gold : C.textMuted,
               border: `1px solid ${statusFilter === f ? C.gold+"44" : C.border}`
