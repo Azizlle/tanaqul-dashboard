@@ -278,6 +278,9 @@ const AR = {
   "Schedule Date":"تاريخ الجدولة","Cancel Schedule":"إلغاء الجدولة","Send Now":"إرسال الآن",
   "Message sent successfully":"تم إرسال الرسالة بنجاح","Draft saved":"تم حفظ المسودة","Template saved":"تم حفظ القالب",
   "Broadcast queued":"تم وضع البث في الطابور","Schedule set":"تم تعيين الجدولة",
+  // ═══ SUPPORT TICKETS ═══
+  "Support Tickets":"تذاكر الدعم","In Progress":"قيد المعالجة","Resolved":"تم الحل","Closed":"مغلقة",
+  "Reply":"الرد","Send Reply":"إرسال الرد","Ticket ID":"رقم التذكرة","No tickets":"لا توجد تذاكر","Admin Reply":"رد المسؤول",
 };
 
 const translate = (lang, key) => lang === "ar" ? (AR[key] || key) : key;
@@ -385,6 +388,7 @@ const Icons = {
   cpu:         (s=20,c="currentColor") => <TI size={s} color={c} d={["M5 5m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z","M9 9h6v6h-6z","M3 10h2","M3 14h2","M19 10h2","M19 14h2","M10 3v2","M14 3v2","M10 19v2","M14 19v2"]} />,
   bulkAction:  (s=20,c="currentColor") => <TI size={s} color={c} d={["M9 6l11 0","M9 12l11 0","M9 18l11 0","M5 6l0 .01","M5 12l0 .01","M5 18l0 .01"]} />,
   envelope:    (s=20,c="currentColor") => <TI size={s} color={c} d={["M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z","M3 7l9 6l9 -6"]} />,
+  support:     (s=20,c="currentColor") => <TI size={s} color={c} d={["M4 13a8 8 0 1 1 16 0","M4 13v3a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-3a1 1 0 0 0 -1 -1h-1a1 1 0 0 0 -1 1z","M17 13v3a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-3a1 1 0 0 0 -1 -1h-1a1 1 0 0 0 -1 1z","M14 19a2 2 0 0 1 -2 2"]} />,
   megaphone:   (s=20,c="currentColor") => <TI size={s} color={c} d={["M18 8a3 3 0 0 1 0 6","M10 8v6a1 1 0 0 1 -1 1h-1a1 1 0 0 1 -1 -1v-1.5l-4 1.5v-6l4 1.5v-1.5a1 1 0 0 1 1 -1h1a1 1 0 0 1 1 1","M10 8l5 -3v12l-5 -3"]} />,
   template:    (s=20,c="currentColor") => <TI size={s} color={c} d={["M4 4m0 1a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1z","M4 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z","M14 12l6 0","M14 16l6 0","M14 20l6 0"]} />,
   clockSend:   (s=20,c="currentColor") => <TI size={s} color={c} d={["M20.984 12.535a9 9 0 1 0 -8.468 8.45","M12 7v5l3 3","M19 16v6","M22 19l-3 3l-3 -3"]} />,
@@ -6224,6 +6228,7 @@ const MODULES = [
   {id:"settings",label:"Settings",labelAr:"الإعدادات"},
   {id:"health",label:"System Health",labelAr:"حالة النظام"},
   {id:"usermgmt",label:"User Management",labelAr:"إدارة المستخدمين"},
+  {id:"support",label:"Support Tickets",labelAr:"تذاكر الدعم"},
 ];
 const ROLE_PERMS = {
   SUPER_ADMIN:MODULES.map(m=>m.id),
@@ -7211,6 +7216,7 @@ const GlobalSearch = ({ isOpen, onClose, setPage, setPageHint }) => {
       {id:"settings",label:"Settings",labelAr:"الإعدادات",icon:"⚙️"},
       {id:"health",label:"System Health",labelAr:"حالة النظام",icon:"❤️"},
       {id:"treasury",label:"Treasury & Recon",labelAr:"الخزينة والتسوية",icon:"⚖️"},
+      {id:"support",label:"Support Tickets",labelAr:"تذاكر الدعم",icon:"🎧"},
     ];
     PAGES_SEARCH.forEach(pg => {
       if(results.length >= MAX) return;
@@ -9169,6 +9175,250 @@ const Settings = ({ onLangChange }) => {
   );
 };
 
+const SupportTickets = () => {
+  const { isAr, t } = useLang();
+  const { C } = useTheme();
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [replying, setReplying] = useState(false);
+
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      const params = statusFilter !== "ALL" ? `?status=${statusFilter}` : "";
+      const token = localStorage.getItem("tanaqul_token");
+      const res = await fetch(`https://api.tanaqul.app/api/v1/support/tickets${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTickets(data.tickets || []);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchTickets(); }, [statusFilter]);
+
+  const handleReply = async (ticketId) => {
+    if (!replyText.trim()) return;
+    setReplying(true);
+    try {
+      const token = localStorage.getItem("tanaqul_token");
+      const res = await fetch(`https://api.tanaqul.app/api/v1/support/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ admin_reply: replyText, status: "RESOLVED" })
+      });
+      if (res.ok) {
+        setReplyText("");
+        setSelectedTicket(null);
+        fetchTickets();
+      }
+    } catch (e) { console.error(e); }
+    finally { setReplying(false); }
+  };
+
+  const updateStatus = async (ticketId, newStatus) => {
+    try {
+      const token = localStorage.getItem("tanaqul_token");
+      await fetch(`https://api.tanaqul.app/api/v1/support/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      fetchTickets();
+    } catch (e) { console.error(e); }
+  };
+
+  const statusColors = {
+    OPEN: { bg: "#EF444422", color: "#EF4444", label: isAr ? "مفتوحة" : "Open" },
+    IN_PROGRESS: { bg: "#F59E0B22", color: "#F59E0B", label: isAr ? "قيد المعالجة" : "In Progress" },
+    RESOLVED: { bg: "#10B98122", color: "#10B981", label: isAr ? "تم الحل" : "Resolved" },
+    CLOSED: { bg: "#6B728022", color: "#6B7280", label: isAr ? "مغلقة" : "Closed" },
+  };
+
+  const categoryLabels = {
+    GENERAL: isAr ? "عام" : "General",
+    TRADE: isAr ? "تداول" : "Trade",
+    WALLET: isAr ? "محفظة" : "Wallet",
+    APPOINTMENT: isAr ? "مواعيد" : "Appointment",
+    ACCOUNT: isAr ? "حساب" : "Account",
+    TECHNICAL: isAr ? "تقني" : "Technical",
+  };
+
+  // Stats row
+  const openCount = tickets.filter(t => t.status === "OPEN").length;
+  const inProgressCount = tickets.filter(t => t.status === "IN_PROGRESS").length;
+  const resolvedCount = tickets.filter(t => t.status === "RESOLVED").length;
+
+  return (
+    <div>
+      {/* Stats Cards */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        {[
+          { label: isAr ? "الكل" : "All", value: tickets.length, color: C.gold },
+          { label: isAr ? "مفتوحة" : "Open", value: openCount, color: "#EF4444" },
+          { label: isAr ? "قيد المعالجة" : "In Progress", value: inProgressCount, color: "#F59E0B" },
+          { label: isAr ? "تم الحل" : "Resolved", value: resolvedCount, color: "#10B981" },
+        ].map((s, i) => (
+          <div key={i} style={{background:C.card,borderRadius:14,padding:"20px 24px",border:`1px solid ${C.border}`}}>
+            <p style={{fontSize:13,color:C.textMuted,marginBottom:4}}>{s.label}</p>
+            <p style={{fontSize:28,fontWeight:800,color:s.color}}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter tabs */}
+      <div style={{display:"flex",gap:8,marginBottom:20}}>
+        {["ALL","OPEN","IN_PROGRESS","RESOLVED","CLOSED"].map(f => (
+          <button key={f} onClick={() => setStatusFilter(f)}
+            style={{padding:"8px 18px",borderRadius:10,border:"none",cursor:"pointer",fontWeight:600,fontSize:13,
+              background: statusFilter === f ? C.gold+"22" : C.card,
+              color: statusFilter === f ? C.gold : C.textMuted,
+              border: `1px solid ${statusFilter === f ? C.gold+"44" : C.border}`
+            }}>
+            {f === "ALL" ? (isAr ? "الكل" : "All") : (statusColors[f]?.label || f)}
+          </button>
+        ))}
+      </div>
+
+      {/* Tickets Table */}
+      {loading ? (
+        <div style={{textAlign:"center",padding:60,color:C.textMuted}}>{isAr ? "جاري التحميل..." : "Loading..."}</div>
+      ) : tickets.length === 0 ? (
+        <div style={{textAlign:"center",padding:60,color:C.textMuted}}>{isAr ? "لا توجد تذاكر" : "No tickets"}</div>
+      ) : (
+        <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+            <thead>
+              <tr style={{borderBottom:`1px solid ${C.border}`,background:C.bg}}>
+                {[isAr?"رقم":"ID", isAr?"المستثمر":"Investor", isAr?"التصنيف":"Category", isAr?"الموضوع":"Subject", isAr?"الحالة":"Status", isAr?"التاريخ":"Date", isAr?"إجراء":"Action"].map((h,i) => (
+                  <th key={i} style={{padding:"12px 16px",textAlign:isAr?"right":"left",fontWeight:700,color:C.textMuted,fontSize:12,textTransform:"uppercase"}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tickets.map(ticket => {
+                const sc = statusColors[ticket.status] || statusColors.OPEN;
+                return (
+                  <tr key={ticket.id} style={{borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}
+                    onClick={() => { setSelectedTicket(ticket); setReplyText(ticket.admin_reply || ""); }}
+                    onMouseEnter={e => e.currentTarget.style.background = C.bg}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={{padding:"14px 16px",fontFamily:"'DM Mono',monospace",fontSize:12,color:C.gold}}>{ticket.display_id}</td>
+                    <td style={{padding:"14px 16px"}}>
+                      <p style={{fontWeight:600,color:C.navy,fontSize:13}}>{ticket.investor_name || "—"}</p>
+                      <p style={{fontSize:11,color:C.textMuted}}>{ticket.investor_display_id}</p>
+                    </td>
+                    <td style={{padding:"14px 16px"}}>
+                      <span style={{background:C.gold+"15",color:C.gold,padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600}}>
+                        {categoryLabels[ticket.category] || ticket.category}
+                      </span>
+                    </td>
+                    <td style={{padding:"14px 16px",color:C.navy,fontWeight:500,maxWidth:300,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ticket.subject}</td>
+                    <td style={{padding:"14px 16px"}}>
+                      <span style={{background:sc.bg,color:sc.color,padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{sc.label}</span>
+                    </td>
+                    <td style={{padding:"14px 16px",fontSize:12,color:C.textMuted}}>{new Date(ticket.created_at).toLocaleDateString(isAr?"ar-SA":"en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</td>
+                    <td style={{padding:"14px 16px"}}>
+                      {ticket.status === "OPEN" && (
+                        <button onClick={e => { e.stopPropagation(); updateStatus(ticket.display_id, "IN_PROGRESS"); }}
+                          style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",background:"#F59E0B22",color:"#F59E0B",fontWeight:600,fontSize:12}}>
+                          {isAr ? "بدء المعالجة" : "Start"}
+                        </button>
+                      )}
+                      {ticket.status === "RESOLVED" && (
+                        <button onClick={e => { e.stopPropagation(); updateStatus(ticket.display_id, "CLOSED"); }}
+                          style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",background:"#6B728022",color:"#6B7280",fontWeight:600,fontSize:12}}>
+                          {isAr ? "إغلاق" : "Close"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Ticket Detail Modal */}
+      {selectedTicket && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}
+          onClick={() => setSelectedTicket(null)}>
+          <div style={{background:C.card,borderRadius:20,padding:32,maxWidth:640,width:"90%",maxHeight:"80vh",overflowY:"auto",position:"relative"}}
+            onClick={e => e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+              <div>
+                <h3 style={{fontSize:20,fontWeight:800,color:C.navy}}>{selectedTicket.subject}</h3>
+                <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{selectedTicket.display_id} · {categoryLabels[selectedTicket.category] || selectedTicket.category}</p>
+              </div>
+              <button onClick={() => setSelectedTicket(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:24,color:C.textMuted}}>×</button>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+              <div style={{background:C.bg,borderRadius:10,padding:14}}>
+                <p style={{fontSize:11,color:C.textMuted,marginBottom:4}}>{isAr ? "المستثمر" : "Investor"}</p>
+                <p style={{fontWeight:600,color:C.navy,fontSize:14}}>{selectedTicket.investor_name}</p>
+                <p style={{fontSize:12,color:C.textMuted}}>{selectedTicket.investor_display_id}</p>
+              </div>
+              <div style={{background:C.bg,borderRadius:10,padding:14}}>
+                <p style={{fontSize:11,color:C.textMuted,marginBottom:4}}>{isAr ? "الحالة" : "Status"}</p>
+                <select value={selectedTicket.status} onChange={e => { updateStatus(selectedTicket.display_id, e.target.value); setSelectedTicket({...selectedTicket, status: e.target.value}); }}
+                  style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:C.card,color:C.navy,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+                  {["OPEN","IN_PROGRESS","RESOLVED","CLOSED"].map(s => (
+                    <option key={s} value={s}>{statusColors[s]?.label || s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Investor message */}
+            <div style={{background:C.bg,borderRadius:12,padding:18,marginBottom:16}}>
+              <p style={{fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:8}}>{isAr ? "رسالة المستثمر" : "Investor Message"}</p>
+              <p style={{color:C.navy,fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{selectedTicket.body}</p>
+              <p style={{fontSize:11,color:C.textMuted,marginTop:8}}>{new Date(selectedTicket.created_at).toLocaleString(isAr?"ar-SA":"en-US")}</p>
+            </div>
+
+            {/* Existing reply */}
+            {selectedTicket.admin_reply && selectedTicket.replied_at && (
+              <div style={{background:C.gold+"0D",borderRadius:12,padding:18,marginBottom:16,border:`1px solid ${C.gold}22`}}>
+                <p style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:8}}>{isAr ? "رد المسؤول" : "Admin Reply"}</p>
+                <p style={{color:C.navy,fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{selectedTicket.admin_reply}</p>
+                <p style={{fontSize:11,color:C.textMuted,marginTop:8}}>{new Date(selectedTicket.replied_at).toLocaleString(isAr?"ar-SA":"en-US")}</p>
+              </div>
+            )}
+
+            {/* Reply textarea */}
+            {selectedTicket.status !== "CLOSED" && (
+              <div>
+                <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{isAr ? "الرد" : "Reply"}</p>
+                <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
+                  rows={4} placeholder={isAr ? "اكتب ردك هنا..." : "Type your reply here..."}
+                  style={{width:"100%",padding:14,borderRadius:12,border:`1px solid ${C.border}`,background:C.bg,color:C.navy,fontSize:14,resize:"vertical",fontFamily:"inherit"}} />
+                <div style={{display:"flex",gap:10,marginTop:12,justifyContent:"flex-end"}}>
+                  <button onClick={() => setSelectedTicket(null)}
+                    style={{padding:"10px 24px",borderRadius:10,border:`1px solid ${C.border}`,background:"transparent",color:C.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+                    {isAr ? "إلغاء" : "Cancel"}
+                  </button>
+                  <button onClick={() => handleReply(selectedTicket.display_id)} disabled={replying || !replyText.trim()}
+                    style={{padding:"10px 24px",borderRadius:10,border:"none",background:C.gold,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",opacity:replying||!replyText.trim()?0.5:1}}>
+                    {replying ? (isAr ? "جاري الإرسال..." : "Sending...") : (isAr ? "إرسال الرد" : "Send Reply")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PAGES = [
   {id:"dashboard",    icon:"dashboard",    label:"Dashboard"},
   {id:"investors",    icon:"investors",    label:"Investors"},
@@ -9186,6 +9436,7 @@ const PAGES = [
   {id:"settings",     icon:"settings",     label:"Settings"},
   {id:"health",       icon:"health",       label:"System Health"},
   {id:"treasury",     icon:"treasury",     label:"Treasury & Recon"},
+  {id:"support",      icon:"support",      label:"Support Tickets"},
   // Profile accessible via user name click in sidebar, not as separate page
 ];
 
@@ -11047,7 +11298,8 @@ export default function App() {
     appointments:<Appointments/>, financials:<Financials/>, reports:<Reports/>,
     blacklist:<Blacklist/>, blocks:<Blocks/>, settings:<Settings onLangChange={switchLang}/>, auditlog:<AuditLog/>,
     commcenter:<CommCenter/>, usermgmt:<UserManagement/>, profile:<AccountProfile/>, health:<SystemHealth/>,
-    treasury:<TreasuryReconciliation/>
+    treasury:<TreasuryReconciliation/>,
+    support:<SupportTickets/>
   }[page] || <Dashboard/>);
 
   return (

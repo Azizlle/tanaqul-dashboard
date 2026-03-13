@@ -507,6 +507,13 @@ const storageFees = {
   async waiveMonth(id,d) { return request("/storage-fees/waive/"+id, { method: "POST", body: d }); },
   async forceSell(id,d) { return request("/storage-fees/force-sell/"+id, { method: "POST", body: d }); },
 };
+const support = {
+  async tickets(params = {}) { return request("/support/tickets", { params }); },
+  async ticket(id) { return request(`/support/tickets/${id}`); },
+  async reply(id, data) { return request(`/support/tickets/${id}`, { method: "PATCH", body: data }); },
+  async stats() { return request("/support/stats"); },
+};
+
 const api = {
   auth,
   dashboard,
@@ -524,6 +531,7 @@ const api = {
   aml,
   treasury,
   storageFees,
+  support,
   // Utilities
   setBaseUrl(url) {
     // Override base URL if needed
