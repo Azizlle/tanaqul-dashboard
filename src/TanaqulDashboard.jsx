@@ -8506,6 +8506,10 @@ const Settings = ({ onLangChange }) => {
   // Legal documents
   const [termsUrl,setTermsUrl]=useState(""); const [platformAgreementUrl,setPlatformAgreementUrl]=useState(""); const [authTemplateUrl,setAuthTemplateUrl]=useState("");
   const [bookingTermsAr,setBookingTermsAr]=useState(""); const [bookingTermsEn,setBookingTermsEn]=useState("");
+  // Banks list
+  const [banksList,setBanksList]=useState([]);
+  const [newBank,setNewBank]=useState({code:"",name_en:"",name_ar:"",swift:"",logo_url:""});
+  const [banksLoading,setBanksLoading]=useState(false);
   // Smart Trading / Smart Hub
   const [stPlans,setStPlans]=useState([]);
   const [stNewPlan,setStNewPlan]=useState({name_en:"",name_ar:"",price_monthly:"",features_en:"",features_ar:"",is_popular:false});
@@ -8519,13 +8523,14 @@ const Settings = ({ onLangChange }) => {
   useEffect(()=>{
     apiFetch("/settings/smart-trading/plans").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.plans||d))setStPlans(d.plans||d);}).catch(()=>{});
     apiFetch("/settings/smart-trading/ai").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setAiApiKey(d.api_key);if(d.chat_limit)setAiChatLimit(String(d.chat_limit));if(d.model)setAiModel(d.model);}}).catch(()=>{});
+    apiFetch("/settings/banks").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d))setBanksList(d);}).catch(()=>{});
   },[]);
 
 
   return (
     <div>
       <SectionHeader title={isAr?"الإعدادات":"Settings"} sub={isAr?"إعدادات وإدارة المنصة":"Platform configuration and management"} />
-      <TabBar tabs={[{id:"PLATFORM",label:isAr?"المنصة":"PLATFORM"},{id:"PAYMENTS",label:isAr?"المدفوعات":"PAYMENTS"},{id:"COMMISSION",label:isAr?"العمولة":"COMMISSION"},{id:"STORAGE FEES",label:isAr?"رسوم التخزين":"STORAGE FEES"},{id:"SMART HUB",label:isAr?"المركز الذكي":"SMART HUB"},{id:"BLOCKCHAIN",label:isAr?"البلوكشين":"BLOCKCHAIN"},{id:"NOTIFICATIONS",label:isAr?"الإشعارات":"NOTIFICATIONS"},{id:"REPORTING",label:isAr?"التقارير":"REPORTING"},{id:"VAULT",label:isAr?"الخزينة":"VAULT"},{id:"MANUFACTURERS",label:isAr?"الشركات المصنعة":"MANUFACTURERS"},{id:"NAFATH",label:isAr?"نفاذ":"NAFATH"},{id:"SECURITY",label:isAr?"الأمان":"SECURITY"},{id:"LEGAL",label:isAr?"القانونية":"LEGAL"}]} active={tab} onChange={setTab} />
+      <TabBar tabs={[{id:"PLATFORM",label:isAr?"المنصة":"PLATFORM"},{id:"PAYMENTS",label:isAr?"المدفوعات":"PAYMENTS"},{id:"BANKS",label:isAr?"البنوك":"BANKS"},{id:"COMMISSION",label:isAr?"العمولة":"COMMISSION"},{id:"STORAGE FEES",label:isAr?"رسوم التخزين":"STORAGE FEES"},{id:"SMART HUB",label:isAr?"المركز الذكي":"SMART HUB"},{id:"BLOCKCHAIN",label:isAr?"البلوكشين":"BLOCKCHAIN"},{id:"NOTIFICATIONS",label:isAr?"الإشعارات":"NOTIFICATIONS"},{id:"REPORTING",label:isAr?"التقارير":"REPORTING"},{id:"VAULT",label:isAr?"الخزينة":"VAULT"},{id:"MANUFACTURERS",label:isAr?"الشركات المصنعة":"MANUFACTURERS"},{id:"NAFATH",label:isAr?"نفاذ":"NAFATH"},{id:"SECURITY",label:isAr?"الأمان":"SECURITY"},{id:"LEGAL",label:isAr?"القانونية":"LEGAL"}]} active={tab} onChange={setTab} />
       {tab==="PLATFORM"&&<div>
         <G title={isAr?"إعدادات المنصة":"Platform Settings"}>
           <Inp label={isAr?"اسم المنصة":"Platform Name"} value={platform.name} onChange={v=>setPlatform({...platform,name:v})} />
@@ -8543,6 +8548,70 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"مدى — نسبة + حد أقصى ثابت":"MADA — Percentage + Fixed Cap"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={madaFee} onChange={setMadaFee} /><Inp label={isAr?"الحد الأقصى (ريال)":"Max Cap (SAR)"} value={madaCap} onChange={setMadaCap} /><Inp label={isAr?"حد المعاملة (ريال)":"Transaction Limit (SAR)"} value={madaLimit} onChange={setMadaLimit} /></G>
         <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={visaFee} onChange={setVisaFee} /><Inp label={isAr?"حد المعاملة (ريال) — 0 = بلا حد":"Transaction Limit (SAR) — 0 = No limit"} value={visaLimit} onChange={setVisaLimit} /></G>
         <G title={isAr?"سداد — رسوم ثابتة":"SADAD — Fixed Fee"}><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
+      </div>}
+      {tab==="BANKS"&&<div>
+        <G title={isAr?"البنوك المسجلة":"Registered Banks"}>
+          <div style={{background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",gap:12,alignItems:"flex-start"}}>
+            <span style={{fontSize:18}}>🏦</span>
+            <div>
+              <p style={{fontSize:14,fontWeight:700,color:"#1E40AF",margin:"0 0 4px"}}>{isAr?"إدارة قائمة البنوك":"Bank List Management"}</p>
+              <p style={{fontSize:12,color:"#2563EB",margin:0}}>{isAr?"هذه القائمة تظهر للمستثمرين عند إضافة حسابات IBAN. أضف جميع البنوك المرخصة من ساما.":"This list appears to investors when adding IBAN accounts. Add all SAMA-licensed banks."}</p>
+            </div>
+          </div>
+          {banksList.length===0?<p style={{fontSize:14,color:C.textMuted,textAlign:"center",padding:"20px 0"}}>{isAr?"لا توجد بنوك بعد":"No banks yet"}</p>:
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead>
+                <tr style={{background:C.bg,borderBottom:`2px solid ${C.border}`}}>
+                  <th style={{padding:"10px 12px",textAlign:"start",fontWeight:700,color:C.textMuted}}>{isAr?"الرمز":"Code"}</th>
+                  <th style={{padding:"10px 12px",textAlign:"start",fontWeight:700,color:C.textMuted}}>{isAr?"الاسم (إنجليزي)":"Name (EN)"}</th>
+                  <th style={{padding:"10px 12px",textAlign:"start",fontWeight:700,color:C.textMuted}}>{isAr?"الاسم (عربي)":"Name (AR)"}</th>
+                  <th style={{padding:"10px 12px",textAlign:"start",fontWeight:700,color:C.textMuted}}>SWIFT</th>
+                  <th style={{padding:"10px 12px",textAlign:"start",fontWeight:700,color:C.textMuted}}>{isAr?"الشعار":"Logo"}</th>
+                  <th style={{padding:"10px 12px",textAlign:"center",fontWeight:700,color:C.textMuted}}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {banksList.map((bank,idx)=>(
+                  <tr key={bank.code||idx} style={{borderBottom:`1px solid ${C.border}`}}>
+                    <td style={{padding:"10px 12px",fontWeight:600,color:C.text}}>{bank.code}</td>
+                    <td style={{padding:"10px 12px",color:C.text}}>{bank.name_en}</td>
+                    <td style={{padding:"10px 12px",color:C.text,direction:"rtl"}}>{bank.name_ar}</td>
+                    <td style={{padding:"10px 12px",color:C.textMuted,fontFamily:"monospace",fontSize:12}}>{bank.swift||"—"}</td>
+                    <td style={{padding:"10px 12px"}}>{bank.logo_url?<img src={bank.logo_url} alt="" style={{height:24,maxWidth:80,objectFit:"contain"}}/>:<span style={{color:C.textMuted,fontSize:11}}>—</span>}</td>
+                    <td style={{padding:"10px 12px",textAlign:"center"}}><Btn small variant="danger" onClick={async()=>{try{await apiFetch(`/settings/banks/${bank.code}`,{method:"DELETE"});setBanksList(p=>p.filter(b=>b.code!==bank.code));showToast(isAr?"تم حذف البنك":"Bank removed","success");}catch(e){showToast(isAr?"خطأ":"Error","error");}}}>{isAr?"حذف":"Delete"}</Btn></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>}
+          <p style={{fontSize:12,color:C.textMuted,marginTop:8}}>{isAr?`إجمالي: ${banksList.length} بنك`:`Total: ${banksList.length} banks`}</p>
+        </G>
+
+        {/* Add New Bank */}
+        <G title={isAr?"إضافة بنك":"Add Bank"}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+            <Inp label={isAr?"رمز البنك":"Bank Code"} value={newBank.code} onChange={v=>setNewBank(p=>({...p,code:v.toUpperCase()}))} placeholder="e.g. SNB" />
+            <Inp label={isAr?"الاسم (إنجليزي)":"Name (English)"} value={newBank.name_en} onChange={v=>setNewBank(p=>({...p,name_en:v}))} placeholder="e.g. Saudi National Bank" />
+            <Inp label={isAr?"الاسم (عربي)":"Name (Arabic)"} value={newBank.name_ar} onChange={v=>setNewBank(p=>({...p,name_ar:v}))} placeholder="مثال: البنك الأهلي السعودي" />
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:10}}>
+            <Inp label={isAr?"رمز SWIFT":"SWIFT Code"} value={newBank.swift} onChange={v=>setNewBank(p=>({...p,swift:v.toUpperCase()}))} placeholder="e.g. NCBKSAJE" />
+            <Inp label={isAr?"رابط الشعار (اختياري)":"Logo URL (optional)"} value={newBank.logo_url} onChange={v=>setNewBank(p=>({...p,logo_url:v}))} placeholder="https://..." />
+          </div>
+          <div style={{marginTop:12}}>
+            <Btn variant="teal" onClick={async()=>{
+              if(!newBank.code||!newBank.name_en)return showToast(isAr?"أدخل الرمز والاسم":"Enter code and name","error");
+              try{
+                const r=await apiFetch("/settings/banks",{method:"POST",body:JSON.stringify(newBank)});
+                const d=await r.json();
+                setBanksList(p=>[...p,d||newBank]);
+                setNewBank({code:"",name_en:"",name_ar:"",swift:"",logo_url:""});
+                showToast(isAr?"تمت إضافة البنك":"Bank added","success");
+              }catch(e){showToast(isAr?"خطأ":"Error","error");}
+            }}><span style={{display:"flex",alignItems:"center",gap:6}}>{Icons.add(14,C.white)} {isAr?"إضافة البنك":"Add Bank"}</span></Btn>
+          </div>
+        </G>
       </div>}
       {tab==="COMMISSION"&&<CommissionTab
         commBuyer={commBuyer} setCommBuyer={setCommBuyer}
