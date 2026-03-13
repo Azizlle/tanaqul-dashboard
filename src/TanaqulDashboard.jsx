@@ -8529,7 +8529,7 @@ const Settings = ({ onLangChange }) => {
   useEffect(()=>{
     apiFetch("/settings/smart-trading/plans").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.plans||d))setStPlans(d.plans||d);}).catch(()=>{});
     apiFetch("/settings/smart-trading/ai").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setAiApiKey(d.api_key);if(d.chat_limit)setAiChatLimit(String(d.chat_limit));if(d.model)setAiModel(d.model);}}).catch(()=>{});
-    apiFetch("/settings/banks").then(r=>{if(!r||!r.ok){console.warn("Banks fetch failed:",r?.status);return null;}return r.json();}).then(d=>{if(d&&Array.isArray(d))setBanksList(d);}).catch(e=>console.warn("Banks fetch error:",e));
+    apiFetch("/settings/banks").then(async r=>{if(!r||!r.ok){const txt=await r?.text().catch(()=>"");console.warn("Banks fetch failed:",r?.status,txt);return null;}return r.json();}).then(d=>{console.log("Banks data:",d);if(d&&Array.isArray(d))setBanksList(d);}).catch(e=>console.warn("Banks fetch error:",e));
   },[]);
 
 
