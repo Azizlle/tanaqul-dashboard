@@ -2587,10 +2587,10 @@ const Financials = () => {
           <div>
             <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>{isAr?"رسوم تخزين الخزينة":"Vault Storage Fees"}</p>
             <p style={{fontSize:12,color:"#6D28D9",margin:0}}>
-              {isAr?"رسوم حفظ سنوية تُفرض لكل جرام بعد انتهاء فترة السماح. تُطبّق فقط على التوكنات المحفوظة في الخزنة لأكثر من فترة السماح.":"Annual custody fees charged per gram after grace period. Only applies to tokens held in the vault beyond the grace period."}
-              Gold: {storageFeeConfig.gold_rate_percent}%/yr &nbsp;·&nbsp;
-              Silver: {storageFeeConfig.silver_rate_percent}%/yr &nbsp;·&nbsp;
-              Platinum: {(storageFeeConfig.platinum_rate_percent||storageFeeConfig.plat_rate_percent||0.6)}%/yr &nbsp;·&nbsp;
+              {isAr?"رسوم حفظ شهرية تُفرض لكل جرام بعد انتهاء فترة السماح. تُطبّق فقط على التوكنات المحفوظة في الخزنة لأكثر من فترة السماح.":"Monthly custody fees charged per gram after grace period. Only applies to tokens held in the vault beyond the grace period."}
+              Gold: {storageFeeConfig.gold_rate_percent}%/mo &nbsp;·&nbsp;
+              Silver: {storageFeeConfig.silver_rate_percent}%/mo &nbsp;·&nbsp;
+              Platinum: {(storageFeeConfig.platinum_rate_percent||storageFeeConfig.plat_rate_percent||0.6)}%/mo &nbsp;·&nbsp;
               Grace period: {storageFeeConfig.grace_period_days} days &nbsp;·&nbsp;
               Movement threshold: {storageFeeConfig.movement_threshold_pct||10}%
             </p>
@@ -8520,37 +8520,37 @@ const Settings = ({ onLangChange }) => {
           <span style={{fontSize:18}}>🏦</span>
           <div>
             <p style={{fontSize:14,fontWeight:700,color:"#5B21B6",margin:"0 0 4px"}}>{isAr?"إعدادات رسوم التخزين":"Vault Storage Fee Configuration"}</p>
-            <p style={{fontSize:12,color:"#6D28D9",margin:0}}>{isAr?"يتم احتساب رسوم الحفظ السنوية على القيمة السوقية للحيازات الفعلية لكل دورة فوترة. يُطبّق الحد الأدنى حتى لو كانت الرسوم المحسوبة أقل.":"Annual custody fees are charged on the market value of physical holdings per billing cycle. Minimum fee applies even if calculated fee is lower."}</p>
+            <p style={{fontSize:12,color:"#6D28D9",margin:0}}>{isAr?"يتم احتساب رسوم الحفظ الشهرية على القيمة السوقية للحيازات الفعلية. يُطبّق الحد الأدنى حتى لو كانت الرسوم المحسوبة أقل.":"Monthly custody fees are charged on the market value of physical holdings. Minimum fee applies even if calculated fee is lower."}</p>
           </div>
         </div>
-        <G title={isAr?"نسبة الرسوم السنوية لكل معدن (%)":"Per-Metal Annual Fee Rate (%)"}>
+        <G title={isAr?"نسبة الرسوم الشهرية لكل معدن (%)":"Per-Metal Monthly Fee Rate (%)"}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الذهب — السنوي %":"GOLD — ANNUAL %"}</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الذهب — الشهري %":"GOLD — MONTHLY %"}</label>
               <input type="number" step="0.05" min="0" max="5"
                 value={storageFeeSettings?.goldAnnualPct||"0.5"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,goldAnnualPct:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.5% سنوياً من قيمة الذهب":"e.g. 0.5% per year of gold value"}</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.5% سنوياً من قيمة الذهب":"e.g. 0.5% per month of gold value"}</p>
             </div>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الفضة — السنوي %":"SILVER — ANNUAL %"}</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"الفضة — الشهري %":"SILVER — MONTHLY %"}</label>
               <input type="number" step="0.05" min="0" max="5"
                 value={storageFeeSettings?.silverAnnualPct||"0.75"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,silverAnnualPct:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.75% سنوياً من قيمة الفضة":"e.g. 0.75% per year of silver value"}</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.75% سنوياً من قيمة الفضة":"e.g. 0.75% per month of silver value"}</p>
             </div>
             <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"البلاتين — السنوي %":"PLATINUM — ANNUAL %"}</label>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"البلاتين — الشهري %":"PLATINUM — MONTHLY %"}</label>
               <input type="number" step="0.05" min="0" max="5"
                 value={storageFeeSettings?.platinumAnnualPct||"0.6"}
                 onChange={e=>setStorageFeeSettings(p=>({...p,platinumAnnualPct:e.target.value}))}
                 style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:15,outline:"none",fontFamily:"'DM Mono',monospace"}}
               />
-              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.6% سنوياً من قيمة البلاتين":"e.g. 0.6% per year of platinum value"}</p>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:4}}>{isAr?"مثال: 0.6% سنوياً من قيمة البلاتين":"e.g. 0.6% per month of platinum value"}</p>
             </div>
           </div>
         </G>
@@ -8595,13 +8595,12 @@ const Settings = ({ onLangChange }) => {
               {metal:"Platinum",pct:storageFeeSettings?.platinumAnnualPct||"0",sarPerG:_sfPlat?.priceSAR||0, color:"#A78BFA"},
             ].map(({metal,pct,sarPerG,color})=>{
               const cycle = storageFeeSettings?.billingCycle||"monthly";
-              const div = cycle==="monthly"?12:cycle==="quarterly"?4:1;
-              const feePerG = sarPerG * parseFloat(pct||0)/100 / div;
+              const feePerG = sarPerG * parseFloat(pct||0)/100;
               return (
                 <div key={metal} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.06)",fontSize:13}}>
                   <span style={{color:"rgba(255,255,255,0.5)"}}>{isAr?({"Gold":"الذهب","Silver":"الفضة","Platinum":"البلاتين"}[metal]||metal):metal}</span>
-                  <span style={{color:"rgba(255,255,255,0.5)"}}>SAR {sarPerG}/g × {pct}%/yr ÷ {div}</span>
-                  <span style={{color,fontWeight:700,fontFamily:"'DM Mono',monospace"}}>SAR {(feePerG||0).toFixed(4)} / gram / {cycle.replace("ly","")}</span>
+                  <span style={{color:"rgba(255,255,255,0.5)"}}>SAR {sarPerG}/g × {pct}%/mo</span>
+                  <span style={{color,fontWeight:700,fontFamily:"'DM Mono',monospace"}}>SAR {(feePerG||0).toFixed(4)} / gram / month</span>
                 </div>
               );
             })}
