@@ -2545,7 +2545,7 @@ const Financials = () => {
         {/* Manual Activation */}
         <div style={{marginBottom:16}}>
           {!manualSubForm ? (
-            <button onClick={()=>setManualSubForm({investor_id:"",months:"1",notes:""})} style={{padding:"8px 16px",background:C.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل اشتراك برو يدوي":"Manual Pro Activation"}</button>
+            <button onClick={()=>setManualSubForm({investor_id:"",months:"1",notes:"",auto_renew:false})} style={{padding:"8px 16px",background:C.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل اشتراك برو يدوي":"Manual Pro Activation"}</button>
           ) : (
             <div style={{background:C.cream,border:`1px solid ${C.gold}33`,borderRadius:10,padding:16,marginBottom:12}}>
               <p style={{fontSize:14,fontWeight:700,color:C.gold,margin:"0 0 12px"}}>{isAr?"تفعيل اشتراك برو يدوي (بدون فوترة)":"Manual Pro Activation (No Billing)"}</p>
@@ -2566,12 +2566,22 @@ const Financials = () => {
                   <input value={manualSubForm.notes} onChange={e=>setManualSubForm(p=>({...p,notes:e.target.value}))} placeholder={isAr?"اختياري":"Optional"} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}} />
                 </div>
               </div>
+              {/* Auto-Renew Toggle */}
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"8px 12px",background:manualSubForm.auto_renew?"#F0FDF4":"#F9FAFB",borderRadius:8,border:`1px solid ${manualSubForm.auto_renew?"#BBF7D0":"#E5E7EB"}`}}>
+                <div onClick={()=>setManualSubForm(p=>({...p,auto_renew:!p.auto_renew}))} style={{width:40,height:22,borderRadius:11,background:manualSubForm.auto_renew?"#22C55E":"#D1D5DB",position:"relative",cursor:"pointer",transition:"background 0.2s",flexShrink:0}}>
+                  <div style={{width:18,height:18,borderRadius:9,background:"#fff",position:"absolute",top:2,left:manualSubForm.auto_renew?20:2,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+                </div>
+                <div>
+                  <p style={{fontSize:13,fontWeight:600,color:manualSubForm.auto_renew?"#166534":"#374151",margin:0}}>{isAr?"التجديد التلقائي":"Auto-Renewal"}</p>
+                  <p style={{fontSize:11,color:manualSubForm.auto_renew?"#15803D":"#6B7280",margin:0}}>{isAr?"عند انتهاء الاشتراك يُجدد تلقائياً (محفظة أولاً، ثم بطاقة)":"When subscription expires, auto-renew (wallet first, then card)"}</p>
+                </div>
+              </div>
               <div style={{display:"flex",gap:8}}>
                 <button onClick={async ()=>{
                   if(!manualSubForm.investor_id){showToast(isAr?"اختر المستثمر":"Select an investor","error");return;}
                   const planId=stPlans.length>0?stPlans[0].id:"smart-hub";
                   try{
-                    const r=await apiFetch("/billing/subscriptions/activate",{method:"POST",body:JSON.stringify({investor_id:manualSubForm.investor_id,plan_id:planId,months:parseInt(manualSubForm.months||1),notes:manualSubForm.notes})});
+                    const r=await apiFetch("/billing/subscriptions/activate",{method:"POST",body:JSON.stringify({investor_id:manualSubForm.investor_id,plan_id:planId,months:parseInt(manualSubForm.months||1),notes:manualSubForm.notes,auto_renew:manualSubForm.auto_renew})});
                     const data=r&&r.ok?await r.json():null;
                     const action=data?.action==="extended"?(isAr?"✅ تم تمديد الاشتراك":"✅ Subscription extended"):(isAr?"✅ تم تفعيل الاشتراك":"✅ Subscription activated");
                     showToast(action);
@@ -2591,6 +2601,7 @@ const Financials = () => {
           {key:"price",label:isAr?"السعر الشهري":"Monthly Price",render:(_,row)=>row.isManual?<span style={{fontWeight:700,color:"#9333EA"}}>{isAr?"مجاني":"FREE"}</span>:<SARAmount amount={row.price}/>},
           {key:"vat",label:isAr?"ض.ق.م 15%":"VAT 15%",render:(_,row)=>row.isManual?<span style={{color:C.textMuted}}>—</span>:<span style={{color:"#E65100",fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(row.price)*0.15).toFixed(2)}</span>},
           {key:"total",label:isAr?"الإجمالي":"Total",render:(_,row)=>row.isManual?<span style={{fontWeight:700,color:"#9333EA"}}>{isAr?"مجاني":"FREE"}</span>:<span style={{fontWeight:700,color:C.gold,fontFamily:"'DM Mono',monospace"}}>SAR {(parseFloat(row.price||0)*1.15).toFixed(2)}</span>},
+          {key:"autoRenew",label:isAr?"تجديد تلقائي":"Auto-Renew",render:v=>v?<span style={{fontSize:11,fontWeight:700,color:"#166534",background:"#F0FDF4",padding:"2px 8px",borderRadius:4}}>{isAr?"مفعّل":"ON"}</span>:<span style={{fontSize:11,fontWeight:600,color:"#9CA3AF"}}>{isAr?"معطّل":"OFF"}</span>},
           {key:"status",label:isAr?"الحالة":"Status",render:(v,row)=><>{row.isManual&&<span style={{fontSize:10,fontWeight:700,color:"#9333EA",background:"#FAF5FF",padding:"2px 6px",borderRadius:4,marginEnd:4}}>{isAr?"يدوي":"Manual"}</span>}<Badge label={v}/></>},
           {key:"startedAt",label:isAr?"تاريخ البدء":"Started"},
           {key:"expiresAt",label:isAr?"ينتهي في":"Expires"},
@@ -2600,6 +2611,7 @@ const Financials = () => {
           plan:isAr?(s.plan_name_ar||s.plan_name||"—"):(s.plan_name_en||s.plan_name||"—"),
           price:String(s.price_monthly||s.amount||0),
           vat:String(s.price_monthly||s.amount||0),
+          autoRenew:!!s.auto_renew,
           status:s.status||"ACTIVE",
           isManual:!!s.is_manual,
           startedAt:(s.started_at||s.created_at||"").slice(0,10),
