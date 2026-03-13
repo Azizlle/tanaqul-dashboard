@@ -9182,8 +9182,25 @@ const SupportTickets = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
+
+  const fetchTicketDetail = async (displayId) => {
+    setDetailLoading(true);
+    try {
+      const token = localStorage.getItem("tanaqul_token");
+      const res = await fetch(`https://api.tanaqul.app/api/v1/support/tickets/${displayId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedTicket(data);
+        setReplyText(data.admin_reply || "");
+      }
+    } catch (e) { console.error(e); }
+    finally { setDetailLoading(false); }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -9306,7 +9323,7 @@ const SupportTickets = () => {
                 const sc = statusColors[ticket.status] || statusColors.OPEN;
                 return (
                   <tr key={ticket.id} style={{borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}
-                    onClick={() => { setSelectedTicket(ticket); setReplyText(ticket.admin_reply || ""); }}
+                    onClick={() => { fetchTicketDetail(ticket.display_id); }}
                     onMouseEnter={e => e.currentTarget.style.background = C.bg}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     <td style={{padding:"14px 16px",fontFamily:"'DM Mono',monospace",fontSize:12,color:C.gold}}>{ticket.display_id}</td>
@@ -9348,72 +9365,73 @@ const SupportTickets = () => {
 
       {/* Ticket Detail Modal */}
       {selectedTicket && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}
-          onClick={() => setSelectedTicket(null)}>
-          <div style={{background:C.card,borderRadius:20,padding:32,maxWidth:640,width:"90%",maxHeight:"80vh",overflowY:"auto",position:"relative"}}
-            onClick={e => e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-              <div>
-                <h3 style={{fontSize:20,fontWeight:800,color:C.navy}}>{selectedTicket.subject}</h3>
-                <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{selectedTicket.display_id} · {categoryLabels[selectedTicket.category] || selectedTicket.category}</p>
-              </div>
-              <button onClick={() => setSelectedTicket(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:24,color:C.textMuted}}>×</button>
-            </div>
-
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-              <div style={{background:C.bg,borderRadius:10,padding:14}}>
-                <p style={{fontSize:11,color:C.textMuted,marginBottom:4}}>{isAr ? "المستثمر" : "Investor"}</p>
-                <p style={{fontWeight:600,color:C.navy,fontSize:14}}>{selectedTicket.investor_name}</p>
-                <p style={{fontSize:12,color:C.textMuted}}>{selectedTicket.investor_display_id}</p>
-              </div>
-              <div style={{background:C.bg,borderRadius:10,padding:14}}>
-                <p style={{fontSize:11,color:C.textMuted,marginBottom:4}}>{isAr ? "الحالة" : "Status"}</p>
-                <select value={selectedTicket.status} onChange={e => { updateStatus(selectedTicket.display_id, e.target.value); setSelectedTicket({...selectedTicket, status: e.target.value}); }}
-                  style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:C.card,color:C.navy,fontWeight:600,fontSize:13,cursor:"pointer"}}>
-                  {["OPEN","IN_PROGRESS","RESOLVED","CLOSED"].map(s => (
-                    <option key={s} value={s}>{statusColors[s]?.label || s}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Investor message */}
-            <div style={{background:C.bg,borderRadius:12,padding:18,marginBottom:16}}>
-              <p style={{fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:8}}>{isAr ? "رسالة المستثمر" : "Investor Message"}</p>
-              <p style={{color:C.navy,fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{selectedTicket.body}</p>
-              <p style={{fontSize:11,color:C.textMuted,marginTop:8}}>{new Date(selectedTicket.created_at).toLocaleString(isAr?"ar-SA":"en-US")}</p>
-            </div>
-
-            {/* Existing reply */}
-            {selectedTicket.admin_reply && selectedTicket.replied_at && (
-              <div style={{background:C.gold+"0D",borderRadius:12,padding:18,marginBottom:16,border:`1px solid ${C.gold}22`}}>
-                <p style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:8}}>{isAr ? "رد المسؤول" : "Admin Reply"}</p>
-                <p style={{color:C.navy,fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{selectedTicket.admin_reply}</p>
-                <p style={{fontSize:11,color:C.textMuted,marginTop:8}}>{new Date(selectedTicket.replied_at).toLocaleString(isAr?"ar-SA":"en-US")}</p>
-              </div>
-            )}
-
-            {/* Reply textarea */}
-            {selectedTicket.status !== "CLOSED" && (
-              <div>
-                <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{isAr ? "الرد" : "Reply"}</p>
-                <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
-                  rows={4} placeholder={isAr ? "اكتب ردك هنا..." : "Type your reply here..."}
-                  style={{width:"100%",padding:14,borderRadius:12,border:`1px solid ${C.border}`,background:C.bg,color:C.navy,fontSize:14,resize:"vertical",fontFamily:"inherit"}} />
-                <div style={{display:"flex",gap:10,marginTop:12,justifyContent:"flex-end"}}>
-                  <button onClick={() => setSelectedTicket(null)}
-                    style={{padding:"10px 24px",borderRadius:10,border:`1px solid ${C.border}`,background:"transparent",color:C.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>
-                    {isAr ? "إلغاء" : "Cancel"}
-                  </button>
-                  <button onClick={() => handleReply(selectedTicket.display_id)} disabled={replying || !replyText.trim()}
-                    style={{padding:"10px 24px",borderRadius:10,border:"none",background:C.gold,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",opacity:replying||!replyText.trim()?0.5:1}}>
-                    {replying ? (isAr ? "جاري الإرسال..." : "Sending...") : (isAr ? "إرسال الرد" : "Send Reply")}
-                  </button>
+        <Modal title={`${selectedTicket.subject} — ${selectedTicket.display_id}`} onClose={() => setSelectedTicket(null)}>
+          {detailLoading ? (
+            <div style={{textAlign:"center",padding:40,color:C.textMuted}}>{isAr ? "جاري التحميل..." : "Loading..."}</div>
+          ) : (
+            <>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+                <div style={{background:C.bg,borderRadius:10,padding:14}}>
+                  <p style={{fontSize:11,color:C.textMuted,marginBottom:4}}>{isAr ? "المستثمر" : "Investor"}</p>
+                  <p style={{fontWeight:600,color:C.navy,fontSize:14}}>{selectedTicket.investor_name_en || selectedTicket.investor_name || "—"}</p>
+                  <p style={{fontSize:12,color:C.textMuted}}>{selectedTicket.investor_display_id}</p>
+                </div>
+                <div style={{background:C.bg,borderRadius:10,padding:14}}>
+                  <p style={{fontSize:11,color:C.textMuted,marginBottom:4}}>{isAr ? "الحالة" : "Status"}</p>
+                  <select value={selectedTicket.status} onChange={e => { updateStatus(selectedTicket.display_id, e.target.value); setSelectedTicket({...selectedTicket, status: e.target.value}); }}
+                    style={{width:"100%",padding:"8px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:C.card,color:C.navy,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+                    {["OPEN","IN_PROGRESS","RESOLVED","CLOSED"].map(s => (
+                      <option key={s} value={s}>{statusColors[s]?.label || s}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* Category badge */}
+              <div style={{marginBottom:16}}>
+                <span style={{background:C.gold+"15",color:C.gold,padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:600}}>
+                  {categoryLabels[selectedTicket.category] || selectedTicket.category}
+                </span>
+              </div>
+
+              {/* Investor message */}
+              <div style={{background:C.bg,borderRadius:12,padding:18,marginBottom:16,border:`1px solid ${C.border}`}}>
+                <p style={{fontSize:12,fontWeight:700,color:C.textMuted,marginBottom:8}}>{isAr ? "رسالة المستثمر" : "Investor Message"}</p>
+                <p style={{color:C.navy,fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{selectedTicket.body || (isAr ? "لا توجد رسالة" : "No message")}</p>
+                <p style={{fontSize:11,color:C.textMuted,marginTop:8}}>{new Date(selectedTicket.created_at).toLocaleString(isAr?"ar-SA":"en-US")}</p>
+              </div>
+
+              {/* Existing reply */}
+              {selectedTicket.admin_reply && selectedTicket.replied_at && (
+                <div style={{background:C.gold+"0D",borderRadius:12,padding:18,marginBottom:16,border:`1px solid ${C.gold}22`}}>
+                  <p style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:8}}>{isAr ? "رد المسؤول" : "Admin Reply"}</p>
+                  <p style={{color:C.navy,fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{selectedTicket.admin_reply}</p>
+                  <p style={{fontSize:11,color:C.textMuted,marginTop:8}}>{new Date(selectedTicket.replied_at).toLocaleString(isAr?"ar-SA":"en-US")}</p>
+                </div>
+              )}
+
+              {/* Reply textarea */}
+              {selectedTicket.status !== "CLOSED" && (
+                <div>
+                  <p style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:8}}>{isAr ? "الرد" : "Reply"}</p>
+                  <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
+                    rows={4} placeholder={isAr ? "اكتب ردك هنا..." : "Type your reply here..."}
+                    style={{width:"100%",padding:14,borderRadius:12,border:`1px solid ${C.border}`,background:C.bg,color:C.navy,fontSize:14,resize:"vertical",fontFamily:"inherit"}} />
+                  <div style={{display:"flex",gap:10,marginTop:12,justifyContent:"flex-end"}}>
+                    <button onClick={() => setSelectedTicket(null)}
+                      style={{padding:"10px 24px",borderRadius:10,border:`1px solid ${C.border}`,background:"transparent",color:C.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+                      {isAr ? "إلغاء" : "Cancel"}
+                    </button>
+                    <button onClick={() => handleReply(selectedTicket.display_id)} disabled={replying || !replyText.trim()}
+                      style={{padding:"10px 24px",borderRadius:10,border:"none",background:C.gold,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",opacity:replying||!replyText.trim()?0.5:1}}>
+                      {replying ? (isAr ? "جاري الإرسال..." : "Sending...") : (isAr ? "إرسال الرد" : "Send Reply")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </Modal>
       )}
     </div>
   );
