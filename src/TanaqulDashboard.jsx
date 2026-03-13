@@ -9195,7 +9195,7 @@ const SupportTickets = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setTickets(data.tickets || []);
+        setTickets(Array.isArray(data) ? data : data.tickets || []);
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
