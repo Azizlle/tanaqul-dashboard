@@ -2224,8 +2224,11 @@ const Financials = () => {
   const [subLoading, setSubLoading] = useState(false);
   const [manualSubForm, setManualSubForm] = useState(null); // {investor_id, plan_id, months, notes}
   const [stPlans, setStPlans] = useState([]);
+  const [compSub, setCompSub] = useState(false); // complimentary subscription toggle
+  const [compSubLoading, setCompSubLoading] = useState(false);
   useEffect(()=>{
     apiFetch("/settings/smart-trading/plans").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.plans||d))setStPlans(d.plans||d);}).catch(()=>{});
+    apiFetch("/billing/complimentary-subscription").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setCompSub(!!d.enabled);}).catch(()=>{});
   },[]);
   // Fetch subscriptions when tab is active
   useEffect(()=>{
@@ -2514,26 +2517,44 @@ const Financials = () => {
             </div>
           ))}
         </div>
+        {/* Complimentary Subscription Toggle */}
+        <div style={{background:compSub?"#F0FDF4":"#FFF7ED",border:`1px solid ${compSub?"#BBF7D0":"#FED7AA"}`,borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:18}}>{compSub?"🎁":"📦"}</span>
+            <div>
+              <p style={{fontSize:13,fontWeight:700,color:compSub?"#166534":"#9A3412",margin:0}}>{isAr?"اشتراك برو مجاني للمسجلين الجدد":"Complimentary Pro for New Registrations"}</p>
+              <p style={{fontSize:11,color:compSub?"#15803D":"#C2410C",margin:"2px 0 0"}}>{isAr?"عند التفعيل، كل مستثمر جديد يحصل على شهر مجاني في اشتراك برو":"When enabled, every new investor gets 1 month free Pro subscription"}</p>
+            </div>
+          </div>
+          <label style={{display:"flex",alignItems:"center",gap:8,cursor:compSubLoading?"not-allowed":"pointer",opacity:compSubLoading?0.6:1}}>
+            <span style={{fontSize:12,fontWeight:600,color:compSub?"#166534":"#9A3412"}}>{compSub?(isAr?"مفعّل":"Enabled"):(isAr?"معطّل":"Disabled")}</span>
+            <div onClick={async()=>{
+              if(compSubLoading)return;
+              setCompSubLoading(true);
+              try{
+                const newVal=!compSub;
+                const r=await apiFetch("/billing/complimentary-subscription",{method:"PUT",body:JSON.stringify({enabled:newVal})});
+                if(r&&r.ok){setCompSub(newVal);showToast(newVal?(isAr?"✅ تم تفعيل الاشتراك المجاني":"✅ Complimentary subscription enabled"):(isAr?"تم إيقاف الاشتراك المجاني":"Complimentary subscription disabled"));}
+                else showToast(isAr?"حدث خطأ":"Error","error");
+              }catch(e){showToast(isAr?"حدث خطأ":"Error","error");}finally{setCompSubLoading(false);}
+            }} style={{width:44,height:24,borderRadius:12,background:compSub?"#22C55E":"#D1D5DB",position:"relative",cursor:"inherit",transition:"background 0.2s"}}>
+              <div style={{width:20,height:20,borderRadius:10,background:"#fff",position:"absolute",top:2,left:compSub?22:2,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+            </div>
+          </label>
+        </div>
         {/* Manual Activation */}
         <div style={{marginBottom:16}}>
           {!manualSubForm ? (
-            <button onClick={()=>setManualSubForm({investor_id:"",plan_id:"",months:"1",notes:""})} style={{padding:"8px 16px",background:C.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل اشتراك يدوي":"Manual Activation"}</button>
+            <button onClick={()=>setManualSubForm({investor_id:"",months:"1",notes:""})} style={{padding:"8px 16px",background:C.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل اشتراك برو يدوي":"Manual Pro Activation"}</button>
           ) : (
             <div style={{background:C.cream,border:`1px solid ${C.gold}33`,borderRadius:10,padding:16,marginBottom:12}}>
-              <p style={{fontSize:14,fontWeight:700,color:C.gold,margin:"0 0 12px"}}>{isAr?"تفعيل اشتراك يدوي (بدون فوترة)":"Manual Activation (No Billing)"}</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 120px 1fr",gap:10,marginBottom:12}}>
+              <p style={{fontSize:14,fontWeight:700,color:C.gold,margin:"0 0 12px"}}>{isAr?"تفعيل اشتراك برو يدوي (بدون فوترة)":"Manual Pro Activation (No Billing)"}</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 120px 1fr",gap:10,marginBottom:12}}>
                 <div>
                   <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"المستثمر":"Investor"}</label>
                   <select value={manualSubForm.investor_id} onChange={e=>setManualSubForm(p=>({...p,investor_id:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}}>
                     <option value="">{isAr?"اختر مستثمر":"Select investor"}</option>
                     {investors.filter(i=>i.status!=="REJECTED"&&!i.is_market_maker).map(i=><option key={i.id} value={i.id}>{i.display_id} — {isAr?(i.name_ar||i.name_en):(i.name_en||i.name_ar)}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الباقة":"Plan"}</label>
-                  <select value={manualSubForm.plan_id} onChange={e=>setManualSubForm(p=>({...p,plan_id:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}}>
-                    <option value="">{isAr?"اختر باقة":"Select plan"}</option>
-                    {stPlans.map(p=><option key={p.id} value={p.id}>{isAr?p.name_ar:p.name_en} — SAR {p.price_monthly}</option>)}
                   </select>
                 </div>
                 <div>
@@ -2547,15 +2568,17 @@ const Financials = () => {
               </div>
               <div style={{display:"flex",gap:8}}>
                 <button onClick={async ()=>{
-                  if(!manualSubForm.investor_id||!manualSubForm.plan_id){showToast(isAr?"أدخل المعرف والباقة":"Enter investor ID and plan","error");return;}
+                  if(!manualSubForm.investor_id){showToast(isAr?"اختر المستثمر":"Select an investor","error");return;}
+                  const planId=stPlans.length>0?stPlans[0].id:"smart-hub";
                   try{
-                    await apiFetch("/billing/subscriptions/activate",{method:"POST",body:JSON.stringify({investor_id:manualSubForm.investor_id,plan_id:manualSubForm.plan_id,months:parseInt(manualSubForm.months||1),notes:manualSubForm.notes})});
-                    showToast(isAr?"✅ تم تفعيل الاشتراك":"✅ Subscription activated");
+                    const r=await apiFetch("/billing/subscriptions/activate",{method:"POST",body:JSON.stringify({investor_id:manualSubForm.investor_id,plan_id:planId,months:parseInt(manualSubForm.months||1),notes:manualSubForm.notes})});
+                    const data=r&&r.ok?await r.json():null;
+                    const action=data?.action==="extended"?(isAr?"✅ تم تمديد الاشتراك":"✅ Subscription extended"):(isAr?"✅ تم تفعيل الاشتراك":"✅ Subscription activated");
+                    showToast(action);
                     setManualSubForm(null);
-                    // Refresh subscriptions
                     apiFetch("/subscriptions").then(r=>r&&r.ok?r.json():null).then(d=>{if(d?.items)setSubscriptions(d.items);else if(Array.isArray(d))setSubscriptions(d);}).catch(()=>{});
                   }catch(e){showToast(isAr?"حدث خطأ":"Error","error");}
-                }} style={{padding:"8px 20px",background:C.greenSolid,color:"#fff",border:"none",borderRadius:6,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل":"Activate"}</button>
+                }} style={{padding:"8px 20px",background:C.greenSolid,color:"#fff",border:"none",borderRadius:6,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAr?"تفعيل / تمديد":"Activate / Extend"}</button>
                 <button onClick={()=>setManualSubForm(null)} style={{padding:"8px 16px",background:C.border,color:C.text,border:"none",borderRadius:6,fontWeight:600,fontSize:13,cursor:"pointer"}}>{isAr?"إلغاء":"Cancel"}</button>
               </div>
             </div>
