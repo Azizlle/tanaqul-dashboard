@@ -2215,7 +2215,7 @@ const Appointments = () => {
 
 const Financials = () => {
   const { t, isAr } = useLang();
-  const { withdrawals=[], setWithdrawals=()=>{}, matches=[], walletMovements=[], appointments=[], addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
+  const { investors=[], withdrawals=[], setWithdrawals=()=>{}, matches=[], walletMovements=[], appointments=[], addAudit=()=>{}, pageHint=null, setPageHint=()=>{} } = useAppData();
   const [tab,setTab]=useState("ORDERS");
   const [storageFeeConfig, setStorageFeeConfig] = useState({gold_rate_percent:0.5,silver_rate_percent:0.75,platinum_rate_percent:0.6,grace_period_days:5});
   const [storageFeeHistory, setStorageFeeHistory] = useState([]);
@@ -2519,8 +2519,11 @@ const Financials = () => {
               <p style={{fontSize:14,fontWeight:700,color:C.gold,margin:"0 0 12px"}}>{isAr?"تفعيل اشتراك يدوي (بدون فوترة)":"Manual Activation (No Billing)"}</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 120px 1fr",gap:10,marginBottom:12}}>
                 <div>
-                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"معرّف المستثمر":"Investor ID"}</label>
-                  <input value={manualSubForm.investor_id} onChange={e=>setManualSubForm(p=>({...p,investor_id:e.target.value}))} placeholder="INV-XXXX" style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}} />
+                  <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"المستثمر":"Investor"}</label>
+                  <select value={manualSubForm.investor_id} onChange={e=>setManualSubForm(p=>({...p,investor_id:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,background:C.bg}}>
+                    <option value="">{isAr?"اختر مستثمر":"Select investor"}</option>
+                    {investors.filter(i=>i.status!=="REJECTED"&&!i.is_market_maker).map(i=><option key={i.id} value={i.id}>{i.display_id} — {isAr?(i.name_ar||i.name_en):(i.name_en||i.name_ar)}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={{fontSize:11,fontWeight:600,color:C.textMuted,display:"block",marginBottom:4}}>{isAr?"الباقة":"Plan"}</label>
