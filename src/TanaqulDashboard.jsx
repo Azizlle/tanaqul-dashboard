@@ -1401,11 +1401,11 @@ const Investors = () => {
   const doAction = (inv, act) => { setSel(inv); setAction(act); setReason(""); setNotifyMsg(""); };
 
   const confirmAction = async () => {
-    const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE",approve:"ACTIVE",reject:"REJECTED"}[action];
-    const msgs = {suspend:"Investor suspended — appointments auto-cancelled",activate:"Investor reactivated",ban:"Investor banned — appointments auto-cancelled",unban:"Investor unbanned",notify:"Notification sent",approve:"Company investor approved",reject:"Company investor rejected"};
+    const newStatus = {suspend:"SUSPENDED",activate:"ACTIVE",ban:"BANNED",unban:"ACTIVE",approve:"ACTIVE",reject:"REJECTED",request_docs:"PENDING_DOCUMENT"}[action];
+    const msgs = {suspend:"Investor suspended — appointments auto-cancelled",activate:"Investor reactivated",ban:"Investor banned — appointments auto-cancelled",unban:"Investor unbanned",notify:"Notification sent",approve:"Company investor approved",reject:"Company investor rejected",request_docs:"Document request sent"};
     try {
       const uid = sel._uuid || sel.id;
-      const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/unban",approve:"/investors/"+uid+"/approve",reject:"/investors/"+uid+"/reject"}[action];
+      const endpoint = {suspend:"/investors/"+uid+"/suspend",activate:"/investors/"+uid+"/activate",ban:"/investors/"+uid+"/ban",unban:"/investors/"+uid+"/unban",approve:"/investors/"+uid+"/approve",reject:"/investors/"+uid+"/reject",request_docs:"/investors/"+uid+"/request-documents"}[action];
       if(endpoint) {
         const r = await apiFetch(endpoint, {method:"POST", body:JSON.stringify({reason:reason||"No reason provided"})});
         if(r && !r.ok) { showToast("⚠️ Backend error — action not applied"); setSel(null); setAction(""); return; }
@@ -1508,7 +1508,7 @@ const Investors = () => {
             {row.status==="ACTIVE"&&<><Btn small variant="ghost" onClick={()=>doAction(row,"suspend")}>{t("Suspend")}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"ban")}>{t("Ban")}</Btn></>}
             {row.status==="SUSPENDED"&&<><Btn small variant="teal" onClick={()=>doAction(row,"activate")}>{t("Activate")}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"ban")}>{t("Ban")}</Btn></>}
             {row.status==="BANNED"&&<Btn small variant="teal" onClick={()=>doAction(row,"unban")}>{t("Unban")}</Btn>}
-            {row.status==="PENDING_APPROVAL"&&<><Btn small variant="teal" onClick={()=>doAction(row,"approve")}>{isAr?"موافقة":"Approve"}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"reject")}>{isAr?"رفض":"Reject"}</Btn></>}
+            {row.status==="PENDING_APPROVAL"&&<><Btn small variant="teal" onClick={()=>doAction(row,"approve")}>{isAr?"موافقة":"Approve"}</Btn><Btn small variant="danger" onClick={()=>doAction(row,"reject")}>{isAr?"رفض":"Reject"}</Btn><Btn small variant="outline" onClick={()=>doAction(row,"request_docs")}>{isAr?"طلب وثائق":"Request Docs"}</Btn></>}
             {row.status==="REJECTED"&&<Btn small variant="outline" onClick={()=>doAction(row,"view")}>{isAr?"عرض":"View"}</Btn>}
             {row.status==="PENDING_DOCUMENT"&&<Btn small variant="outline" onClick={()=>doAction(row,"view")}>{isAr?"عرض":"View"}</Btn>}
             <Btn small variant="ghost" onClick={()=>doAction(row,"notify")}>{t("Notify")}</Btn>
@@ -9425,6 +9425,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/commission/rates",{method:"PUT",body:JSON.stringify({buyer_rate:parseFloat(commBuyer||2),seller_rate:parseFloat(commSeller||1)})});}catch(e){}
           try{await apiFetch("/settings/cancel-fee",{method:"PUT",body:JSON.stringify({fee:parseFloat(cancelFee||50)})});}catch(e){}
           try{await apiFetch("/settings/gateway",{method:"PUT",body:JSON.stringify({mada_fee:parseFloat(madaFee||1.5),mada_cap:parseFloat(madaCap||15),visa_fee:parseFloat(visaFee||2.5),sadad_fee:parseFloat(sadadFee||0),mada_limit:parseFloat(madaLimit||50000),visa_limit:parseFloat(visaLimit||0),wallet_deposit:walletOn})});}catch(e){}
+          try{await apiFetch("/settings/wallet_direct_deposit_enabled",{method:"PUT",body:JSON.stringify({value:walletOn?"true":"false"})});}catch(e){}
           try{await apiFetch("/settings/platform",{method:"PUT",body:JSON.stringify(platform)});}catch(e){}
           try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn,explorer_url:explorerUrl})});}catch(e){}
           try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),deposit_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
