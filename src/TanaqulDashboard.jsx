@@ -8639,6 +8639,7 @@ const Settings = ({ onLangChange }) => {
     apiFetch("/settings/blockchain").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.network_name)setNetName(d.network_name);if(d.protocol)setProtocol(d.protocol);if(d.contract)setContract(d.contract);if(d.max_mb)setMaxMB(String(d.max_mb));if(d.max_hrs)setMaxHrs(String(d.max_hrs));if(d.quorum)setQuorum(String(d.quorum));if(d.explorer_public!==undefined)setExplorerOn(d.explorer_public);if(d.explorer_url)setExplorerUrl(d.explorer_url);}}).catch(()=>{});
     apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.deposit_fee)setTestFee(String(d.deposit_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));if(d.weekend_days)setWeekendDays(d.weekend_days);}}).catch(()=>{});
     apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);if(d.app_id)setNafathAppId(d.app_id);if(d.app_key)setNafathAppKey(d.app_key);if(d.base_url)setNafathUrl(d.base_url);}}).catch(()=>{});
+    apiFetch("/payments/config").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){setPayPrimary(d.primary_provider||"noon");setPayFailover(d.failover_enabled!==false);if(d.noon){setNoonBizId(d.noon.business_id||"");setNoonApiKey(d.noon.api_key||"");setNoonMode(d.noon.mode||"sandbox");}if(d.tayseer){setTayseerMerchId(d.tayseer.merchant_id||"");setTayseerApiKey(d.tayseer.api_key||"");setTayseerMode(d.tayseer.mode||"sandbox");}}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
     try{apiFetch("/settings/otp-dev-mode").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setOtpDevMode(d.enabled||false);}).catch(()=>{});}catch{}
     try{apiFetch("/settings/2fa").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setInvestor2faRequired(d.required||false);}).catch(()=>{});}catch{}
@@ -8648,6 +8649,11 @@ const Settings = ({ onLangChange }) => {
   },[]);
   const [tab,setTab]=useState("PLATFORM");
   const [walletOn,setWalletOn]=useState(false);
+  // Payment Gateway (Noon + Tayseer)
+  const [payPrimary,setPayPrimary]=useState("noon");
+  const [payFailover,setPayFailover]=useState(true);
+  const [noonBizId,setNoonBizId]=useState(""); const [noonApiKey,setNoonApiKey]=useState(""); const [noonMode,setNoonMode]=useState("sandbox");
+  const [tayseerMerchId,setTayseerMerchId]=useState(""); const [tayseerApiKey,setTayseerApiKey]=useState(""); const [tayseerMode,setTayseerMode]=useState("sandbox");
   const [explorerOn,setExplorerOn]=useState(true);
   const [saved,setSavedMain]=useState(false);
   const showSaved=()=>{
@@ -8770,6 +8776,26 @@ const Settings = ({ onLangChange }) => {
         <G title={isAr?"مدى — نسبة + حد أقصى ثابت":"MADA — Percentage + Fixed Cap"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={madaFee} onChange={setMadaFee} /><Inp label={isAr?"الحد الأقصى (ريال)":"Max Cap (SAR)"} value={madaCap} onChange={setMadaCap} /><Inp label={isAr?"حد المعاملة (ريال)":"Transaction Limit (SAR)"} value={madaLimit} onChange={setMadaLimit} /></G>
         <G title={isAr?"فيزا / ماستركارد":"Visa / Mastercard"}><Inp label={isAr?"نسبة الرسوم %":"Fee %"} value={visaFee} onChange={setVisaFee} /><Inp label={isAr?"حد المعاملة (ريال) — 0 = بلا حد":"Transaction Limit (SAR) — 0 = No limit"} value={visaLimit} onChange={setVisaLimit} /></G>
         <G title={isAr?"سداد — رسوم ثابتة":"SADAD — Fixed Fee"}><Inp label={isAr?"رسوم ثابتة (ريال)":"Fixed Fee (SAR)"} value={sadadFee} onChange={setSadadFee} /></G>
+        <G title={isAr?"بوابة الدفع — نون + تيسير":"Payment Gateway — Noon + Tayseer"}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <Sel label={isAr?"المزود الأساسي":"Primary Provider"} value={payPrimary} onChange={setPayPrimary} options={[{value:"noon",label:"Noon Payments"},{value:"tayseer",label:"Tayseer"}]} />
+            <Toggle label={isAr?"التحويل التلقائي عند الفشل":"Auto-Failover"} sub={isAr?"التحويل للمزود الثاني عند فشل الأول":"Switch to secondary on failure"} value={payFailover} onChange={setPayFailover} />
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:14}}>
+            <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
+              <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:10}}>Noon Payments</p>
+              <Inp label="Business ID" value={noonBizId} onChange={setNoonBizId} placeholder={isAr?"معرف التاجر":"Merchant Business ID"} />
+              <Inp label="API Key" value={noonApiKey} onChange={setNoonApiKey} type="password" placeholder="API Key" />
+              <Sel label={isAr?"الوضع":"Mode"} value={noonMode} onChange={setNoonMode} options={[{value:"sandbox",label:"Sandbox"},{value:"live",label:"Live"}]} />
+            </div>
+            <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
+              <p style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:10}}>Tayseer</p>
+              <Inp label="Merchant ID" value={tayseerMerchId} onChange={setTayseerMerchId} placeholder={isAr?"معرف التاجر":"Merchant ID"} />
+              <Inp label="API Key" value={tayseerApiKey} onChange={setTayseerApiKey} type="password" placeholder="API Key" />
+              <Sel label={isAr?"الوضع":"Mode"} value={tayseerMode} onChange={setTayseerMode} options={[{value:"sandbox",label:"Sandbox"},{value:"live",label:"Live"}]} />
+            </div>
+          </div>
+        </G>
       </div>}
       {tab==="BANKS"&&<div>
         <G title={isAr?"البنوك المسجلة":"Registered Banks"}>
@@ -9430,6 +9456,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn,explorer_url:explorerUrl})});}catch(e){}
           try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),deposit_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
           try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode,app_id:nafathAppId,app_key:nafathAppKey,base_url:nafathUrl})});}catch(e){}
+          try{await apiFetch("/payments/config",{method:"PUT",body:JSON.stringify({primary_provider:payPrimary,failover_enabled:payFailover,noon:{business_id:noonBizId,api_key:noonApiKey,mode:noonMode},tayseer:{merchant_id:tayseerMerchId,api_key:tayseerApiKey,mode:tayseerMode}})});}catch(e){}
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
           try{await apiFetch("/settings/otp-dev-mode",{method:"PUT",body:JSON.stringify({enabled:otpDevMode})});}catch(e){}
           try{await apiFetch("/settings/2fa",{method:"PUT",body:JSON.stringify({required:investor2faRequired})});}catch(e){}
