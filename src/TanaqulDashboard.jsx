@@ -8557,17 +8557,20 @@ const Settings = ({ onLangChange }) => {
   const [aiChatLimit,setAiChatLimit]=useState("50");
   const [aiModel,setAiModel]=useState("gpt-4o-mini");
   const [aiShowKey,setAiShowKey]=useState(false);
+  // Contact & Office
+  const [contactInfo,setContactInfo]=useState({email:"",whatsapp:"",call_center:"",office_lat:24.7136,office_lng:46.6753,office_address_en:"",office_address_ar:"",working_hours_en:"",working_hours_ar:""});
   useEffect(()=>{
     apiFetch("/settings/smart-trading/plans").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.plans||d))setStPlans(d.plans||d);}).catch(()=>{});
     apiFetch("/settings/smart-trading/ai").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setAiApiKey(d.api_key);if(d.chat_limit)setAiChatLimit(String(d.chat_limit));if(d.model)setAiModel(d.model);}}).catch(()=>{});
     apiFetch("/settings/banks").then(async r=>{if(!r||!r.ok){const txt=await r?.text().catch(()=>"");console.warn("Banks fetch failed:",r?.status,txt);return null;}return r.json();}).then(d=>{console.log("Banks data:",d);if(d&&Array.isArray(d))setBanksList(d);}).catch(e=>console.warn("Banks fetch error:",e));
+    apiFetch("/settings/contact-office").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&(d.email!==undefined))setContactInfo(p=>({...p,...d}));}).catch(()=>{});
   },[]);
 
 
   return (
     <div>
       <SectionHeader title={isAr?"الإعدادات":"Settings"} sub={isAr?"إعدادات وإدارة المنصة":"Platform configuration and management"} />
-      <TabBar tabs={[{id:"PLATFORM",label:isAr?"المنصة":"PLATFORM"},{id:"PAYMENTS",label:isAr?"المدفوعات":"PAYMENTS"},{id:"BANKS",label:isAr?"البنوك":"BANKS"},{id:"COMMISSION",label:isAr?"العمولة":"COMMISSION"},{id:"STORAGE FEES",label:isAr?"رسوم التخزين":"STORAGE FEES"},{id:"SMART HUB",label:isAr?"المركز الذكي":"SMART HUB"},{id:"BLOCKCHAIN",label:isAr?"البلوكشين":"BLOCKCHAIN"},{id:"NOTIFICATIONS",label:isAr?"الإشعارات":"NOTIFICATIONS"},{id:"REPORTING",label:isAr?"التقارير":"REPORTING"},{id:"VAULT",label:isAr?"الخزينة":"VAULT"},{id:"MANUFACTURERS",label:isAr?"الشركات المصنعة":"MANUFACTURERS"},{id:"NAFATH",label:isAr?"نفاذ":"NAFATH"},{id:"SECURITY",label:isAr?"الأمان":"SECURITY"},{id:"LEGAL",label:isAr?"القانونية":"LEGAL"}]} active={tab} onChange={setTab} />
+      <TabBar tabs={[{id:"PLATFORM",label:isAr?"المنصة":"PLATFORM"},{id:"PAYMENTS",label:isAr?"المدفوعات":"PAYMENTS"},{id:"BANKS",label:isAr?"البنوك":"BANKS"},{id:"COMMISSION",label:isAr?"العمولة":"COMMISSION"},{id:"STORAGE FEES",label:isAr?"رسوم التخزين":"STORAGE FEES"},{id:"SMART HUB",label:isAr?"المركز الذكي":"SMART HUB"},{id:"BLOCKCHAIN",label:isAr?"البلوكشين":"BLOCKCHAIN"},{id:"NOTIFICATIONS",label:isAr?"الإشعارات":"NOTIFICATIONS"},{id:"REPORTING",label:isAr?"التقارير":"REPORTING"},{id:"VAULT",label:isAr?"الخزينة":"VAULT"},{id:"MANUFACTURERS",label:isAr?"الشركات المصنعة":"MANUFACTURERS"},{id:"NAFATH",label:isAr?"نفاذ":"NAFATH"},{id:"SECURITY",label:isAr?"الأمان":"SECURITY"},{id:"CONTACT",label:isAr?"التواصل":"CONTACT"},{id:"LEGAL",label:isAr?"القانونية":"LEGAL"}]} active={tab} onChange={setTab} />
       {tab==="PLATFORM"&&<div>
         <G title={isAr?"إعدادات المنصة":"Platform Settings"}>
           <Inp label={isAr?"اسم المنصة":"Platform Name"} value={platform.name} onChange={v=>setPlatform({...platform,name:v})} />
@@ -9142,6 +9145,49 @@ const Settings = ({ onLangChange }) => {
         </G>
         <PriceFeedSettings />
       </div>}
+      {tab==="CONTACT"&&<div>
+        <G title={isAr?"معلومات التواصل":"Contact Information"}>
+          <p style={{fontSize:13,color:C.textMuted,marginBottom:14}}>{isAr?"هذه المعلومات تظهر للمستثمرين في صفحة الدعم — بطاقة «تواصل معنا».":"These details appear to investors on the Support page — \"Contact Us\" card."}</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+            <Inp label={isAr?"البريد الإلكتروني":"Email"} value={contactInfo.email} onChange={v=>setContactInfo(p=>({...p,email:v}))} placeholder="support@tanaqul.com" />
+            <Inp label={isAr?"واتساب":"WhatsApp"} value={contactInfo.whatsapp} onChange={v=>setContactInfo(p=>({...p,whatsapp:v}))} placeholder="+966 50 000 0000" />
+            <Inp label={isAr?"مركز الاتصال":"Call Center"} value={contactInfo.call_center} onChange={v=>setContactInfo(p=>({...p,call_center:v}))} placeholder="920000000" />
+          </div>
+        </G>
+        <G title={isAr?"ساعات العمل":"Working Hours"}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div>
+              <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"ساعات العمل (عربي)":"Working Hours (Arabic)"}</label>
+              <textarea value={contactInfo.working_hours_ar} onChange={e=>setContactInfo(p=>({...p,working_hours_ar:e.target.value}))} placeholder={isAr?"الأحد - الخميس: 9:00 ص - 5:00 م":"الأحد - الخميس: 9:00 ص - 5:00 م"} style={{width:"100%",minHeight:80,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}} />
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:13,fontWeight:700,color:C.textMuted,marginBottom:6}}>{isAr?"ساعات العمل (إنجليزي)":"Working Hours (English)"}</label>
+              <textarea value={contactInfo.working_hours_en} onChange={e=>setContactInfo(p=>({...p,working_hours_en:e.target.value}))} placeholder="Sun - Thu: 9:00 AM - 5:00 PM" style={{width:"100%",minHeight:80,padding:"10px 12px",borderRadius:10,border:`1px solid ${C.border}`,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}} />
+            </div>
+          </div>
+        </G>
+        <G title={isAr?"موقع المكتب — الوصول إلينا":"Office Location — Reach Us"}>
+          <p style={{fontSize:13,color:C.textMuted,marginBottom:14}}>{isAr?"حدد إحداثيات المكتب على الخريطة. يتم عرض الموقع للمستثمرين مع عرض القمر الصناعي واتجاهات الوصول.":"Set office coordinates. Shown to investors with satellite view and directions."}</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+            <Inp label={isAr?"خط العرض (Latitude)":"Latitude"} value={String(contactInfo.office_lat)} onChange={v=>setContactInfo(p=>({...p,office_lat:parseFloat(v)||0}))} placeholder="24.7136" type="number" />
+            <Inp label={isAr?"خط الطول (Longitude)":"Longitude"} value={String(contactInfo.office_lng)} onChange={v=>setContactInfo(p=>({...p,office_lng:parseFloat(v)||0}))} placeholder="46.6753" type="number" />
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+            <Inp label={isAr?"العنوان (عربي)":"Address (Arabic)"} value={contactInfo.office_address_ar} onChange={v=>setContactInfo(p=>({...p,office_address_ar:v}))} placeholder={isAr?"الرياض، المملكة العربية السعودية":"الرياض، المملكة العربية السعودية"} />
+            <Inp label={isAr?"العنوان (إنجليزي)":"Address (English)"} value={contactInfo.office_address_en} onChange={v=>setContactInfo(p=>({...p,office_address_en:v}))} placeholder="Riyadh, Saudi Arabia" />
+          </div>
+          {/* Map Preview */}
+          <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:350}}>
+            <iframe
+              title="Office Location"
+              width="100%" height="100%" frameBorder="0" style={{border:0}}
+              src={`https://www.google.com/maps?q=${contactInfo.office_lat},${contactInfo.office_lng}&z=16&output=embed&t=k`}
+              allowFullScreen
+            />
+          </div>
+          <p style={{fontSize:12,color:C.textMuted,marginTop:6}}>{isAr?"💡 غيّر الإحداثيات أعلاه وستتحدث الخريطة تلقائياً. استخدم Google Maps للحصول على الإحداثيات.":"💡 Change coordinates above and the map updates automatically. Use Google Maps to get coordinates."}</p>
+        </G>
+      </div>}
       {tab==="LEGAL"&&<div>
         <G title={isAr?"المستندات القانونية":"Legal Documents"}>
           <p style={{fontSize:13,color:C.textMuted,marginBottom:12}}>{isAr?"ارفع ملفات PDF لعرضها للمستثمرين أثناء التسجيل. تفتح في صفحة جديدة.":"Upload PDF files shown to investors during signup. Opens in a new browser tab."}</p>
@@ -9200,6 +9246,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/manufacturers",{method:"PUT",body:JSON.stringify({items:manufacturers||[]})});}catch(e){}
           try{await apiFetch("/settings/legal",{method:"PUT",body:JSON.stringify({terms_url:termsUrl,platform_agreement_url:platformAgreementUrl,auth_template_url:authTemplateUrl,booking_terms_ar:bookingTermsAr,booking_terms_en:bookingTermsEn})});}catch(e){}
           try{await apiFetch("/settings/smart-trading/plans/bulk",{method:"PUT",body:JSON.stringify({plans:stPlans})});}catch(e){}
+          try{await apiFetch("/settings/contact-office",{method:"PUT",body:JSON.stringify(contactInfo)});}catch(e){}
           showSaved();}}>{isAr?"حفظ الإعدادات":"Save Settings"}</Btn></div>
       <div id="split-err" style={{display:"none",background:C.redBg,border:"1px solid #C85C3E44",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:14,color:"#C85C3E",fontWeight:600}}></div>
     </div>

@@ -513,6 +513,10 @@ const support = {
   async reply(id, data) { return request(`/support/tickets/${id}`, { method: "PATCH", body: data }); },
   async stats() { return request("/support/stats"); },
 };
+const contactOffice = {
+  async get() { return request("/settings/contact-office"); },
+  async update(data) { return request("/settings/contact-office", { method: "PUT", body: data }); },
+};
 
 const api = {
   auth,
@@ -532,6 +536,7 @@ const api = {
   treasury,
   storageFees,
   support,
+  contactOffice,
   // Utilities
   setBaseUrl(url) {
     // Override base URL if needed
