@@ -8139,6 +8139,98 @@ const NOTIF_TEMPLATES = [
     bodyAr:"عزيزي {investorName}، حسابك تحت المراجعة الروتينية لمكافحة غسل الأموال وفقاً لأنظمة ساما. قد يُطلب منك وثائق إضافية. لا يلزم اتخاذ إجراء حالياً.",
     pushTitleEn:"",pushTitleAr:"",pushBodyEn:"",pushBodyAr:"",
     deepLink:"",vars:["investorName"],smsMaxChars:160},
+  // ─── Account Lifecycle (NEW) ──────────────────────────────────────────────
+  {id:"N25",backendKey:"ACCOUNT_SUSPENDED",group:"account",groupAr:"الحساب",name:"Account Suspended",nameAr:"تعليق الحساب",
+    trigger:"auto",triggerEvent:"investor.suspended",channels:["push","sms"],priority:"urgent",enabled:true,
+    titleEn:"Account Suspended",titleAr:"تم تعليق حسابك",
+    bodyEn:"Your Tanaqul account has been suspended. Reason: {reason}. Contact compliance@tanaqul.sa for details.",
+    bodyAr:"تم تعليق حسابك في تنقل. السبب: {reason}. تواصل مع compliance@tanaqul.sa للتفاصيل.",
+    pushTitleEn:"Account Suspended",pushTitleAr:"تم تعليق الحساب",
+    pushBodyEn:"Your account is under review.",pushBodyAr:"حسابك قيد المراجعة.",
+    deepLink:"tanaqul://support",vars:["reason"],smsMaxChars:160},
+  {id:"N26",backendKey:"ACCOUNT_REACTIVATED",group:"account",groupAr:"الحساب",name:"Account Reactivated",nameAr:"إعادة تفعيل الحساب",
+    trigger:"auto",triggerEvent:"investor.activated",channels:["push","sms"],priority:"normal",enabled:true,
+    titleEn:"Account Reactivated",titleAr:"تم تفعيل حسابك",
+    bodyEn:"Your Tanaqul account has been reactivated. You can now resume trading.",
+    bodyAr:"تم إعادة تفعيل حسابك في تنقل. يمكنك مواصلة التداول.",
+    pushTitleEn:"Welcome Back!",pushTitleAr:"مرحباً بعودتك!",
+    pushBodyEn:"Your account is active again.",pushBodyAr:"حسابك نشط مجدداً.",
+    deepLink:"tanaqul://portfolio",vars:[],smsMaxChars:160},
+  {id:"N27",backendKey:"ACCOUNT_BANNED",group:"account",groupAr:"الحساب",name:"Account Banned",nameAr:"حظر الحساب",
+    trigger:"auto",triggerEvent:"investor.banned",channels:["sms"],priority:"urgent",enabled:true,
+    titleEn:"Account Permanently Restricted",titleAr:"حسابك مقيّد بشكل دائم",
+    bodyEn:"Your Tanaqul account has been permanently restricted. Reason: {reason}. All open orders cancelled. Contact legal@tanaqul.sa.",
+    bodyAr:"تم تقييد حسابك في تنقل بشكل دائم. السبب: {reason}. تم إلغاء جميع الأوامر. تواصل مع legal@tanaqul.sa.",
+    pushTitleEn:"",pushTitleAr:"",pushBodyEn:"",pushBodyAr:"",
+    deepLink:"",vars:["reason"],smsMaxChars:160},
+  // ─── Company Flow (NEW) ───────────────────────────────────────────────────
+  {id:"N28",backendKey:"COMPANY_REJECTED",group:"account",groupAr:"الحساب",name:"Company Registration Rejected",nameAr:"رفض تسجيل الشركة",
+    trigger:"auto",triggerEvent:"company.rejected",channels:["sms","email"],priority:"urgent",enabled:true,
+    titleEn:"Company Registration Rejected",titleAr:"تم رفض تسجيل الشركة",
+    bodyEn:"Your company registration has been rejected. Reason: {reason}. You may reapply with updated documents.",
+    bodyAr:"تم رفض تسجيل شركتك. السبب: {reason}. يمكنك إعادة التقديم بوثائق محدّثة.",
+    pushTitleEn:"",pushTitleAr:"",pushBodyEn:"",pushBodyAr:"",
+    deepLink:"",vars:["reason"],smsMaxChars:160},
+  {id:"N29",backendKey:"COMPANY_DOCUMENT_REQUIRED",group:"account",groupAr:"الحساب",name:"Company Document Required",nameAr:"مطلوب وثائق إضافية",
+    trigger:"auto",triggerEvent:"company.document_required",channels:["sms","push"],priority:"normal",enabled:true,
+    titleEn:"Documents Required",titleAr:"مطلوب وثائق",
+    bodyEn:"Additional documents are required for your company registration. Please upload them in the app.",
+    bodyAr:"مطلوب وثائق إضافية لتسجيل شركتك. يرجى رفعها من التطبيق.",
+    pushTitleEn:"Upload Documents",pushTitleAr:"ارفع الوثائق",
+    pushBodyEn:"Additional documents needed for your registration.",pushBodyAr:"مطلوب وثائق إضافية لتسجيلك.",
+    deepLink:"tanaqul://documents",vars:[],smsMaxChars:160},
+  // ─── KYC (NEW) ────────────────────────────────────────────────────────────
+  {id:"N30",backendKey:"KYC_EXPIRY_REMINDER",group:"kyc",groupAr:"التحقق",name:"KYC Expiry Reminder",nameAr:"تذكير انتهاء الهوية",
+    trigger:"scheduled",triggerEvent:"kyc.expiring_30d",channels:["sms","push"],priority:"normal",enabled:true,
+    titleEn:"KYC Expiring Soon",titleAr:"هويتك تنتهي قريباً",
+    bodyEn:"Your identity verification expires on {expiry_date}. Please renew to avoid trading restrictions.",
+    bodyAr:"تنتهي صلاحية التحقق من هويتك في {expiry_date}. يرجى التجديد لتجنب قيود التداول.",
+    pushTitleEn:"KYC Expiring",pushTitleAr:"الهوية تنتهي قريباً",
+    pushBodyEn:"Renew before {expiry_date}.",pushBodyAr:"جدد قبل {expiry_date}.",
+    deepLink:"tanaqul://kyc/renew",vars:["expiry_date"],smsMaxChars:160},
+  {id:"N31",backendKey:"KYC_EXPIRED",group:"kyc",groupAr:"التحقق",name:"KYC Expired",nameAr:"الهوية منتهية",
+    trigger:"auto",triggerEvent:"kyc.expired",channels:["sms","push"],priority:"urgent",enabled:true,
+    titleEn:"KYC Expired — Trading Blocked",titleAr:"الهوية منتهية — التداول متوقف",
+    bodyEn:"Your identity verification has expired. Trading and withdrawals are blocked until you renew via Nafath.",
+    bodyAr:"انتهت صلاحية التحقق من هويتك. التداول والسحب متوقف حتى التجديد عبر نفاذ.",
+    pushTitleEn:"KYC Expired",pushTitleAr:"الهوية منتهية",
+    pushBodyEn:"Trading blocked. Renew KYC now.",pushBodyAr:"التداول متوقف. جدد هويتك الآن.",
+    deepLink:"tanaqul://kyc/renew",vars:[],smsMaxChars:160},
+  // ─── DCA (NEW) ────────────────────────────────────────────────────────────
+  {id:"N32",backendKey:"DCA_ORDER_PLACED",group:"trading",groupAr:"التداول",name:"DCA Order Placed",nameAr:"تم تنفيذ الشراء الدوري",
+    trigger:"auto",triggerEvent:"dca.executed",channels:["sms","push"],priority:"normal",enabled:true,
+    titleEn:"Recurring Buy Executed",titleAr:"تم تنفيذ الشراء الدوري",
+    bodyEn:"Your recurring buy of {amount} SAR in {metal} has been executed at {price} SAR/g.",
+    bodyAr:"تم تنفيذ الشراء الدوري بقيمة {amount} ر.س في {metal} بسعر {price} ر.س/غ.",
+    pushTitleEn:"DCA Executed",pushTitleAr:"تم الشراء الدوري",
+    pushBodyEn:"{amount} SAR in {metal} @ {price}.",pushBodyAr:"{amount} ر.س في {metal} بسعر {price}.",
+    deepLink:"tanaqul://portfolio",vars:["amount","metal","price"],smsMaxChars:160},
+  {id:"N33",backendKey:"DCA_SKIPPED",group:"trading",groupAr:"التداول",name:"DCA Skipped",nameAr:"تم تخطي الشراء الدوري",
+    trigger:"auto",triggerEvent:"dca.skipped",channels:["sms","push"],priority:"normal",enabled:true,
+    titleEn:"Recurring Buy Skipped",titleAr:"تم تخطي الشراء الدوري",
+    bodyEn:"Your recurring buy of {amount} SAR in {metal} was skipped due to insufficient wallet balance.",
+    bodyAr:"تم تخطي الشراء الدوري بقيمة {amount} ر.س في {metal} بسبب عدم كفاية الرصيد.",
+    pushTitleEn:"DCA Skipped",pushTitleAr:"تخطي الشراء الدوري",
+    pushBodyEn:"Insufficient balance for {metal} DCA.",pushBodyAr:"رصيد غير كافٍ لـ DCA {metal}.",
+    deepLink:"tanaqul://wallet",vars:["amount","metal"],smsMaxChars:160},
+  // ─── Support (NEW) ────────────────────────────────────────────────────────
+  {id:"N34",backendKey:"SUPPORT_TICKET_REPLY",group:"account",groupAr:"الحساب",name:"Support Ticket Reply",nameAr:"رد على تذكرة الدعم",
+    trigger:"auto",triggerEvent:"support.reply",channels:["sms","push"],priority:"normal",enabled:true,
+    titleEn:"Support Ticket Updated",titleAr:"تم تحديث تذكرة الدعم",
+    bodyEn:"Your support ticket #{ticket_id} has been updated. Check the app for details.",
+    bodyAr:"تم تحديث تذكرة الدعم #{ticket_id}. تحقق من التطبيق للتفاصيل.",
+    pushTitleEn:"Ticket Updated",pushTitleAr:"تم تحديث التذكرة",
+    pushBodyEn:"Your support ticket has a new reply.",pushBodyAr:"تذكرتك تلقت رداً جديداً.",
+    deepLink:"tanaqul://support/{ticket_id}",vars:["ticket_id"],smsMaxChars:160},
+  // ─── Wallet Deposit (NEW — gated by SAMA toggle) ──────────────────────────
+  {id:"N35",backendKey:"WALLET_DEPOSIT_CONFIRMED",group:"wallet",groupAr:"المحفظة",name:"Wallet Deposit Confirmed",nameAr:"تم إيداع مبلغ في المحفظة",
+    trigger:"auto",triggerEvent:"wallet.deposited",channels:["sms","push"],priority:"normal",enabled:true,
+    titleEn:"Wallet Credited",titleAr:"تم إضافة رصيد",
+    bodyEn:"{amount} SAR has been credited to your Tanaqul wallet. Ref: {ref}",
+    bodyAr:"تم إضافة {amount} ر.س لمحفظتك في تنقل. المرجع: {ref}",
+    pushTitleEn:"Wallet Credited",pushTitleAr:"تم إضافة رصيد",
+    pushBodyEn:"{amount} SAR added to your wallet.",pushBodyAr:"تم إضافة {amount} ر.س لمحفظتك.",
+    deepLink:"tanaqul://wallet",vars:["amount","ref"],smsMaxChars:160},
 ];
 
 const NOTIF_GROUPS = [
@@ -8151,6 +8243,7 @@ const NOTIF_GROUPS = [
   {id:"wallet",icon:"💳",label:"Wallet & Financial",labelAr:"المحفظة والمالية",color:"#8B6540"},
   {id:"market",icon:"💹",label:"Market & Prices",labelAr:"السوق والأسعار",color:"#C4956A"},
   {id:"compliance",icon:"🛡️",label:"Compliance / AML",labelAr:"الامتثال ومكافحة غسل الأموال",color:"#8B3520"},
+  {id:"support",icon:"🎧",label:"Support",labelAr:"الدعم",color:"#5B7FA4"},
 ];
 
 const NotificationSettings = () => {
@@ -8174,7 +8267,7 @@ const NotificationSettings = () => {
   const [emailFrom, setEmailFrom] = useState("noreply@tanaqul.sa");
   const [emailReplyTo, setEmailReplyTo] = useState("support@tanaqul.sa");
 
-  // Load SMS config + templates from backend
+  // Load SMS config + SMS templates + email templates from backend
   useEffect(()=>{
     apiFetch("/notifications/sms-config").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d){
@@ -8183,9 +8276,9 @@ const NotificationSettings = () => {
         if(d.msegat_sender)setSmsSenderId(d.msegat_sender);
       }
     }).catch(()=>{});
-    apiFetch("/notifications/templates").then(r=>r&&r.ok?r.json():null).then(d=>{
+    apiFetch("/notifications/sms-templates").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&typeof d==="object"){
-        setBackendTemplates(d);
+        setBackendSmsTemplates(d);
         // Merge backend SMS text into dashboard templates so previews show actual saved content
         setTemplates(prev=>prev.map(tpl=>{
           const bt = d[tpl.backendKey] || d[tpl.id];
@@ -8196,9 +8289,13 @@ const NotificationSettings = () => {
         }));
       }
     }).catch(()=>{});
+    apiFetch("/notifications/email-templates").then(r=>r&&r.ok?r.json():null).then(d=>{
+      if(d&&typeof d==="object") setBackendEmailTemplates(d);
+    }).catch(()=>{});
   },[]);
 
-  const [backendTemplates, setBackendTemplates] = useState(null);
+  const [backendSmsTemplates, setBackendSmsTemplates] = useState(null);
+  const [backendEmailTemplates, setBackendEmailTemplates] = useState(null);
 
   // Save SMS gateway config
   const saveSmsConfig = async () => {
@@ -8212,12 +8309,12 @@ const NotificationSettings = () => {
     } catch(e) { showToast(isAr?"❌ خطأ":"❌ Error"); }
   };
 
-  // Save templates to backend
-  const saveTemplates = async () => {
-    if(!backendTemplates) return;
+  // Save all SMS templates to backend
+  const saveSmsTemplates = async () => {
+    if(!backendSmsTemplates) return;
     try {
-      await apiFetch("/notifications/templates",{method:"PUT",body:JSON.stringify(backendTemplates)});
-      showToast(isAr?"✅ تم حفظ القوالب":"✅ Templates saved");
+      await apiFetch("/notifications/sms-templates",{method:"PUT",body:JSON.stringify(backendSmsTemplates)});
+      showToast(isAr?"✅ تم حفظ قوالب SMS":"✅ SMS templates saved");
     } catch(e) { showToast(isAr?"❌ خطأ":"❌ Error"); }
   };
 
@@ -8487,10 +8584,9 @@ const NotificationSettings = () => {
             const updated = {
               sms_en: editTpl.bodyEn,
               sms_ar: editTpl.bodyAr,
-              email_subject: editTpl.titleEn || editTpl.name || "",
             };
-            setBackendTemplates(p=>p?{...p,[bKey]:updated}:{[bKey]:updated});
-            try{await apiFetch("/notifications/templates/"+bKey,{method:"PUT",body:JSON.stringify(updated)});}catch{}
+            setBackendSmsTemplates(p=>p?{...p,[bKey]:updated}:{[bKey]:updated});
+            try{await apiFetch("/notifications/sms-templates/"+bKey,{method:"PUT",body:JSON.stringify(updated)});}catch{}
             setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");
           }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
