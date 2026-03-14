@@ -8185,10 +8185,15 @@ const NotificationSettings = () => {
     }).catch(()=>{});
     apiFetch("/notifications/templates").then(r=>r&&r.ok?r.json():null).then(d=>{
       if(d&&typeof d==="object"){
-        // Merge backend templates into NOTIF_TEMPLATES format
-        // Templates from backend are { KEY: { sms_en, sms_ar, email_subject } }
-        // We store them separately for the edit modal
         setBackendTemplates(d);
+        // Merge backend SMS text into dashboard templates so previews show actual saved content
+        setTemplates(prev=>prev.map(tpl=>{
+          const bt = d[tpl.id];
+          if(bt){
+            return {...tpl, bodyEn:bt.sms_en||tpl.bodyEn, bodyAr:bt.sms_ar||tpl.bodyAr};
+          }
+          return tpl;
+        }));
       }
     }).catch(()=>{});
   },[]);
@@ -8477,18 +8482,15 @@ const NotificationSettings = () => {
         <div style={{display:"flex",gap:8}}>
           <Btn variant="gold" onClick={async()=>{
             setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));
-            // Also save the SMS body text to backend templates if this template has a backend key
-            if(backendTemplates&&editTpl.triggerEvent){
-              const bKey = editTpl.triggerEvent.replace(/\./g,"_").toUpperCase();
-              // Try to match backend template key
-              const matchKey = Object.keys(backendTemplates).find(k=>k===bKey||k===editTpl.id);
-              if(matchKey){
-                const updated = {...backendTemplates[matchKey], sms_en:editTpl.bodyEn, sms_ar:editTpl.bodyAr};
-                if(editTpl.titleEn) updated.email_subject = editTpl.titleEn;
-                setBackendTemplates(p=>({...p,[matchKey]:updated}));
-                try{await apiFetch("/notifications/templates/"+matchKey,{method:"PUT",body:JSON.stringify(updated)});}catch{}
-              }
-            }
+            // Save SMS body text to backend using template ID (N01-N24) as key
+            const bKey = editTpl.id;
+            const updated = {
+              sms_en: editTpl.bodyEn,
+              sms_ar: editTpl.bodyAr,
+              email_subject: editTpl.titleEn || editTpl.name || "",
+            };
+            setBackendTemplates(p=>p?{...p,[bKey]:updated}:{[bKey]:updated});
+            try{await apiFetch("/notifications/templates/"+bKey,{method:"PUT",body:JSON.stringify(updated)});}catch{}
             setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");
           }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
