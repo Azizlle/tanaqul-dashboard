@@ -964,6 +964,10 @@ function setPriceFeed(providerId, apiKey, intervalSecs) {
   _setCrossCookie("price_api_key", _apiKey);
   _setCrossCookie("price_provider", _provider);
   _setCrossCookie("price_interval", String(_interval));
+  // Also save to backend so mobile/fallback can use it
+  if (_apiKey) {
+    apiFetch("/settings/price-feed", {method:"PUT", body:JSON.stringify({provider:_provider, api_key:_apiKey})}).catch(()=>{});
+  }
   if (_timer) clearInterval(_timer);
   if (_apiKey) {
     fetchPrices();
