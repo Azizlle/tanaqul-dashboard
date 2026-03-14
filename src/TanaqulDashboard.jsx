@@ -813,18 +813,32 @@ async function fetchFromProvider(providerId, apiKey) {
   };
 
   if (providerId === "metals.dev") {
-    const res  = await fetch(`https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=SAR&unit=toz`);
-    if (res.status === 401) throw new Error("Invalid API key");
-    if (res.status === 429) throw new Error("Quota exceeded — upgrade plan");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (json.status !== "success") throw new Error(json.message || "API error");
-    const m = json.metals;
-    const g = toGram(m.gold||0), s = toGram(m.silver||0), p = toGram(m.platinum||0);
+    // Try multiple currency/unit combos — always convert to SAR/gram
+    const tryMetalsDev = async (currency, unit) => {
+      const r = await fetch(`https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=${currency}&unit=${unit}`);
+      if (r.status === 401) throw new Error("Invalid API key");
+      if (r.status === 429) throw new Error("Quota exceeded — upgrade plan");
+      if (!r.ok) return null;
+      const j = await r.json();
+      if (j.status !== "success") return null;
+      const m = j.metals;
+      if (!m || !m.gold) return null;
+      // Convert any combo to SAR/gram
+      let mul = 1;
+      if (unit === "toz") mul = 1 / TROY_OZ_TO_GRAMS;
+      if (currency === "USD") mul *= USD_TO_SAR;
+      return { gold: (m.gold||0)*mul, silver: (m.silver||0)*mul, platinum: (m.platinum||0)*mul };
+    };
+    let m = await tryMetalsDev("SAR", "gram");
+    if (!m) m = await tryMetalsDev("SAR", "toz");
+    if (!m) m = await tryMetalsDev("USD", "gram");
+    if (!m) m = await tryMetalsDev("USD", "toz");
+    if (!m) throw new Error("metals.dev returned no data for any currency/unit combo");
+    const g = +(m.gold).toFixed(2), s = +(m.silver).toFixed(2), p = +(m.platinum).toFixed(2);
     return {
-      XAU:{ symbol:"XAU",name:"Gold",    color:"#D4A017",priceSAR:g,priceUSD:toUSD(g),change:chg(g,"XAU"),high:toGram((m.gold||0)*1.002),low:toGram((m.gold||0)*0.998),open:toGram((m.gold||0)*0.999) },
-      XAG:{ symbol:"XAG",name:"Silver",  color:"#A89880",priceSAR:s,priceUSD:toUSD(s),change:chg(s,"XAG"),high:s*1.002,low:s*0.998,open:s*0.999 },
-      XPT:{ symbol:"XPT",name:"Platinum",color:"#C4956A",priceSAR:p,priceUSD:toUSD(p),change:chg(p,"XPT"),high:p*1.003,low:p*0.997,open:p*0.999 },
+      XAU:{ symbol:"XAU",name:"Gold",    color:"#D4A017",priceSAR:g,priceUSD:toUSD(g),change:chg(g,"XAU"),high:+(g*1.002).toFixed(2),low:+(g*0.998).toFixed(2),open:+(g*0.999).toFixed(2) },
+      XAG:{ symbol:"XAG",name:"Silver",  color:"#A89880",priceSAR:s,priceUSD:toUSD(s),change:chg(s,"XAG"),high:+(s*1.002).toFixed(2),low:+(s*0.998).toFixed(2),open:+(s*0.999).toFixed(2) },
+      XPT:{ symbol:"XPT",name:"Platinum",color:"#C4956A",priceSAR:p,priceUSD:toUSD(p),change:chg(p,"XPT"),high:+(p*1.003).toFixed(2),low:+(p*0.997).toFixed(2),open:+(p*0.999).toFixed(2) },
     };
   }
 
@@ -929,6 +943,16 @@ async function fetchPrices() {
   }
 }
 
+// ─── Cross-subdomain cookie helpers ──────────────────────────────────────────
+function _setCrossCookie(name, value, days = 365) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;domain=.tanaqul.app;SameSite=Lax;Secure`;
+}
+function _getCrossCookie(name) {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
 // ─── Public API — called from Settings to switch/save ────────────────────────
 function setPriceFeed(providerId, apiKey, intervalSecs) {
   _provider  = providerId;
@@ -937,6 +961,10 @@ function setPriceFeed(providerId, apiKey, intervalSecs) {
   localStorage.setItem("price_provider", _provider);
   localStorage.setItem("price_api_key",  _apiKey);
   localStorage.setItem("price_interval", String(_interval));
+  // Share with investor portal via cross-subdomain cookie
+  _setCrossCookie("price_api_key", _apiKey);
+  _setCrossCookie("price_provider", _provider);
+  _setCrossCookie("price_interval", String(_interval));
   if (_timer) clearInterval(_timer);
   if (_apiKey) {
     fetchPrices();
@@ -946,8 +974,11 @@ function setPriceFeed(providerId, apiKey, intervalSecs) {
   }
 }
 
-// Start on load
+// Start on load — also sync cookie for portal
 if (_apiKey) {
+  _setCrossCookie("price_api_key", _apiKey);
+  _setCrossCookie("price_provider", _provider);
+  _setCrossCookie("price_interval", String(_interval));
   fetchPrices();
   _timer = setInterval(fetchPrices, _interval * 1000);
 }
