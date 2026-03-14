@@ -7943,23 +7943,23 @@ const GRANULAR_PERMS = [
 // ═══════════════════════════════════════════════════════════════════════════════
 const NOTIF_TEMPLATES = [
   // ─── Account & Onboarding ─────────────────────────────────────────────────
-  {id:"N01",group:"account",groupAr:"الحساب",name:"Welcome — Account Registered",nameAr:"ترحيب — تسجيل حساب جديد",
+  {id:"N01",backendKey:"WELCOME_INDIVIDUAL",group:"account",groupAr:"الحساب",name:"Welcome — Account Registered",nameAr:"ترحيب — تسجيل حساب جديد",
     trigger:"auto",triggerEvent:"investor.created",channels:["push","email","sms"],priority:"normal",enabled:true,
-    titleEn:"Welcome to Tanaqul! 🎉",titleAr:"مرحباً بك في تناقل! 🎉",
-    bodyEn:"Hi {investorName}, your account is now active. Your vault key is {vaultKey}. Start by depositing your first bar to trade tokenized precious metals.",
-    bodyAr:"أهلاً {investorName}، حسابك مُفعّل الآن. مفتاح الخزينة: {vaultKey}. ابدأ بإيداع أول سبيكة لتداول المعادن الثمينة المرمّزة.",
+    titleEn:"Welcome to Tanaqul!",titleAr:"مرحباً بك في تناقل!",
+    bodyEn:"Welcome to Tanaqul! Your account is now active. Start trading precious metals today.",
+    bodyAr:"أهلاً بك في تنقل! حسابك مفعّل الآن. ابدأ تداول المعادن الثمينة اليوم.",
     pushTitleEn:"Welcome to Tanaqul!",pushTitleAr:"مرحباً بك في تناقل!",
     pushBodyEn:"Your account is active. Deposit your first bar to start trading.",pushBodyAr:"حسابك نشط. أودع سبيكتك الأولى للبدء.",
-    deepLink:"tanaqul://portfolio",vars:["investorName","vaultKey"],smsMaxChars:160},
-  {id:"N02",group:"account",groupAr:"الحساب",name:"Account Suspended",nameAr:"تعليق الحساب",
+    deepLink:"tanaqul://portfolio",vars:[],smsMaxChars:160},
+  {id:"N02",backendKey:"ACCOUNT_SUSPENDED",group:"account",groupAr:"الحساب",name:"Account Suspended",nameAr:"تعليق الحساب",
     trigger:"auto",triggerEvent:"investor.suspended",channels:["push","email","sms"],priority:"urgent",enabled:true,
-    titleEn:"Account Suspended ⚠️",titleAr:"تم تعليق حسابك ⚠️",
+    titleEn:"Account Suspended",titleAr:"تم تعليق حسابك",
     bodyEn:"Dear {investorName}, your Tanaqul account has been temporarily suspended. Reason: {reason}. Contact compliance@tanaqul.sa for details.",
     bodyAr:"عزيزي {investorName}، تم تعليق حسابك في تناقل مؤقتاً. السبب: {reason}. تواصل مع compliance@tanaqul.sa.",
     pushTitleEn:"Account Suspended",pushTitleAr:"تم تعليق الحساب",
     pushBodyEn:"Your account is under review. Contact support for details.",pushBodyAr:"حسابك قيد المراجعة. تواصل مع الدعم.",
     deepLink:"tanaqul://support",vars:["investorName","reason"],smsMaxChars:160},
-  {id:"N03",group:"account",groupAr:"الحساب",name:"Account Reactivated",nameAr:"إعادة تفعيل الحساب",
+  {id:"N03",backendKey:"ACCOUNT_REACTIVATED",group:"account",groupAr:"الحساب",name:"Account Reactivated",nameAr:"إعادة تفعيل الحساب",
     trigger:"auto",triggerEvent:"investor.activated",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"Account Reactivated ✅",titleAr:"تم تفعيل حسابك ✅",
     bodyEn:"{investorName}, your Tanaqul account has been reactivated. You can now resume trading.",
@@ -7967,7 +7967,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Welcome Back!",pushTitleAr:"مرحباً بعودتك!",
     pushBodyEn:"Your account is active again. Start trading now.",pushBodyAr:"حسابك نشط مجدداً. ابدأ التداول.",
     deepLink:"tanaqul://portfolio",vars:["investorName"],smsMaxChars:160},
-  {id:"N04",group:"account",groupAr:"الحساب",name:"Account Banned",nameAr:"حظر الحساب",
+  {id:"N04",backendKey:"ACCOUNT_BANNED",group:"account",groupAr:"الحساب",name:"Account Banned",nameAr:"حظر الحساب",
     trigger:"auto",triggerEvent:"investor.banned",channels:["email","sms"],priority:"urgent",enabled:true,
     titleEn:"Account Permanently Restricted",titleAr:"حسابك مقيّد بشكل دائم",
     bodyEn:"Dear {investorName}, your Tanaqul account has been permanently restricted due to: {reason}. All open orders have been cancelled. Contact legal@tanaqul.sa.",
@@ -7975,7 +7975,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"",pushTitleAr:"",pushBodyEn:"",pushBodyAr:"",
     deepLink:"",vars:["investorName","reason"],smsMaxChars:160},
   // ─── KYC & NAFATH ─────────────────────────────────────────────────────────
-  {id:"N05",group:"kyc",groupAr:"التحقق",name:"KYC Expiry Reminder (30 days)",nameAr:"تذكير انتهاء الهوية (30 يوم)",
+  {id:"N05",backendKey:"KYC_EXPIRY_REMINDER",group:"kyc",groupAr:"التحقق",name:"KYC Expiry Reminder (30 days)",nameAr:"تذكير انتهاء الهوية (30 يوم)",
     trigger:"scheduled",triggerEvent:"kyc.expiring_30d",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"KYC Expires in {daysLeft} Days",titleAr:"هويتك تنتهي خلال {daysLeft} يوم",
     bodyEn:"{investorName}, your identity verification expires on {kycExpiry}. Please renew to avoid trading restrictions.",
@@ -7983,7 +7983,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"KYC Expiring Soon",pushTitleAr:"هويتك تنتهي قريباً",
     pushBodyEn:"Renew your KYC before {kycExpiry} to continue trading.",pushBodyAr:"جدد هويتك قبل {kycExpiry} للاستمرار.",
     deepLink:"tanaqul://kyc/renew",vars:["investorName","kycExpiry","daysLeft"],smsMaxChars:160},
-  {id:"N06",group:"kyc",groupAr:"التحقق",name:"KYC Expired — Trading Blocked",nameAr:"الهوية منتهية — التداول متوقف",
+  {id:"N06",backendKey:"KYC_EXPIRED",group:"kyc",groupAr:"التحقق",name:"KYC Expired — Trading Blocked",nameAr:"الهوية منتهية — التداول متوقف",
     trigger:"auto",triggerEvent:"kyc.expired",channels:["push","email","sms"],priority:"urgent",enabled:true,
     titleEn:"KYC Expired — Trading Restricted 🔴",titleAr:"هويتك منتهية — التداول مقيّد 🔴",
     bodyEn:"{investorName}, your KYC has expired as of {kycExpiry}. Trading and withdrawals are blocked until renewal. Please update your documents immediately.",
@@ -7991,7 +7991,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"⚠️ KYC Expired",pushTitleAr:"⚠️ الهوية منتهية",
     pushBodyEn:"Your trading is blocked. Renew KYC now.",pushBodyAr:"التداول متوقف. جدد هويتك الآن.",
     deepLink:"tanaqul://kyc/renew",vars:["investorName","kycExpiry"],smsMaxChars:160},
-  {id:"N07",group:"kyc",groupAr:"التحقق",name:"NAFATH Verification Required",nameAr:"مطلوب التحقق عبر نفاذ",
+  {id:"N07",backendKey:"KYC_VERIFIED",group:"kyc",groupAr:"التحقق",name:"NAFATH Verification Required",nameAr:"مطلوب التحقق عبر نفاذ",
     trigger:"auto",triggerEvent:"nafath.required",channels:["push","sms"],priority:"urgent",enabled:true,
     titleEn:"Identity Verification Required",titleAr:"مطلوب التحقق من الهوية",
     bodyEn:"{investorName}, please verify your identity via NAFATH to activate your account. Open the Tanaqul app to start.",
@@ -8000,14 +8000,14 @@ const NOTIF_TEMPLATES = [
     pushBodyEn:"Complete identity verification to start trading.",pushBodyAr:"أكمل التحقق من الهوية لبدء التداول.",
     deepLink:"tanaqul://nafath/verify",vars:["investorName"],smsMaxChars:160},
   // ─── Login & Security ─────────────────────────────────────────────────────
-  {id:"N08",group:"security",groupAr:"الأمان",name:"Login OTP",nameAr:"رمز الدخول",
+  {id:"N08",backendKey:"OTP_VERIFY",group:"security",groupAr:"الأمان",name:"Login OTP",nameAr:"رمز الدخول",
     trigger:"auto",triggerEvent:"auth.otp_requested",channels:["sms"],priority:"urgent",enabled:true,
     titleEn:"Tanaqul Login Code",titleAr:"رمز دخول تناقل",
     bodyEn:"Your Tanaqul verification code is {otpCode}. Expires in 5 minutes. Do not share this code.",
     bodyAr:"رمز التحقق من تناقل هو {otpCode}. ينتهي خلال 5 دقائق. لا تشاركه.",
     pushTitleEn:"",pushTitleAr:"",pushBodyEn:"",pushBodyAr:"",
     deepLink:"",vars:["otpCode"],smsMaxChars:100},
-  {id:"N09",group:"security",groupAr:"الأمان",name:"New Device Login Alert",nameAr:"تنبيه تسجيل دخول من جهاز جديد",
+  {id:"N09",backendKey:"LOGIN_NEW_DEVICE",group:"security",groupAr:"الأمان",name:"New Device Login Alert",nameAr:"تنبيه تسجيل دخول من جهاز جديد",
     trigger:"auto",triggerEvent:"auth.new_device",channels:["push","email"],priority:"urgent",enabled:true,
     titleEn:"New Login Detected 🔐",titleAr:"تم رصد دخول جديد 🔐",
     bodyEn:"{investorName}, a new login was detected from {deviceName} ({ipAddress}) at {loginTime}. If this wasn't you, change your password immediately.",
@@ -8016,7 +8016,7 @@ const NOTIF_TEMPLATES = [
     pushBodyEn:"Someone logged in from {deviceName}. Was this you?",pushBodyAr:"تم الدخول من {deviceName}. هل هذا أنت؟",
     deepLink:"tanaqul://security/sessions",vars:["investorName","deviceName","ipAddress","loginTime"],smsMaxChars:160},
   // ─── Appointments ─────────────────────────────────────────────────────────
-  {id:"N10",group:"appointments",groupAr:"المواعيد",name:"Appointment Booked",nameAr:"تم حجز الموعد",
+  {id:"N10",backendKey:"APPOINTMENT_CONFIRMED",group:"appointments",groupAr:"المواعيد",name:"Appointment Booked",nameAr:"تم حجز الموعد",
     trigger:"auto",triggerEvent:"appointment.booked",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"Appointment Confirmed ✅",titleAr:"تم تأكيد موعدك ✅",
     bodyEn:"{investorName}, your {aptType} appointment for {metal} ({qty}) at {vault} is confirmed for {aptDate} at {aptTime}. Ref: {aptId}.",
@@ -8024,7 +8024,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Appointment Confirmed",pushTitleAr:"تم تأكيد الموعد",
     pushBodyEn:"{aptType} on {aptDate} at {aptTime}. Bring your ID.",pushBodyAr:"{aptType} بتاريخ {aptDate} الساعة {aptTime}. أحضر هويتك.",
     deepLink:"tanaqul://appointments/{aptId}",vars:["investorName","aptType","metal","qty","vault","aptDate","aptTime","aptId"],smsMaxChars:160},
-  {id:"N11",group:"appointments",groupAr:"المواعيد",name:"Appointment Reminder (24h)",nameAr:"تذكير بالموعد (24 ساعة)",
+  {id:"N11",backendKey:"APPOINTMENT_RESCHEDULED",group:"appointments",groupAr:"المواعيد",name:"Appointment Reminder (24h)",nameAr:"تذكير بالموعد (24 ساعة)",
     trigger:"scheduled",triggerEvent:"appointment.reminder_24h",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"Appointment Tomorrow 🔔",titleAr:"موعدك غداً 🔔",
     bodyEn:"Reminder: {investorName}, you have a {aptType} appointment tomorrow at {aptTime} ({vault}). Please bring your national ID. Ref: {aptId}.",
@@ -8032,7 +8032,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Appointment Tomorrow",pushTitleAr:"موعدك غداً",
     pushBodyEn:"{aptType} at {aptTime}. Don't forget your ID.",pushBodyAr:"{aptType} الساعة {aptTime}. لا تنسَ هويتك.",
     deepLink:"tanaqul://appointments/{aptId}",vars:["investorName","aptType","aptTime","vault","aptId"],smsMaxChars:160},
-  {id:"N12",group:"appointments",groupAr:"المواعيد",name:"No-Show Warning",nameAr:"تحذير عدم الحضور",
+  {id:"N12",backendKey:"APPOINTMENT_NO_SHOW",group:"appointments",groupAr:"المواعيد",name:"No-Show Warning",nameAr:"تحذير عدم الحضور",
     trigger:"auto",triggerEvent:"appointment.no_show",channels:["push","sms"],priority:"urgent",enabled:true,
     titleEn:"Missed Appointment ❌",titleAr:"فاتك موعدك ❌",
     bodyEn:"{investorName}, you missed your appointment on {aptDate}. You now have {noShowCount} no-shows. 3+ may result in booking restrictions and a SAR {penaltyFee} fee.",
@@ -8040,7 +8040,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Missed Appointment",pushTitleAr:"فاتك الموعد",
     pushBodyEn:"You have {noShowCount} no-shows. Reschedule now.",pushBodyAr:"لديك {noShowCount} عدم حضور. أعد الجدولة.",
     deepLink:"tanaqul://appointments",vars:["investorName","aptDate","noShowCount","penaltyFee"],smsMaxChars:160},
-  {id:"N13",group:"appointments",groupAr:"المواعيد",name:"Vault OTP — Appointment Verification",nameAr:"رمز التحقق — الموعد",
+  {id:"N13",backendKey:"APPOINTMENT_OTP",group:"appointments",groupAr:"المواعيد",name:"Vault OTP — Appointment Verification",nameAr:"رمز التحقق — الموعد",
     trigger:"auto",triggerEvent:"appointment.otp",channels:["sms"],priority:"urgent",enabled:true,
     titleEn:"Vault OTP",titleAr:"رمز التحقق للخزينة",
     bodyEn:"Your vault verification code: {otpCode}. Valid for 10 minutes. Show this to the vault officer. Ref: {aptId}.",
@@ -8048,7 +8048,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"",pushTitleAr:"",pushBodyEn:"",pushBodyAr:"",
     deepLink:"",vars:["otpCode","aptId"],smsMaxChars:100},
   // ─── Orders & Trading ─────────────────────────────────────────────────────
-  {id:"N14",group:"trading",groupAr:"التداول",name:"Order Placed",nameAr:"تم وضع الأمر",
+  {id:"N14",backendKey:"ORDER_FILLED",group:"trading",groupAr:"التداول",name:"Order Placed",nameAr:"تم وضع الأمر",
     trigger:"auto",triggerEvent:"order.placed",channels:["push"],priority:"normal",enabled:true,
     titleEn:"Order Placed ✅",titleAr:"تم تسجيل أمرك ✅",
     bodyEn:"Your {orderSide} order for {qty}g {metal} at SAR {price}/g has been placed. Ref: {orderId}.",
@@ -8056,7 +8056,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"{orderSide} Order Placed",pushTitleAr:"تم وضع أمر {orderSide}",
     pushBodyEn:"{qty}g {metal} @ SAR {price}. Ref: {orderId}.",pushBodyAr:"{qty}جرام {metal} بسعر {price} ريال. المرجع: {orderId}.",
     deepLink:"tanaqul://orders/{orderId}",vars:["orderSide","qty","metal","price","orderId"],smsMaxChars:160},
-  {id:"N15",group:"trading",groupAr:"التداول",name:"Order Executed (Matched)",nameAr:"تم تنفيذ الأمر",
+  {id:"N15",backendKey:"ORDER_PARTIAL_FILL",group:"trading",groupAr:"التداول",name:"Order Executed (Matched)",nameAr:"تم تنفيذ الأمر",
     trigger:"auto",triggerEvent:"order.executed",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"Order Executed! 💰",titleAr:"تم تنفيذ أمرك! 💰",
     bodyEn:"Your {orderSide} order for {qty}g {metal} was executed at SAR {execPrice}/g. Total: SAR {totalSAR}. Commission: SAR {commission}.",
@@ -8064,7 +8064,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Trade Executed!",pushTitleAr:"تم التنفيذ!",
     pushBodyEn:"{orderSide} {qty}g {metal} @ SAR {execPrice}.",pushBodyAr:"{orderSide} {qty}جرام {metal} بسعر {execPrice} ريال.",
     deepLink:"tanaqul://portfolio",vars:["orderSide","qty","metal","execPrice","totalSAR","commission","orderId"],smsMaxChars:160},
-  {id:"N16",group:"trading",groupAr:"التداول",name:"Order Cancelled",nameAr:"تم إلغاء الأمر",
+  {id:"N16",backendKey:"ORDER_DROPPED",group:"trading",groupAr:"التداول",name:"Order Cancelled",nameAr:"تم إلغاء الأمر",
     trigger:"auto",triggerEvent:"order.cancelled",channels:["push"],priority:"normal",enabled:true,
     titleEn:"Order Cancelled",titleAr:"تم إلغاء الأمر",
     bodyEn:"Your {orderSide} order ({orderId}) for {qty}g {metal} has been cancelled. Reason: {cancelReason}.",
@@ -8073,7 +8073,7 @@ const NOTIF_TEMPLATES = [
     pushBodyEn:"{orderId} cancelled: {cancelReason}.",pushBodyAr:"تم إلغاء {orderId}: {cancelReason}.",
     deepLink:"tanaqul://orders",vars:["orderSide","qty","metal","orderId","cancelReason"],smsMaxChars:160},
   // ─── Vault & Bars ─────────────────────────────────────────────────────────
-  {id:"N17",group:"vault",groupAr:"الخزينة",name:"Bar Deposited — Tokens Minted",nameAr:"تم إيداع السبيكة — تم سك الرموز",
+  {id:"N17",backendKey:"VAULT_DEPOSIT_CONFIRMED",group:"vault",groupAr:"الخزينة",name:"Bar Deposited — Tokens Minted",nameAr:"تم إيداع السبيكة — تم سك الرموز",
     trigger:"auto",triggerEvent:"bar.deposited",channels:["push","email"],priority:"normal",enabled:true,
     titleEn:"Bar Deposited — Tokens Minted 🏦",titleAr:"تم إيداع السبيكة — تم سك الرموز 🏦",
     bodyEn:"{investorName}, your {metal} bar ({weight}g, {barId}) has been deposited at {vault}. {tokenCount} tokens minted to your wallet.",
@@ -8081,7 +8081,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Bar Deposited ✅",pushTitleAr:"تم إيداع السبيكة ✅",
     pushBodyEn:"{weight}g {metal} deposited. {tokenCount} tokens minted.",pushBodyAr:"تم إيداع {weight}جرام {metal}. تم سك {tokenCount} رمز.",
     deepLink:"tanaqul://vault/{barId}",vars:["investorName","metal","weight","barId","vault","tokenCount"],smsMaxChars:160},
-  {id:"N18",group:"vault",groupAr:"الخزينة",name:"Bar Withdrawn — Tokens Burned",nameAr:"تم سحب السبيكة — تم حرق الرموز",
+  {id:"N18",backendKey:"VAULT_WITHDRAWAL_CONFIRMED",group:"vault",groupAr:"الخزينة",name:"Bar Withdrawn — Tokens Burned",nameAr:"تم سحب السبيكة — تم حرق الرموز",
     trigger:"auto",triggerEvent:"bar.withdrawn",channels:["push","email"],priority:"normal",enabled:true,
     titleEn:"Bar Withdrawn — Tokens Burned",titleAr:"تم سحب السبيكة — تم حرق الرموز",
     bodyEn:"{investorName}, your {metal} bar ({weight}g, {barId}) has been withdrawn from {vault}. {tokenCount} tokens burned.",
@@ -8090,7 +8090,7 @@ const NOTIF_TEMPLATES = [
     pushBodyEn:"{weight}g {metal} withdrawn. Tokens burned.",pushBodyAr:"تم سحب {weight}جرام {metal}. تم حرق الرموز.",
     deepLink:"tanaqul://vault",vars:["investorName","metal","weight","barId","vault","tokenCount"],smsMaxChars:160},
   // ─── Wallet & Financial ───────────────────────────────────────────────────
-  {id:"N19",group:"wallet",groupAr:"المحفظة",name:"Withdrawal Requested",nameAr:"تم طلب السحب",
+  {id:"N19",backendKey:"WITHDRAWAL_REQUESTED",group:"wallet",groupAr:"المحفظة",name:"Withdrawal Requested",nameAr:"تم طلب السحب",
     trigger:"auto",triggerEvent:"withdrawal.requested",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"Withdrawal Request Received",titleAr:"تم استلام طلب السحب",
     bodyEn:"{investorName}, your withdrawal of SAR {amount} to {bankName} (****{ibanLast4}) has been submitted. Processing time: 1-2 business days. Ref: {wrId}.",
@@ -8098,7 +8098,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Withdrawal Submitted",pushTitleAr:"تم تقديم طلب السحب",
     pushBodyEn:"SAR {amount} to {bankName}. Processing 1-2 days.",pushBodyAr:"{amount} ريال إلى {bankName}. المعالجة 1-2 يوم.",
     deepLink:"tanaqul://wallet/withdrawals/{wrId}",vars:["investorName","amount","bankName","ibanLast4","wrId"],smsMaxChars:160},
-  {id:"N20",group:"wallet",groupAr:"المحفظة",name:"Withdrawal Approved",nameAr:"تمت الموافقة على السحب",
+  {id:"N20",backendKey:"WITHDRAWAL_APPROVED",group:"wallet",groupAr:"المحفظة",name:"Withdrawal Approved",nameAr:"تمت الموافقة على السحب",
     trigger:"auto",triggerEvent:"withdrawal.approved",channels:["push","sms"],priority:"normal",enabled:true,
     titleEn:"Withdrawal Approved ✅",titleAr:"تمت الموافقة على السحب ✅",
     bodyEn:"{investorName}, your withdrawal of SAR {amount} has been approved and is being processed to {bankName}.",
@@ -8106,7 +8106,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"Withdrawal Approved",pushTitleAr:"تمت الموافقة",
     pushBodyEn:"SAR {amount} approved. Funds on the way.",pushBodyAr:"{amount} ريال تمت الموافقة. الأموال في الطريق.",
     deepLink:"tanaqul://wallet",vars:["investorName","amount","bankName"],smsMaxChars:160},
-  {id:"N21",group:"wallet",groupAr:"المحفظة",name:"Withdrawal Rejected",nameAr:"تم رفض السحب",
+  {id:"N21",backendKey:"WITHDRAWAL_REJECTED",group:"wallet",groupAr:"المحفظة",name:"Withdrawal Rejected",nameAr:"تم رفض السحب",
     trigger:"auto",triggerEvent:"withdrawal.rejected",channels:["push","email"],priority:"urgent",enabled:true,
     titleEn:"Withdrawal Rejected ❌",titleAr:"تم رفض طلب السحب ❌",
     bodyEn:"{investorName}, your withdrawal of SAR {amount} was rejected. Reason: {rejectReason}. Funds returned to wallet. Contact support for help.",
@@ -8115,7 +8115,7 @@ const NOTIF_TEMPLATES = [
     pushBodyEn:"SAR {amount} rejected. Funds returned to wallet.",pushBodyAr:"رفض {amount} ريال. المبلغ عاد للمحفظة.",
     deepLink:"tanaqul://wallet",vars:["investorName","amount","rejectReason"],smsMaxChars:160},
   // ─── Price Alerts ─────────────────────────────────────────────────────────
-  {id:"N22",group:"market",groupAr:"السوق",name:"Price Alert — Threshold Reached",nameAr:"تنبيه سعر — تم بلوغ الحد",
+  {id:"N22",backendKey:"BUY_PRICE_ALERT",group:"market",groupAr:"السوق",name:"Price Alert — Threshold Reached",nameAr:"تنبيه سعر — تم بلوغ الحد",
     trigger:"auto",triggerEvent:"price.threshold_hit",channels:["push"],priority:"normal",enabled:true,
     titleEn:"{metal} Price Alert 📈",titleAr:"تنبيه سعر {metal} 📈",
     bodyEn:"{metal} just hit SAR {price}/g — {direction} {changePct}% today. Your target of SAR {targetPrice} has been reached.",
@@ -8123,7 +8123,7 @@ const NOTIF_TEMPLATES = [
     pushTitleEn:"{metal} at SAR {price}!",pushTitleAr:"{metal} وصل {price} ريال!",
     pushBodyEn:"Your price alert triggered. {direction} {changePct}%.",pushBodyAr:"تم تفعيل تنبيه السعر. {direction} {changePct}%.",
     deepLink:"tanaqul://market/{metal}",vars:["metal","price","direction","changePct","targetPrice"],smsMaxChars:160},
-  {id:"N23",group:"market",groupAr:"السوق",name:"Daily Market Summary",nameAr:"ملخص السوق اليومي",
+  {id:"N23",backendKey:"SELL_PRICE_ALERT",group:"market",groupAr:"السوق",name:"Daily Market Summary",nameAr:"ملخص السوق اليومي",
     trigger:"scheduled",triggerEvent:"market.daily_summary",channels:["push"],priority:"normal",enabled:true,
     titleEn:"Today's Market Summary 📊",titleAr:"ملخص السوق اليوم 📊",
     bodyEn:"Gold: SAR {goldPrice}/g ({goldChange}%), Silver: SAR {silverPrice}/g ({silverChange}%), Platinum: SAR {platPrice}/g ({platChange}%).",
@@ -8132,7 +8132,7 @@ const NOTIF_TEMPLATES = [
     pushBodyEn:"Gold {goldChange}% | Silver {silverChange}% | Platinum {platChange}%",pushBodyAr:"ذهب {goldChange}% | فضة {silverChange}% | بلاتين {platChange}%",
     deepLink:"tanaqul://market",vars:["goldPrice","goldChange","silverPrice","silverChange","platPrice","platChange"],smsMaxChars:160},
   // ─── Compliance / AML ─────────────────────────────────────────────────────
-  {id:"N24",group:"compliance",groupAr:"الامتثال",name:"AML Review Notice",nameAr:"إشعار مراجعة مكافحة غسل الأموال",
+  {id:"N24",backendKey:"KYC_VERIFIED",group:"compliance",groupAr:"الامتثال",name:"AML Review Notice",nameAr:"إشعار مراجعة مكافحة غسل الأموال",
     trigger:"manual",triggerEvent:"aml.review_initiated",channels:["email"],priority:"normal",enabled:true,
     titleEn:"Routine AML Review Notice",titleAr:"إشعار مراجعة روتينية لمكافحة غسل الأموال",
     bodyEn:"Dear {investorName}, your account is under routine AML review as required by SAMA regulations. You may be contacted for additional documentation. No action needed at this time.",
@@ -8188,7 +8188,7 @@ const NotificationSettings = () => {
         setBackendTemplates(d);
         // Merge backend SMS text into dashboard templates so previews show actual saved content
         setTemplates(prev=>prev.map(tpl=>{
-          const bt = d[tpl.id];
+          const bt = d[tpl.backendKey] || d[tpl.id];
           if(bt){
             return {...tpl, bodyEn:bt.sms_en||tpl.bodyEn, bodyAr:bt.sms_ar||tpl.bodyAr};
           }
@@ -8482,8 +8482,8 @@ const NotificationSettings = () => {
         <div style={{display:"flex",gap:8}}>
           <Btn variant="gold" onClick={async()=>{
             setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));
-            // Save SMS body text to backend using template ID (N01-N24) as key
-            const bKey = editTpl.id;
+            // Save SMS body text to backend using backendKey (e.g. OTP_VERIFY, ORDER_FILLED)
+            const bKey = editTpl.backendKey || editTpl.id;
             const updated = {
               sms_en: editTpl.bodyEn,
               sms_ar: editTpl.bodyAr,
