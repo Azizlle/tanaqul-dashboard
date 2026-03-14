@@ -823,10 +823,11 @@ async function fetchFromProvider(providerId, apiKey) {
       if (j.status !== "success") return null;
       const m = j.metals;
       if (!m || !m.gold) return null;
-      // Auto-detect: gold per toz ~18000+ SAR / ~3000+ USD, per gram ~600 SAR
-      const threshold = currency === "USD" ? 1000 : 10000;
-      let mul = m.gold > threshold ? 1 / TROY_OZ_TO_GRAMS : 1;
-      if (currency === "USD") mul *= USD_TO_SAR;
+      // Use currency/unit from response if available, otherwise trust request params
+      const respUnit = j.unit || unit;
+      const respCurrency = j.currency || currency;
+      let mul = respUnit === "toz" ? 1 / TROY_OZ_TO_GRAMS : 1;
+      if (respCurrency === "USD") mul *= USD_TO_SAR;
       return { gold: (m.gold||0)*mul, silver: (m.silver||0)*mul, platinum: (m.platinum||0)*mul };
     };
     let m = await tryMetalsDev("SAR", "gram");
