@@ -977,11 +977,13 @@ function setPriceFeed(providerId, apiKey, intervalSecs) {
   }
 }
 
-// Start on load — also sync cookie for portal
+// Start on load — sync cookie + backend for portal/mobile
 if (_apiKey) {
   _setCrossCookie("price_api_key", _apiKey);
   _setCrossCookie("price_provider", _provider);
   _setCrossCookie("price_interval", String(_interval));
+  // Sync to backend so mobile can fetch it
+  apiFetch("/settings/price-feed", {method:"PUT", body:JSON.stringify({provider:_provider, api_key:_apiKey})}).catch(()=>{});
   fetchPrices();
   _timer = setInterval(fetchPrices, _interval * 1000);
 }
