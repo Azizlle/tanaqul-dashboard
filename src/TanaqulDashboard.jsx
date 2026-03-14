@@ -823,9 +823,8 @@ async function fetchFromProvider(providerId, apiKey) {
       if (j.status !== "success") return null;
       const m = j.metals;
       if (!m || !m.gold) return null;
-      // Convert any combo to SAR/gram
-      let mul = 1;
-      if (unit === "toz") mul = 1 / TROY_OZ_TO_GRAMS;
+      // metals.dev always returns per troy ounce regardless of unit param
+      let mul = 1 / TROY_OZ_TO_GRAMS;
       if (currency === "USD") mul *= USD_TO_SAR;
       return { gold: (m.gold||0)*mul, silver: (m.silver||0)*mul, platinum: (m.platinum||0)*mul };
     };
