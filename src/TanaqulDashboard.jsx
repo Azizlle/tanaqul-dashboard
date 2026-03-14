@@ -1527,7 +1527,8 @@ const Investors = () => {
   [isAr?"اسم الشركة":"Company Name",sel.companyNameEn],
   [isAr?"اسم الشركة (عربي)":"Company Name (AR)",sel.companyNameAr],
   [isAr?"الرقم الوطني الموحد":"Unified National Number",sel.unifiedNationalNumber],
-  [isAr?"الشخص المفوض":"Authorized Person",sel.authorizedPersonName],
+  [isAr?"الشخص المفوض (إنجليزي)":"Authorized Person (EN)",sel.authorizedPersonNameEn],
+  [isAr?"الشخص المفوض (عربي)":"Authorized Person (AR)",sel.authorizedPersonNameAr],
   [isAr?"هوية المفوض":"Auth Person ID",sel.authorizedPersonId],
 ] : [])].map(([k,v])=>(
             <div key={k} style={{display:"flex",flexDirection:"column",padding:"9px 10px",borderBottom:`1px solid ${C.border}`}}>
@@ -8480,7 +8481,7 @@ const Settings = ({ onLangChange }) => {
     apiFetch("/settings/platform").then(r=>r&&r.ok?r.json():null).then(d=>{if(d&&d.name)setPlatform(d);}).catch(()=>{});
     apiFetch("/settings/blockchain").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.network_name)setNetName(d.network_name);if(d.protocol)setProtocol(d.protocol);if(d.contract)setContract(d.contract);if(d.max_mb)setMaxMB(String(d.max_mb));if(d.max_hrs)setMaxHrs(String(d.max_hrs));if(d.quorum)setQuorum(String(d.quorum));if(d.explorer_public!==undefined)setExplorerOn(d.explorer_public);if(d.explorer_url)setExplorerUrl(d.explorer_url);}}).catch(()=>{});
     apiFetch("/settings/vault").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.locations)setVaultLocs(d.locations);if(d.advance_booking_days)setAdvBook(String(d.advance_booking_days));if(d.expiry_minutes)setExpiry(String(d.expiry_minutes));if(d.slot_start)setSlotStart(d.slot_start);if(d.slot_end)setSlotEnd(d.slot_end);if(d.slot_interval)setSlotInterval(String(d.slot_interval));if(d.slot_desks)setSlotDesks(String(d.slot_desks));if(d.deposit_fee)setTestFee(String(d.deposit_fee));if(d.handling_fee)setHandFee(String(d.handling_fee));if(d.weekend_days)setWeekendDays(d.weekend_days);}}).catch(()=>{});
-    apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);}}).catch(()=>{});
+    apiFetch("/settings/nafath").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.api_key)setNafathKey(d.api_key);if(d.webhook_url)setNafathWebhook(d.webhook_url);if(d.mode)setNafathMode(d.mode);if(d.app_id)setNafathAppId(d.app_id);if(d.app_key)setNafathAppKey(d.app_key);if(d.base_url)setNafathUrl(d.base_url);}}).catch(()=>{});
     apiFetch("/settings/security").then(r=>r&&r.ok?r.json():null).then(d=>{if(d){if(d.session_timeout)setSession(String(d.session_timeout));if(d.ip_whitelist)setIpWhitelist(d.ip_whitelist);}}).catch(()=>{});
     try{apiFetch("/settings/otp-dev-mode").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setOtpDevMode(d.enabled||false);}).catch(()=>{});}catch{}
     try{apiFetch("/settings/2fa").then(r=>r&&r.ok?r.json():null).then(d=>{if(d)setInvestor2faRequired(d.required||false);}).catch(()=>{});}catch{}
@@ -8561,6 +8562,7 @@ const Settings = ({ onLangChange }) => {
   // NAFATH
   const [nafathKey,setNafathKey]=useState(""); const [nafathWebhook,setNafathWebhook]=useState("https://api.tanaqul.sa/nafath/webhook");
   const [nafathMode,setNafathMode]=useState("production");
+  const [nafathAppId,setNafathAppId]=useState(""); const [nafathAppKey,setNafathAppKey]=useState(""); const [nafathUrl,setNafathUrl]=useState("https://auth.tanaqul.co");
   // Security
   const [session,setSession]=useState("30"); const [ipWhitelist,setIpWhitelist]=useState("196.203.x.x, 192.168.x.x"); const [otpDevMode,setOtpDevMode]=useState(false); const [investor2faRequired,setInvestor2faRequired]=useState(false);
   // Legal documents
@@ -9150,12 +9152,20 @@ const Settings = ({ onLangChange }) => {
           </div>
         ))}
       </G>}
-      {tab==="NAFATH"&&<G title={isAr?"تكامل نفاذ":"NAFATH Integration"}>
-        <Inp label={isAr?"مفتاح API":"API Key"} value={nafathKey} onChange={setNafathKey} type="password" />
-        <Inp label={isAr?"رابط Webhook":"Webhook URL"} value={nafathWebhook} onChange={setNafathWebhook} />
-        <Sel label={isAr?"الوضع":"Mode"} value={nafathMode} onChange={setNafathMode} options={[{value:"production",label:isAr?"إنتاج":"Production"},{value:"test",label:isAr?"وضع اختبار":"Test Mode"}]} />
-        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{isAr?"نفاذ إلزامي لجميع التسجيلات. لا تجاوز للتحقق.":"NAFATH mandatory for all registrations. No KYC bypass."}</p>
-      </G>}
+      {tab==="NAFATH"&&<div>
+        <G title={isAr?"بوابة نفاذ (APP-ID / APP-KEY)":"NAFATH Gateway (APP-ID / APP-KEY)"}>
+          <Inp label={isAr?"رابط بوابة نفاذ":"NAFATH Gateway URL"} value={nafathUrl} onChange={setNafathUrl} placeholder="https://auth.tanaqul.co" />
+          <Inp label="APP-ID" value={nafathAppId} onChange={setNafathAppId} placeholder={isAr?"معرف التطبيق":"Your application ID"} />
+          <Inp label="APP-KEY" value={nafathAppKey} onChange={setNafathAppKey} type="password" placeholder={isAr?"مفتاح التطبيق":"Your application key"} />
+          <Sel label={isAr?"الوضع":"Mode"} value={nafathMode} onChange={setNafathMode} options={[{value:"production",label:isAr?"إنتاج":"Production"},{value:"test",label:isAr?"وضع اختبار":"Test Mode"}]} />
+          <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{isAr?"يستخدم بوابة auth.tanaqul.co مع APP-ID و APP-KEY للتحقق من الهوية عبر نفاذ.":"Uses auth.tanaqul.co gateway with APP-ID & APP-KEY for Nafath identity verification."}</p>
+        </G>
+        <G title={isAr?"إعدادات إضافية":"Additional Settings"}>
+          <Inp label={isAr?"مفتاح API (قديم)":"API Key (legacy)"} value={nafathKey} onChange={setNafathKey} type="password" />
+          <Inp label={isAr?"رابط Webhook":"Webhook URL"} value={nafathWebhook} onChange={setNafathWebhook} />
+          <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{isAr?"نفاذ إلزامي لجميع التسجيلات. لا تجاوز للتحقق.":"NAFATH mandatory for all registrations. No KYC bypass."}</p>
+        </G>
+      </div>}
       {tab==="SECURITY"&&<div>
         <G title={isAr?"أمان المسؤول":"Admin Security"}>
           <Toggle label={isAr?"المصادقة الثنائية (2FA) 🔒":"Two-Factor Authentication (2FA) 🔒"} sub={isAr?"مطلوبة لجميع عمليات دخول المسؤولين — لا يمكن تعطيلها":"Required for all admin logins — cannot be disabled"} value={true} onChange={()=>{}} />
@@ -9261,7 +9271,7 @@ const Settings = ({ onLangChange }) => {
           try{await apiFetch("/settings/platform",{method:"PUT",body:JSON.stringify(platform)});}catch(e){}
           try{await apiFetch("/settings/blockchain",{method:"PUT",body:JSON.stringify({network_name:netName,protocol,contract,max_mb:parseInt(maxMB||1),max_hrs:parseInt(maxHrs||24),quorum:parseInt(quorum||1),explorer_public:explorerOn,explorer_url:explorerUrl})});}catch(e){}
           try{await apiFetch("/settings/vault",{method:"PUT",body:JSON.stringify({locations:vaultLocs,advance_booking_days:parseInt(advBook||1),expiry_minutes:parseInt(expiry||30),slot_start:slotStart,slot_end:slotEnd,slot_interval:parseInt(slotInterval||30),slot_desks:parseInt(slotDesks||2),deposit_fee:parseFloat(testFee||150),handling_fee:parseFloat(handFee||100),weekend_days:weekendDays})});}catch(e){}
-          try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode})});}catch(e){}
+          try{await apiFetch("/settings/nafath",{method:"PUT",body:JSON.stringify({api_key:nafathKey,webhook_url:nafathWebhook,mode:nafathMode,app_id:nafathAppId,app_key:nafathAppKey,base_url:nafathUrl})});}catch(e){}
           try{await apiFetch("/settings/security",{method:"PUT",body:JSON.stringify({session_timeout:parseInt(session||30),ip_whitelist:ipWhitelist,two_fa_required:true})});}catch(e){}
           try{await apiFetch("/settings/otp-dev-mode",{method:"PUT",body:JSON.stringify({enabled:otpDevMode})});}catch(e){}
           try{await apiFetch("/settings/2fa",{method:"PUT",body:JSON.stringify({required:investor2faRequired})});}catch(e){}
@@ -11040,6 +11050,8 @@ export default function App() {
             companyNameAr: inv.company_name_ar || "",
             unifiedNationalNumber: inv.unified_national_number || "",
             authorizedPersonName: inv.authorized_person_name || "",
+            authorizedPersonNameEn: inv.authorized_person_name_en || inv.authorized_person_name || "",
+            authorizedPersonNameAr: inv.authorized_person_name_ar || inv.authorized_person_name || "",
             authorizedPersonId: inv.authorized_person_id || "",
             authDocumentName: inv.auth_document_name || "",
             rejectReason: inv.reject_reason || "",
