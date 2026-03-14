@@ -780,9 +780,9 @@ const TIER_INFO = {
 
 // ─── Shared price store ───────────────────────────────────────────────────────
 const FALLBACK_PRICES = {
-  XAU: { priceSAR:839.00, priceUSD:223.73, change:0.42,  high:841.10, low:835.80, open:836.32 },
-  XAG: { priceSAR: 10.42, priceUSD:  2.78, change:-0.18, high: 10.50, low: 10.38, open: 10.44 },
-  XPT: { priceSAR:138.50, priceUSD: 36.93, change: 1.09, high:139.20, low:136.50, open:137.00 },
+  XAU: { priceSAR:0, priceUSD:0, change:0, high:0, low:0, open:0 },
+  XAG: { priceSAR:0, priceUSD:0, change:0, high:0, low:0, open:0 },
+  XPT: { priceSAR:0, priceUSD:0, change:0, high:0, low:0, open:0 },
 };
 let _prices = {
   XAU: { symbol:"XAU", name:"Gold",     color:"#D4A017", ...FALLBACK_PRICES.XAU },
