@@ -8165,14 +8165,56 @@ const NotificationSettings = () => {
   const [toast, setToast] = useState("");
   const showToast = m => { setToast(m); setTimeout(()=>setToast(""),3000); };
 
-  // API config state
-  const [smsKey, setSmsKey] = useState("sk_sms_•••••••••••••");
-  const [smsEndpoint, setSmsEndpoint] = useState("https://api.unifonic.com/v2/messages");
+  // Msegat SMS config state
+  const [mesegatUser, setMesegatUser] = useState("");
+  const [mesegatApiKey, setMesegatApiKey] = useState("");
   const [smsSenderId, setSmsSenderId] = useState("Tanaqul");
-  const [fcmKey, setFcmKey] = useState("AAAA•••••••••••:APA91•••••••••");
+  const [fcmKey, setFcmKey] = useState("");
   const [emailProvider, setEmailProvider] = useState("ses");
   const [emailFrom, setEmailFrom] = useState("noreply@tanaqul.sa");
   const [emailReplyTo, setEmailReplyTo] = useState("support@tanaqul.sa");
+
+  // Load SMS config + templates from backend
+  useEffect(()=>{
+    apiFetch("/notifications/sms-config").then(r=>r&&r.ok?r.json():null).then(d=>{
+      if(d){
+        if(d.msegat_user)setMesegatUser(d.msegat_user);
+        if(d.msegat_api_key)setMesegatApiKey(d.msegat_api_key);
+        if(d.msegat_sender)setSmsSenderId(d.msegat_sender);
+      }
+    }).catch(()=>{});
+    apiFetch("/notifications/templates").then(r=>r&&r.ok?r.json():null).then(d=>{
+      if(d&&typeof d==="object"){
+        // Merge backend templates into NOTIF_TEMPLATES format
+        // Templates from backend are { KEY: { sms_en, sms_ar, email_subject } }
+        // We store them separately for the edit modal
+        setBackendTemplates(d);
+      }
+    }).catch(()=>{});
+  },[]);
+
+  const [backendTemplates, setBackendTemplates] = useState(null);
+
+  // Save SMS gateway config
+  const saveSmsConfig = async () => {
+    try {
+      await apiFetch("/notifications/sms-config",{method:"PUT",body:JSON.stringify({
+        msegat_user:mesegatUser,
+        msegat_api_key:mesegatApiKey,
+        msegat_sender:smsSenderId,
+      })});
+      showToast(isAr?"✅ تم حفظ إعدادات SMS":"✅ SMS config saved");
+    } catch(e) { showToast(isAr?"❌ خطأ":"❌ Error"); }
+  };
+
+  // Save templates to backend
+  const saveTemplates = async () => {
+    if(!backendTemplates) return;
+    try {
+      await apiFetch("/notifications/templates",{method:"PUT",body:JSON.stringify(backendTemplates)});
+      showToast(isAr?"✅ تم حفظ القوالب":"✅ Templates saved");
+    } catch(e) { showToast(isAr?"❌ خطأ":"❌ Error"); }
+  };
 
   const filtered = templates.filter(tpl => {
     if(filterGroup!=="ALL"&&tpl.group!==filterGroup) return false;
@@ -8235,10 +8277,12 @@ const NotificationSettings = () => {
       <G title={isAr?"قنوات الإرسال":"Delivery Channels"}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"SMS — يونيفونك":"SMS — Unifonic"}</span></div>
-            <Inp label={isAr?"مفتاح API":"API Key"} value={smsKey} onChange={setSmsKey} type="password" />
-            <Inp label={isAr?"نقطة الاتصال":"Endpoint"} value={smsEndpoint} onChange={setSmsEndpoint} />
-            <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={setSmsSenderId} />
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>📱</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"SMS — مسجات":"SMS — Msegat"}</span></div>
+            <Inp label={isAr?"اسم المستخدم":"Username"} value={mesegatUser} onChange={setMesegatUser} placeholder="Msegat username" />
+            <Inp label={isAr?"مفتاح API":"API Key"} value={mesegatApiKey} onChange={setMesegatApiKey} type="password" placeholder="Msegat API key" />
+            <Inp label={isAr?"معرف المرسل":"Sender ID"} value={smsSenderId} onChange={setSmsSenderId} placeholder="Tanaqul" />
+            <p style={{fontSize:11,color:C.textMuted,marginTop:4}}>msegat.com/gw/sendsms.php</p>
+            <Btn small variant="gold" style={{marginTop:8}} onClick={saveSmsConfig}>{isAr?"حفظ إعدادات SMS":"Save SMS Config"}</Btn>
           </div>
           <div style={{background:C.bg,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}><span style={{fontSize:18}}>🔔</span><span style={{fontSize:14,fontWeight:700,color:C.navy}}>{isAr?"إشعارات فورية — FCM":"Push — Firebase FCM"}</span></div>
@@ -8431,7 +8475,22 @@ const NotificationSettings = () => {
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <Btn variant="gold" onClick={()=>{setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");}}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
+          <Btn variant="gold" onClick={async()=>{
+            setTemplates(p=>p.map(x=>x.id===editTpl.id?editTpl:x));
+            // Also save the SMS body text to backend templates if this template has a backend key
+            if(backendTemplates&&editTpl.triggerEvent){
+              const bKey = editTpl.triggerEvent.replace(/\./g,"_").toUpperCase();
+              // Try to match backend template key
+              const matchKey = Object.keys(backendTemplates).find(k=>k===bKey||k===editTpl.id);
+              if(matchKey){
+                const updated = {...backendTemplates[matchKey], sms_en:editTpl.bodyEn, sms_ar:editTpl.bodyAr};
+                if(editTpl.titleEn) updated.email_subject = editTpl.titleEn;
+                setBackendTemplates(p=>({...p,[matchKey]:updated}));
+                try{await apiFetch("/notifications/templates/"+matchKey,{method:"PUT",body:JSON.stringify(updated)});}catch{}
+              }
+            }
+            setEditTpl(null);showToast(isAr?"✅ تم حفظ القالب":"✅ Template saved");
+          }}>{isAr?"حفظ التغييرات":"Save Changes"}</Btn>
           <Btn variant="outline" onClick={()=>setEditTpl(null)}>{isAr?"إلغاء":"Cancel"}</Btn>
         </div>
       </Modal>}
@@ -8542,7 +8601,7 @@ const Settings = ({ onLangChange }) => {
   const [quorum,setQuorum]=useState("1");
   const [explorerUrl,setExplorerUrl]=useState("");
   // Notifications
-  const [smsKey,setSmsKey]=useState(""); const [smsEndpoint,setSmsEndpoint]=useState("https://sms-api.example.com");
+  // SMS config moved to NotificationSettings component
   const [fcmKey,setFcmKey]=useState("");
   // Vault
   const [vaultLocs,setVaultLocs]=useState(["Riyadh Vault 1","Jeddah Vault 1"]);
