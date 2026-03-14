@@ -823,8 +823,9 @@ async function fetchFromProvider(providerId, apiKey) {
       if (j.status !== "success") return null;
       const m = j.metals;
       if (!m || !m.gold) return null;
-      // metals.dev always returns per troy ounce regardless of unit param
-      let mul = 1 / TROY_OZ_TO_GRAMS;
+      // Auto-detect: gold > 500 SAR or > 100 USD means per-toz
+      const threshold = currency === "USD" ? 100 : 500;
+      let mul = m.gold > threshold ? 1 / TROY_OZ_TO_GRAMS : 1;
       if (currency === "USD") mul *= USD_TO_SAR;
       return { gold: (m.gold||0)*mul, silver: (m.silver||0)*mul, platinum: (m.platinum||0)*mul };
     };
