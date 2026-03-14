@@ -823,11 +823,9 @@ async function fetchFromProvider(providerId, apiKey) {
       if (j.status !== "success") return null;
       const m = j.metals;
       if (!m || !m.gold) return null;
-      // Use currency/unit from response if available, otherwise trust request params
-      const respUnit = j.unit || unit;
-      const respCurrency = j.currency || currency;
-      let mul = respUnit === "toz" ? 1 / TROY_OZ_TO_GRAMS : 1;
-      if (respCurrency === "USD") mul *= USD_TO_SAR;
+      // metals.dev always returns per troy ounce — always convert to gram
+      let mul = 1 / TROY_OZ_TO_GRAMS;
+      if (currency === "USD") mul *= USD_TO_SAR;
       return { gold: (m.gold||0)*mul, silver: (m.silver||0)*mul, platinum: (m.platinum||0)*mul };
     };
     let m = await tryMetalsDev("SAR", "gram");
